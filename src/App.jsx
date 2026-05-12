@@ -1,8 +1,13 @@
 import {
-  BrowserRouter,
   Routes,
   Route,
+  useLocation,
 } from "react-router-dom";
+
+import {
+  useEffect,
+} from "react";
+
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import ProductDetails from "./pages/ProductDetails";
@@ -12,145 +17,136 @@ import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import AdminUpload from "./pages/AdminUpload";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
 import Payment from "./pages/Payment";
 import Signup from "./pages/Signup";
 import UserLogin from "./pages/UserLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+
+import {
+  trackPage,
+} from "./utils/analytics";
+
 export default function App() {
+
+  const location = useLocation();
+
+  useEffect(() => {
+
+    trackPage(
+      location.pathname
+    );
+
+  }, [location]);
 
   return (
 
-    <BrowserRouter>
+    <Routes>
 
-      <Routes>
+      {/* HOME */}
+      <Route
+        path="/"
+        element={<Home />}
+      />
 
-        {/* HOME */}
-        <Route
-          path="/"
-          element={<Home />}
-        />
+      {/* PRODUCTS */}
+      <Route
+        path="/products"
+        element={<Products />}
+      />
 
-        {/* PRODUCTS */}
-        <Route
-          path="/products"
-          element={<Products />}
-        />
+      {/* PRODUCT DETAILS */}
+      <Route
+        path="/product/:id"
+        element={<ProductDetails />}
+      />
 
-        {/* PRODUCT DETAILS */}
-        <Route
-          path="/product/:id"
-          element={<ProductDetails />}
-        />
+      {/* LOGIN */}
+      <Route
+        path="/login"
+        element={<Login />}
+      />
 
-        {/* LOGIN */}
-        <Route
-          path="/login"
-          element={<Login />}
-        />
+      {/* CART */}
+      <Route
+        path="/cart"
+        element={
+          <ProtectedRoute>
+            <Cart />
+          </ProtectedRoute>
+        }
+      />
 
-        {/* CART */}
-        <Route
+      {/* WISHLIST */}
+      <Route
+        path="/wishlist"
+        element={
+          <ProtectedRoute>
+            <Wishlist />
+          </ProtectedRoute>
+        }
+      />
 
-          path="/cart"
+      {/* CHECKOUT */}
+      <Route
+        path="/checkout"
+        element={
+          <ProtectedRoute>
+            <Checkout />
+          </ProtectedRoute>
+        }
+      />
 
-          element={
+      {/* ADMIN */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <AdminUpload />
+          </AdminRoute>
+        }
+      />
 
-            <ProtectedRoute>
+      {/* ORDERS */}
+      <Route
+        path="/orders"
+        element={
+          <AdminRoute>
+            <Orders />
+          </AdminRoute>
+        }
+      />
 
-              <Cart />
-
-            </ProtectedRoute>
-          }
-        />
-
-        {/* WISHLIST */}
-        <Route
-
-          path="/wishlist"
-
-          element={
-
-            <ProtectedRoute>
-
-              <Wishlist />
-
-            </ProtectedRoute>
-          }
-        />
-
-        {/* CHECKOUT */}
-        <Route
-
-          path="/checkout"
-
-          element={
-
-            <ProtectedRoute>
-
-              <Checkout />
-
-            </ProtectedRoute>
-          }
-        />
-
-        {/* ADMIN */}
-        <Route
-
-          path="/admin"
-
-          element={
-
-            <AdminRoute>
-
-              <AdminUpload />
-
-            </AdminRoute>
-          }
-        />
-
-        {/* ORDERS */}
-        <Route
-
-          path="/orders"
-
-          element={
-
-            <AdminRoute>
-
-              <Orders />
-
-            </AdminRoute>
-          }
-        />
-
-        <Route
+      {/* PAYMENT */}
+      <Route
         path="/payment"
         element={
-        <ProtectedRoute>
-          <Payment />
-          </ProtectedRoute>}
-        />
+          <ProtectedRoute>
+            <Payment />
+          </ProtectedRoute>
+        }
+      />
 
-        <Route
+      {/* SIGNUP */}
+      <Route
         path="/signup"
         element={<Signup />}
-        />
-        
-        <Route
+      />
+
+      {/* USER LOGIN */}
+      <Route
         path="/user-login"
         element={<UserLogin />}
-        />
+      />
 
-        <Route
+      {/* ADMIN DASHBOARD */}
+      <Route
         path="/admin-dashboard"
         element={<AdminDashboard />}
-        />
+      />
 
-      </Routes>
-
-    </BrowserRouter>
+    </Routes>
   );
 }

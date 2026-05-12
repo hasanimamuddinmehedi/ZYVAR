@@ -1,36 +1,45 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
 
 import App from "./App";
-
 import "./index.css";
 
-import {
-  HelmetProvider,
-} from "react-helmet-async";
-
+import { HelmetProvider } from "react-helmet-async";
 import { CartProvider } from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
+
+import { initAnalytics } from "./utils/analytics";
+import {  registerSW, } from "virtual:pwa-register";
+
+registerSW({
+  immediate: true,
+});
+
+initAnalytics();
 
 ReactDOM.createRoot(
   document.getElementById("root")
 ).render(
-
   <React.StrictMode>
 
-    <HelmetProvider>
+    <BrowserRouter>
 
-      <WishlistProvider>
+      <HelmetProvider>
 
-        <CartProvider>
+        <WishlistProvider>
 
-          <App />
+          <CartProvider>
 
-        </CartProvider>
+            <App />
 
-      </WishlistProvider>
+          </CartProvider>
 
-    </HelmetProvider>
+        </WishlistProvider>
+
+      </HelmetProvider>
+
+    </BrowserRouter>
 
   </React.StrictMode>
 );

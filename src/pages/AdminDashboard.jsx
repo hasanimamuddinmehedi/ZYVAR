@@ -378,9 +378,9 @@ export default function AdminDashboard() {
 
                         <td className="py-5 flex items-center gap-4">
 
-                          <img
-
+                          <LazyLoadImage
                             src={product.image}
+                                //effect="blur"
 
                             alt={product.name}
 

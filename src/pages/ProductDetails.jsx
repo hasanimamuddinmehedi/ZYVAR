@@ -5,6 +5,8 @@ import {  db, } from "../firebase/firebase";
 import { useCart } from "../context/CartContext";
 import ProductReviews from "../components/ProductReviews";
 import SEO from "../components/SEO";
+import {  trackEvent, } from "../utils/analytics";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 
 export default function ProductDetails() {
 
@@ -58,6 +60,11 @@ export default function ProductDetails() {
             ...docSnap.data(),
           });
         }
+        trackEvent(
+            "Product",
+              "View Product",
+                product.name
+              );
 
       } catch (error) {
 
@@ -116,9 +123,9 @@ export default function ProductDetails() {
                 
           />
 
-          <img
-
+          <LazyLoadImage
             src={product.image}
+              //effect="blur"
 
             alt={product.name}
 

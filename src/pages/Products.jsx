@@ -1,21 +1,11 @@
 import { useEffect, useState } from "react";
-
-import {
-  collection,
-  getDocs,
-} from "firebase/firestore";
-
+import {  collection,  getDocs, } from "firebase/firestore";
 import { db } from "../firebase/firebase";
-
 import { useCart } from "../context/CartContext";
-
-import {
-  useWishlist,
-} from "../context/WishlistContext";
-
-import {
-  Link,
-} from "react-router-dom";
+import {  useWishlist, } from "../context/WishlistContext";
+import {  Link, } from "react-router-dom";
+import {  trackEvent, } from "../utils/analytics";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 
 export default function Products() {
 
@@ -154,9 +144,17 @@ export default function Products() {
                 type="text"
                 placeholder="Search products..."
                 value={search}
-                onChange={(e) =>
-                  setSearch(e.target.value)
-                }
+                onChange={(e) => {
+                    setSearchTerm(
+                          e.target.value
+                          );
+
+                          trackEvent(
+                                "Search",
+                                "Product Search",
+                                    e.target.value
+                                    );
+                                  }}
 
                 className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#D4AF37] text-white placeholder-gray-500"
               />
@@ -210,8 +208,9 @@ export default function Products() {
                   {/* IMAGE */}
                   <div className="relative overflow-hidden">
 
-                    <img
+                    <LazyLoadImage
                       src={product.image}
+                        //effect="blur"
                       alt={product.name}
                       className="h-64 sm:h-72 lg:h-80 w-full object-cover group-hover:scale-110 transition duration-700"
                     />
@@ -265,20 +264,30 @@ export default function Products() {
                     <div className="flex gap-3">
 
                       <button
-                        onClick={() => addToCart(product)}
+                        onClick={() => {
+                            addToCart(product);
+                              trackEvent(
+                                    "Cart",
+                                        "Add To Cart",
+                                            product.name
+                                            );
+                                          }}
                         className="flex-1 py-4 rounded-2xl bg-[#D4AF37] text-black font-black hover:scale-[1.02] transition duration-300"
                       >
                         Add to Cart
                       </button>
 
                       <button
-                        onClick={() =>
-
-                          isInWishlist(product.id)
-                            ? removeFromWishlist(product.id)
-                            : addToWishlist(product)
-
-                        }
+                        onClick={() => {
+                            addToWishlist(
+                                  product
+                                  );
+                                    trackEvent(
+                                          "Wishlist",
+                                              "Add Wishlist",
+                                                  product.name
+                                                  );
+                                                }}
 
                         className={`w-14 rounded-2xl border transition text-xl
 

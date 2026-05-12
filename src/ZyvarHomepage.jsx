@@ -1,3 +1,4 @@
+import { LazyLoadImage } from "react-lazy-load-image-component";
 export default function ZyvarHomepage() {
   const products = [
     {
@@ -294,8 +295,9 @@ export default function ZyvarHomepage() {
                 className="group rounded-3xl overflow-hidden bg-[#161616] border border-white/10 hover:border-[#D4AF37] transition duration-300 hover:-translate-y-3"
               >
                 <div className="overflow-hidden">
-                  <img
+                  <LazyLoadImage
                     src={product.image}
+                      //effect="blur"
                     alt={product.name}
                     className="h-80 w-full object-cover group-hover:scale-110 transition duration-700"
                   />
@@ -486,8 +488,9 @@ export default function ZyvarHomepage() {
                 className="group rounded-[32px] overflow-hidden border border-white/10 bg-white/5 backdrop-blur-xl hover:border-[#D4AF37] transition duration-500 hover:-translate-y-3"
               >
                 <div className="relative overflow-hidden">
-                  <img
+                  <LazyLoadImage
                     src={product.image}
+                      //effect="blur"
                     alt={product.name}
                     className="h-80 w-full object-cover group-hover:scale-110 transition duration-700"
                   />

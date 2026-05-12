@@ -159,6 +159,12 @@ export default function Checkout() {
           <h1 className="text-5xl font-black mb-6">
             Order Confirmed
           </h1>
+          
+          trackEvent(
+              "Order",
+                "Place Order",
+                  "Checkout Success"
+                  );
 
           <p className="text-gray-400 text-lg leading-relaxed">
             Thank you for shopping with ZYVAR.

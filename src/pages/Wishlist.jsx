@@ -1,8 +1,6 @@
-import {
-  useWishlist,
-} from "../context/WishlistContext";
-
+import {  useWishlist, } from "../context/WishlistContext";
 import { useCart } from "../context/CartContext";
+import { LazyLoadImage } from "react-lazy-load-image-component";
 
 export default function Wishlist() {
 
@@ -59,9 +57,10 @@ export default function Wishlist() {
                 {/* IMAGE */}
                 <div className="relative">
 
-                  <img
-                    src={product.image}
-                    alt={product.name}
+                  <LazyLoadImage
+                      src={product.image}
+                        //effect="blur"
+                      alt={product.name}
                     className="h-80 w-full object-cover"
                   />
 

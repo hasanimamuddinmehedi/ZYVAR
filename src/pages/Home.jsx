@@ -7,6 +7,7 @@ import Testimonials from "../components/Testimonials";
 import Newsletter from "../components/Newsletter";
 import Footer from "../components/Footer";
 import SEO from "../components/SEO";
+import WhatsAppSupport from "../components/WhatsAppSupport";
 
 export default function Home() {
   return (
@@ -24,6 +25,7 @@ export default function Home() {
       <Testimonials />
       <Newsletter />
       <Footer />
+      <WhatsAppSupport />
     </div>
   );
 }

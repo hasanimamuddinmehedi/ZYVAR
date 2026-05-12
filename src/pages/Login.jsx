@@ -1,20 +1,9 @@
 import { useState } from "react";
-
-import {
-  signInWithEmailAndPassword,
-} from "firebase/auth";
-
-import {
-  useNavigate,
-} from "react-router-dom";
-
-import { auth }
-from "../firebase/firebase";
-
-import {
-  ADMIN_EMAIL,
-}
-from "../utils/adminCheck";
+import {  signInWithEmailAndPassword, } from "firebase/auth";
+import {  useNavigate, } from "react-router-dom";
+import { auth } from "../firebase/firebase";
+import {  ADMIN_EMAIL, } from "../utils/adminCheck";
+import {  trackEvent,} from "../utils/analytics";
 
 export default function Login() {
 
@@ -63,6 +52,12 @@ export default function Login() {
 
           return;
         }
+
+        trackEvent(
+            "User",
+              "Login",
+                email
+              );
 
         alert(
           "Admin Login Successful"
