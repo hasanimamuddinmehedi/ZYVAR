@@ -8,17 +8,19 @@ import Newsletter from "../components/Newsletter";
 import Footer from "../components/Footer";
 import SEO from "../components/SEO";
 import WhatsAppSupport from "../components/WhatsAppSupport";
+import ProductCollage from "../components/ProductCollage";
 
 export default function Home() {
   return (
     <div className="bg-[#0B0B0B] text-white overflow-hidden">
       <SEO
-        title="ZYVAR — Luxury Ecommerce Store"
+        title="ZYVAR"
         description="Shop premium skincare, watches, perfumes, fashion, imported foods and lifestyle products from ZYVAR."
         image="https://yourdomain.com/banner.jpg"
         />
       <Navbar />
       <Hero />
+      <ProductCollage />
       <Categories />
       <FeaturedProducts />
       <BrandBanner />

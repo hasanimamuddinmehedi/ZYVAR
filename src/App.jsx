@@ -24,6 +24,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
+import Navbar from "./components/Navbar";
 
 import {
   trackPage,
@@ -42,111 +43,116 @@ export default function App() {
   }, [location]);
 
   return (
+    <>
+      {/* NAVBAR */}
+      <Navbar />
 
-    <Routes>
+      {/* ROUTES */}
+      <Routes>
 
-      {/* HOME */}
-      <Route
-        path="/"
-        element={<Home />}
-      />
+        {/* HOME */}
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
-      {/* PRODUCTS */}
-      <Route
-        path="/products"
-        element={<Products />}
-      />
+        {/* PRODUCTS */}
+        <Route
+          path="/products"
+          element={<Products />}
+        />
 
-      {/* PRODUCT DETAILS */}
-      <Route
-        path="/product/:id"
-        element={<ProductDetails />}
-      />
+        {/* PRODUCT DETAILS */}
+        <Route
+          path="/product/:id"
+          element={<ProductDetails />}
+        />
 
-      {/* LOGIN */}
-      <Route
-        path="/login"
-        element={<Login />}
-      />
+        {/* LOGIN */}
+        <Route
+          path="/login"
+          element={<Login />}
+        />
 
-      {/* CART */}
-      <Route
-        path="/cart"
-        element={
-          <ProtectedRoute>
-            <Cart />
-          </ProtectedRoute>
-        }
-      />
+        {/* CART */}
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <Cart />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* WISHLIST */}
-      <Route
-        path="/wishlist"
-        element={
-          <ProtectedRoute>
-            <Wishlist />
-          </ProtectedRoute>
-        }
-      />
+        {/* WISHLIST */}
+        <Route
+          path="/wishlist"
+          element={
+            <ProtectedRoute>
+              <Wishlist />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* CHECKOUT */}
-      <Route
-        path="/checkout"
-        element={
-          <ProtectedRoute>
-            <Checkout />
-          </ProtectedRoute>
-        }
-      />
+        {/* CHECKOUT */}
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <Checkout />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* ADMIN */}
-      <Route
-        path="/admin"
-        element={
-          <AdminRoute>
-            <AdminUpload />
-          </AdminRoute>
-        }
-      />
+        {/* ADMIN */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminUpload />
+            </AdminRoute>
+          }
+        />
 
-      {/* ORDERS */}
-      <Route
-        path="/orders"
-        element={
-          <AdminRoute>
-            <Orders />
-          </AdminRoute>
-        }
-      />
+        {/* ORDERS */}
+        <Route
+          path="/orders"
+          element={
+            <AdminRoute>
+              <Orders />
+            </AdminRoute>
+          }
+        />
 
-      {/* PAYMENT */}
-      <Route
-        path="/payment"
-        element={
-          <ProtectedRoute>
-            <Payment />
-          </ProtectedRoute>
-        }
-      />
+        {/* PAYMENT */}
+        <Route
+          path="/payment"
+          element={
+            <ProtectedRoute>
+              <Payment />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* SIGNUP */}
-      <Route
-        path="/signup"
-        element={<Signup />}
-      />
+        {/* SIGNUP */}
+        <Route
+          path="/signup"
+          element={<Signup />}
+        />
 
-      {/* USER LOGIN */}
-      <Route
-        path="/user-login"
-        element={<UserLogin />}
-      />
+        {/* USER LOGIN */}
+        <Route
+          path="/user-login"
+          element={<UserLogin />}
+        />
 
-      {/* ADMIN DASHBOARD */}
-      <Route
-        path="/admin-dashboard"
-        element={<AdminDashboard />}
-      />
+        {/* ADMIN DASHBOARD */}
+        <Route
+          path="/admin-dashboard"
+          element={<AdminDashboard />}
+        />
 
-    </Routes>
+      </Routes>
+    </>
   );
 }

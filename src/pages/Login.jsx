@@ -165,7 +165,7 @@ export default function Login() {
             </h2>
 
             <p className="text-gray-400 mb-10">
-              Login to access your admin dashboard.
+              Login to manage your admin dashboard.
             </p>
 
             {/* FORM */}

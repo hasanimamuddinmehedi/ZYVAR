@@ -1,6 +1,43 @@
+import {  FaFacebookF,  FaInstagram,  FaWhatsapp, } from "react-icons/fa";
 export default function Footer() {
   return (
     <footer className="border-t border-white/10 px-4 sm:px-6 lg:px-10 py-10">
+      <div className="flex items-center gap-4 mt-6">
+
+  <a
+    href="https://facebook.com"
+    target="_blank"
+
+    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+  >
+
+    <FaFacebookF />
+
+  </a>
+
+  <a
+    href="https://instagram.com"
+    target="_blank"
+
+    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+  >
+
+    <FaInstagram />
+
+  </a>
+
+  <a
+    href="https://wa.me/8801820400999"
+    target="_blank"
+
+    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+  >
+
+    <FaWhatsapp />
+
+  </a>
+
+</div>
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         <div>
           <h1 className="text-3xl font-black tracking-[0.3em] text-[#D4AF37] mb-3">

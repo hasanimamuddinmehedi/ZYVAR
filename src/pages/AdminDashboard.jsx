@@ -1,18 +1,8 @@
-import { useEffect, useState }
-from "react";
-
-import {
-  collection,
-  getDocs,
-} from "firebase/firestore";
-
-import {
-  useNavigate,
-} from "react-router-dom";
-
-import {
-  db,
-} from "../firebase/firebase";
+import { useEffect, useState } from "react";
+import {  collection,  getDocs, } from "firebase/firestore";
+import {  useNavigate, } from "react-router-dom";
+import {  db, } from "../firebase/firebase";
+import { Link } from "react-router-dom";
 
 export default function AdminDashboard() {
 
@@ -138,11 +128,11 @@ export default function AdminDashboard() {
         {/* NAVIGATION */}
         <nav className="space-y-4">
 
-          <button className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl bg-[#D4AF37] text-black font-bold">
+          <link className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl bg-[#D4AF37] text-black font-bold">
             📊 Dashboard
-          </button>
+          </link>
 
-          <button
+          <link
 
             onClick={() =>
               navigate("/admin-upload")
@@ -153,9 +143,9 @@ export default function AdminDashboard() {
 
             ➕ Upload Product
 
-          </button>
+          </link>
 
-          <button
+          <link
 
             onClick={() =>
               navigate("/admin-products")
@@ -166,9 +156,9 @@ export default function AdminDashboard() {
 
             🛍 Products
 
-          </button>
+          </link>
 
-          <button
+          <link
 
             onClick={() =>
               navigate("/admin-orders")
@@ -179,13 +169,13 @@ export default function AdminDashboard() {
 
             📦 Orders
 
-          </button>
+          </link>
 
-          <button className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#D4AF37]">
+          <link className="w-full flex items-center gap-4 px-6 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#D4AF37]">
 
             ⚙ Settings
 
-          </button>
+          </link>
 
         </nav>
 
@@ -200,11 +190,11 @@ export default function AdminDashboard() {
             Manage your entire ecommerce business professionally.
           </p>
 
-          <button className="w-full py-4 rounded-2xl bg-[#D4AF37] text-black font-black">
+          <link className="w-full py-4 rounded-2xl bg-[#D4AF37] text-black font-black">
 
             Explore Features
 
-          </button>
+          </link>
 
         </div>
       </aside>
@@ -231,7 +221,7 @@ export default function AdminDashboard() {
 
           </div>
 
-          <button
+          <link
 
             onClick={() =>
               navigate("/admin-upload")
@@ -242,7 +232,7 @@ export default function AdminDashboard() {
 
             Upload Product
 
-          </button>
+          </link>
 
         </div>
 
@@ -312,7 +302,7 @@ export default function AdminDashboard() {
               Recent Products
             </h3>
 
-            <button
+            <link
 
               onClick={() =>
                 navigate("/admin-products")
@@ -323,7 +313,7 @@ export default function AdminDashboard() {
 
               View All
 
-            </button>
+            </link>
 
           </div>
 
@@ -427,7 +417,7 @@ export default function AdminDashboard() {
               Recent Orders
             </h3>
 
-            <button
+            <link
 
               onClick={() =>
                 navigate("/admin-orders")
@@ -438,7 +428,7 @@ export default function AdminDashboard() {
 
               View Orders
 
-            </button>
+            </link>
 
           </div>
 
