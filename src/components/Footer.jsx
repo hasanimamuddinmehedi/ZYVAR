@@ -5,7 +5,7 @@ export default function Footer() {
       <div className="flex items-center gap-4 mt-6">
 
   <a
-    href="https://facebook.com"
+    href="https://facebook.com/zyvar.shop"
     target="_blank"
 
     className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
@@ -16,7 +16,7 @@ export default function Footer() {
   </a>
 
   <a
-    href="https://instagram.com"
+    href="https://instagram.com/zyvar.shop"
     target="_blank"
 
     className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
@@ -45,23 +45,36 @@ export default function Footer() {
           </h1>
 
           <p className="text-gray-500">
-            Premium Ecommerce Experience.
+            Original Cosmetics • Family Essentials • Imported Treats
           </p>
         </div>
 
-        <div className="flex gap-6 text-gray-400">
-          <button className="hover:text-[#D4AF37] transition">
-            Facebook
-          </button>
+        {/* Social Links Temporarily Disabled */}
 
-          <button className="hover:text-[#D4AF37] transition">
-            Instagram
-          </button>
+{/*
+<div className="flex gap-6 text-gray-400">
+  <button
+    type="button"
+    className="hover:text-[#D4AF37] transition"
+  >
+    Facebook
+  </button>
 
-          <button className="hover:text-[#D4AF37] transition">
-            TikTok
-          </button>
-        </div>
+  <button
+    type="button"
+    className="hover:text-[#D4AF37] transition"
+  >
+    Instagram
+  </button>
+
+  <button
+    type="button"
+    className="hover:text-[#D4AF37] transition"
+  >
+    TikTok
+  </button>
+</div>
+*/}
       </div>
     </footer>
   );

@@ -49,9 +49,7 @@ export default function Hero() {
             transition={{ delay: 0.6 }}
             className="text-gray-300 text-lg leading-relaxed max-w-2xl mb-10"
           >
-            Explore premium skincare, imported perfumes,
-            luxury fashion, watches, baby care and lifestyle
-            essentials exclusively from ZYVAR.
+            Discover original cosmetics, family essentials, imported treats, luxury accessories, skincare, perfumes and premium lifestyle products from ZYVAR.
           </motion.p>
 
           {/* BUTTONS */}

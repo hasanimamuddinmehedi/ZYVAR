@@ -100,9 +100,7 @@ export default function Login() {
           </h1>
 
           <p className="text-gray-300 text-lg leading-relaxed mb-10">
-            Premium luxury ecommerce platform for skincare,
-            perfumes, fashion, watches, imported collections
-            and lifestyle products.
+            Original Cosmetics • Family Essentials • Imported Treats
           </p>
 
           {/* STATS */}
