@@ -38,7 +38,7 @@ export default function Categories() {
     <section className="py-24 px-6 lg:px-10 bg-[#0B0B0B] text-white relative overflow-hidden">
 
       {/* Glow */}
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-[#D4AF37]/10 blur-[120px]" />
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-[#C6922B]/10 blur-[120px]" />
 
       <div className="max-w-7xl mx-auto relative z-10">
 
@@ -66,16 +66,16 @@ export default function Categories() {
           className="text-center mb-20"
         >
 
-          <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-sm mb-5">
+          <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-5">
 
             Shop By Category
 
           </p>
 
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black  leading-tight">
 
             Explore Our
-            <span className="block text-[#D4AF37]">
+            <span className="block text-[#C6922B]">
 
               Luxury Collections
 
@@ -126,7 +126,7 @@ export default function Categories() {
                 border border-white/10
                 bg-white/5
                 backdrop-blur-xl
-                hover:border-[#D4AF37]
+                hover:border-[#C6922B]
                 transition
                 duration-500
               "
@@ -156,13 +156,13 @@ export default function Categories() {
               {/* Content */}
               <div className="absolute bottom-0 left-0 p-8">
 
-                <h3 className="text-3xl font-black mb-3">
+                <h3 className="text-3xl font-black  mb-3">
 
                   {category.name}
 
                 </h3>
 
-                <button className="px-6 py-3 rounded-2xl bg-[#D4AF37] text-black font-bold hover:scale-105 transition">
+                <button className="px-6 py-3 rounded-2xl bg-[#C6922B] text-black font-bold hover:scale-105 transition">
 
                   Explore Now
 

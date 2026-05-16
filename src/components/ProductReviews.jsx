@@ -186,13 +186,13 @@ export default function ProductReviews({
 
         <div>
 
-          <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-sm mb-4">
+          <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-4">
 
             Customer Feedback
 
           </p>
 
-          <h2 className="text-5xl font-black">
+          <h2 className="text-5xl font-black ">
 
             Product Reviews
 
@@ -208,7 +208,7 @@ export default function ProductReviews({
 
           </p>
 
-          <h3 className="text-4xl font-black text-[#D4AF37]">
+          <h3 className="text-4xl font-black  text-[#C6922B]">
 
             ⭐ {averageRating}
 
@@ -221,7 +221,7 @@ export default function ProductReviews({
       {/* REVIEW FORM */}
       <div className="rounded-[35px] border border-white/10 bg-white/5 p-8 mb-10">
 
-        <h3 className="text-3xl font-black mb-8">
+        <h3 className="text-3xl font-black  mb-8">
 
           Write A Review
 
@@ -314,7 +314,7 @@ export default function ProductReviews({
 
             type="submit"
 
-            className="px-8 py-5 rounded-2xl bg-[#D4AF37] text-black font-black"
+            className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-black "
           >
 
             Submit Review
@@ -330,7 +330,7 @@ export default function ProductReviews({
 
         <div className="flex justify-center py-20">
 
-          <div className="w-16 h-16 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+          <div className="w-16 h-16 border-4 border-[#C6922B] border-t-transparent rounded-full animate-spin" />
 
         </div>
 
@@ -338,7 +338,7 @@ export default function ProductReviews({
 
         <div className="rounded-[35px] border border-white/10 bg-white/5 p-16 text-center">
 
-          <h3 className="text-3xl font-black mb-4">
+          <h3 className="text-3xl font-black  mb-4">
 
             No Reviews Yet
 
@@ -369,7 +369,7 @@ export default function ProductReviews({
 
                 <div>
 
-                  <h4 className="text-2xl font-black mb-2">
+                  <h4 className="text-2xl font-black  mb-2">
 
                     {review.userName}
 

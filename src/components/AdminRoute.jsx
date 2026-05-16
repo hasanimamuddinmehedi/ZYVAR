@@ -5,7 +5,7 @@ import { auth }
 from "../firebase/firebase";
 
 import {
-  ADMIN_EMAIL,
+  ADMIN_EMAILS,
 }
 from "../utils/adminCheck";
 
@@ -28,8 +28,9 @@ export default function AdminRoute({
 
   // NOT ADMIN
   if (
-    user.email !==
-    ADMIN_EMAIL
+    !ADMIN_EMAILS.includes(
+      user.email
+    )
   ) {
 
     return (

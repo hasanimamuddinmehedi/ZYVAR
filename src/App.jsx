@@ -16,15 +16,17 @@ import Cart from "./pages/Cart";
 import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
-import AdminUpload from "./pages/AdminUpload";
+import Admin from "./pages/Admin";
 import Payment from "./pages/Payment";
 import Signup from "./pages/Signup";
 import UserLogin from "./pages/UserLogin";
-import AdminDashboard from "./pages/AdminDashboard";
-
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import Navbar from "./components/Navbar";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Profile from "./pages/Profile";
+import ProfileSettings from "./pages/ProfileSettings";
 
 import {
   trackPage,
@@ -32,8 +34,10 @@ import {
 
 export default function App() {
 
-  const location = useLocation();
+  const location =
+    useLocation();
 
+  // TRACK PAGE VIEW
   useEffect(() => {
 
     trackPage(
@@ -42,10 +46,27 @@ export default function App() {
 
   }, [location]);
 
+  // HIDE NAVBAR ON AUTH PAGES
+  const hideNavbarRoutes = [
+    "/login",
+    "/signup",
+    "/user-login",
+  ];
+
+  const shouldHideNavbar =
+    hideNavbarRoutes.includes(
+      location.pathname
+    );
+
   return (
+
     <>
       {/* NAVBAR */}
-      <Navbar />
+      {
+        !shouldHideNavbar && (
+          <Navbar />
+        )
+      }
 
       {/* ROUTES */}
       <Routes>
@@ -53,25 +74,49 @@ export default function App() {
         {/* HOME */}
         <Route
           path="/"
-          element={<Home />}
+          element={
+            <Home />
+          }
         />
 
         {/* PRODUCTS */}
         <Route
           path="/products"
-          element={<Products />}
+          element={
+            <Products />
+          }
         />
 
         {/* PRODUCT DETAILS */}
         <Route
           path="/product/:id"
-          element={<ProductDetails />}
+          element={
+            <ProductDetails />
+          }
         />
 
         {/* LOGIN */}
         <Route
           path="/login"
-          element={<Login />}
+          element={
+            <Login />
+          }
+        />
+
+        {/* SIGNUP */}
+        <Route
+          path="/signup"
+          element={
+            <Signup />
+          }
+        />
+
+        {/* USER LOGIN */}
+        <Route
+          path="/user-login"
+          element={
+            <UserLogin />
+          }
         />
 
         {/* CART */}
@@ -104,12 +149,42 @@ export default function App() {
           }
         />
 
-        {/* ADMIN */}
+        {/* PAYMENT */}
+        <Route
+          path="/payment"
+          element={
+            <ProtectedRoute>
+              <Payment />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* PROFILE */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* PROFILE SETTINGS */}
+        <Route
+          path="/profile-settings"
+          element={
+            <ProtectedRoute>
+              <ProfileSettings />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ADMIN PANEL */}
         <Route
           path="/admin"
           element={
             <AdminRoute>
-              <AdminUpload />
+              <Admin />
             </AdminRoute>
           }
         />
@@ -124,32 +199,20 @@ export default function App() {
           }
         />
 
-        {/* PAYMENT */}
+        {/* ABOUT */}
         <Route
-          path="/payment"
+          path="/about"
           element={
-            <ProtectedRoute>
-              <Payment />
-            </ProtectedRoute>
+            <About />
           }
         />
 
-        {/* SIGNUP */}
+        {/* CONTACT */}
         <Route
-          path="/signup"
-          element={<Signup />}
-        />
-
-        {/* USER LOGIN */}
-        <Route
-          path="/user-login"
-          element={<UserLogin />}
-        />
-
-        {/* ADMIN DASHBOARD */}
-        <Route
-          path="/admin-dashboard"
-          element={<AdminDashboard />}
+          path="/contact"
+          element={
+            <Contact />
+          }
         />
 
       </Routes>

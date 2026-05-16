@@ -62,7 +62,7 @@ export default function AdminLogin() {
 
         <div className="text-center mb-10">
 
-          <h1 className="text-5xl font-black text-[#D4AF37] mb-4 tracking-[0.2em]">
+          <h1 className="text-5xl font-black  text-[#C6922B] mb-4 tracking-[0.2em]">
             ZYVAR
           </h1>
 
@@ -90,7 +90,7 @@ export default function AdminLogin() {
                 setEmail(e.target.value)
               }
               required
-              className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#D4AF37]"
+              className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
             />
           </div>
 
@@ -108,14 +108,14 @@ export default function AdminLogin() {
                 setPassword(e.target.value)
               }
               required
-              className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#D4AF37]"
+              className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-5 rounded-2xl bg-[#D4AF37] text-black text-lg font-black hover:scale-[1.02] transition duration-300"
+            className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black  hover:scale-[1.02] transition duration-300"
           >
 
             {

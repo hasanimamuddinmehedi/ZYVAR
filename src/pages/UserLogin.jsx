@@ -98,7 +98,7 @@ export default function UserLogin() {
 
         <div className="text-center mb-10">
 
-          <h1 className="text-5xl font-black tracking-[0.3em] text-[#D4AF37] mb-4">
+          <h1 className="text-5xl font-black  tracking-[0.3em] text-[#C6922B] mb-4">
             ZYVAR
           </h1>
 
@@ -130,7 +130,7 @@ export default function UserLogin() {
               )
             }
 
-            className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#D4AF37]"
+            className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
           />
 
           {/* PASSWORD */}
@@ -150,7 +150,7 @@ export default function UserLogin() {
               )
             }
 
-            className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#D4AF37]"
+            className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
           />
 
           <button
@@ -159,7 +159,7 @@ export default function UserLogin() {
 
             disabled={loading}
 
-            className="w-full py-5 rounded-2xl bg-[#D4AF37] text-black font-black"
+            className="w-full py-5 rounded-2xl bg-[#C6922B] text-black font-black "
           >
 
             {
@@ -188,7 +188,7 @@ export default function UserLogin() {
 
           onClick={handleGoogle}
 
-          className="w-full py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#D4AF37]"
+          className="w-full py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B]"
         >
 
           Continue With Google
@@ -205,7 +205,7 @@ export default function UserLogin() {
               navigate("/signup")
             }
 
-            className="text-[#D4AF37] ml-2"
+            className="text-[#C6922B] ml-2"
           >
 
             Signup

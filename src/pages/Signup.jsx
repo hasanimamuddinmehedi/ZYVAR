@@ -1,5 +1,4 @@
-import { useState }
-from "react";
+import { useState } from "react";
 
 import {
   createUserWithEmailAndPassword,
@@ -14,38 +13,102 @@ import {
 } from "firebase/firestore";
 
 import {
-  useNavigate,
-} from "react-router-dom";
-
-import {
   auth,
   db,
 } from "../firebase/firebase";
+
+import {
+  useNavigate,
+  Link,
+} from "react-router-dom";
+
+import {
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 
 export default function Signup() {
 
   const navigate =
     useNavigate();
 
-  const [name, setName] =
+  const provider =
+    new GoogleAuthProvider();
+
+  const [name,
+    setName] =
     useState("");
 
-  const [email, setEmail] =
+  const [email,
+    setEmail] =
     useState("");
 
   const [password,
     setPassword] =
     useState("");
 
+  const [confirmPassword,
+    setConfirmPassword] =
+    useState("");
+
+  const [showPassword,
+    setShowPassword] =
+    useState(false);
+
+  const [showConfirmPassword,
+    setShowConfirmPassword] =
+    useState(false);
+
   const [loading,
     setLoading] =
     useState(false);
+
+  const [focusedField,
+    setFocusedField] =
+    useState("");
+
+  // PASSWORD VALIDATION
+  const passwordValid =
+    password.length >= 6;
+
+  const passwordMatched =
+    password === confirmPassword;
+
+  // EMAIL VALIDATION
+  const emailValid =
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+      email
+    );
 
   // SIGNUP
   const handleSignup =
     async (e) => {
 
       e.preventDefault();
+
+      if (!emailValid) {
+
+        return alert(
+          "Please enter a valid email."
+        );
+      }
+
+      if (!passwordValid) {
+
+        return alert(
+          "Password must be at least 6 characters."
+        );
+      }
+
+      if (!passwordMatched) {
+
+        return alert(
+          "Passwords do not match."
+        );
+      }
 
       try {
 
@@ -61,10 +124,13 @@ export default function Signup() {
             password
           );
 
+        const user =
+          userCredential.user;
+
         // UPDATE PROFILE
         await updateProfile(
 
-          userCredential.user,
+          user,
 
           {
             displayName:
@@ -72,26 +138,45 @@ export default function Signup() {
           }
         );
 
-        // SAVE USER
+        // SAVE TO FIRESTORE
         await setDoc(
 
           doc(
             db,
             "users",
-            userCredential.user.uid
+            user.uid
           ),
 
           {
 
             uid:
-              userCredential.user.uid,
+              user.uid,
 
             name,
 
-            email,
+            email:
+              user.email,
 
-            role:
-              "user",
+            photoURL:
+              user.photoURL || "",
+
+            phone: "",
+
+            dob: "",
+
+            gender: "",
+
+            occupation: "",
+
+            division: "",
+
+            district: "",
+
+            upazila: "",
+
+            area: "",
+
+            address: "",
 
             createdAt:
               new Date(),
@@ -102,13 +187,29 @@ export default function Signup() {
           "Account Created Successfully"
         );
 
-        navigate("/login");
+        navigate("/");
 
       } catch (error) {
 
         console.log(error);
 
-        alert(error.message);
+        if (
+
+          error.code ===
+          "auth/email-already-in-use"
+
+        ) {
+
+          alert(
+            "This email is already registered."
+          );
+
+        } else {
+
+          alert(
+            error.message
+          );
+        }
 
       } finally {
 
@@ -116,53 +217,72 @@ export default function Signup() {
       }
     };
 
-  // GOOGLE LOGIN
-  const handleGoogle =
+  // GOOGLE SIGNUP
+  const handleGoogleSignup =
     async () => {
 
       try {
 
-        const provider =
-          new GoogleAuthProvider();
-
         const result =
           await signInWithPopup(
-
             auth,
             provider
           );
 
-        // SAVE USER
+        const user =
+          result.user;
+
         await setDoc(
 
           doc(
             db,
             "users",
-            result.user.uid
+            user.uid
           ),
 
           {
 
             uid:
-              result.user.uid,
+              user.uid,
 
             name:
-              result.user.displayName,
+              user.displayName || "",
 
             email:
-              result.user.email,
+              user.email || "",
 
-            image:
-              result.user.photoURL,
+            photoURL:
+              user.photoURL || "",
 
-            role:
-              "user",
+            phone: "",
+
+            dob: "",
+
+            gender: "",
+
+            occupation: "",
+
+            division: "",
+
+            district: "",
+
+            upazila: "",
+
+            area: "",
+
+            address: "",
 
             createdAt:
               new Date(),
           },
 
-          { merge: true }
+          {
+            merge: true,
+          }
+        );
+
+        alert(
+          "Google Signup Successful"
         );
 
         navigate("/");
@@ -171,192 +291,569 @@ export default function Signup() {
 
         console.log(error);
 
-        alert(error.message);
+        alert(
+          error.message
+        );
       }
     };
 
   return (
 
-    <div className="min-h-screen bg-[#0B0B0B] text-white flex items-center justify-center px-6 py-20">
+    <div className="min-h-screen bg-[#0B0B0B] text-white flex overflow-hidden">
 
-      <div className="w-full max-w-md rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-2xl p-8 md:p-10">
+      {/* LEFT SIDE */}
+      <div className="hidden lg:flex flex-1 relative items-center justify-center bg-gradient-to-br from-black to-[#121212] overflow-hidden">
 
-        <div className="text-center mb-10">
+        {/* GLOW */}
+        <div className="absolute w-[500px] h-[500px] rounded-full bg-[#C6922B]/10 blur-[120px]" />
 
-          <h1 className="text-5xl font-black tracking-[0.3em] text-[#D4AF37] mb-4">
-            ZYVAR
-          </h1>
+        <div className="relative z-10 max-w-xl px-10">
 
-          <p className="uppercase tracking-[0.2em] text-sm text-gray-400">
-            Create Your Account
-          </p>
-
-        </div>
-
-        {/* FORM */}
-        <form
-          onSubmit={handleSignup}
-          className="space-y-6"
-        >
-
-          {/* NAME */}
-          <div>
-
-            <label className="block mb-3 text-sm uppercase tracking-widest text-gray-400">
-
-              Full Name
-
-            </label>
-
-            <input
-
-              type="text"
-
-              required
-
-              value={name}
-
-              onChange={(e) =>
-                setName(
-                  e.target.value
-                )
-              }
-
-              placeholder="Enter your full name"
-
-              className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#D4AF37]"
-            />
-
-          </div>
-
-          {/* EMAIL */}
-          <div>
-
-            <label className="block mb-3 text-sm uppercase tracking-widest text-gray-400">
-
-              Email Address
-
-            </label>
-
-            <input
-
-              type="email"
-
-              required
-
-              value={email}
-
-              onChange={(e) =>
-                setEmail(
-                  e.target.value
-                )
-              }
-
-              placeholder="Enter your email"
-
-              className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#D4AF37]"
-            />
-
-          </div>
-
-          {/* PASSWORD */}
-          <div>
-
-            <label className="block mb-3 text-sm uppercase tracking-widest text-gray-400">
-
-              Password
-
-            </label>
-
-            <input
-
-              type="password"
-
-              required
-
-              value={password}
-
-              onChange={(e) =>
-                setPassword(
-                  e.target.value
-                )
-              }
-
-              placeholder="Create password"
-
-              className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#D4AF37]"
-            />
-
-          </div>
-
-          {/* BUTTON */}
-          <button
-
-            type="submit"
-
-            disabled={loading}
-
-            className="w-full py-5 rounded-2xl bg-[#D4AF37] text-black font-black hover:scale-[1.02] transition"
-          >
-
-            {
-              loading
-
-                ? "Creating Account..."
-
-                : "Create Account"
-            }
-
-          </button>
-
-        </form>
-
-        {/* DIVIDER */}
-        <div className="flex items-center gap-4 my-8">
-
-          <div className="flex-1 h-px bg-white/10" />
-
-          <span className="text-gray-500 text-sm">
-            OR
-          </span>
-
-          <div className="flex-1 h-px bg-white/10" />
-
-        </div>
-
-        {/* GOOGLE */}
-        <button
-
-          onClick={handleGoogle}
-
-          className="w-full py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#D4AF37] transition"
-        >
-
-          Continue With Google
-
-        </button>
-
-        {/* LOGIN */}
-        <div className="mt-8 text-center text-gray-400 text-sm">
-
-          Already have an account?
-
+          {/* BACK */}
           <button
 
             onClick={() =>
-              navigate("/login")
+              navigate("/")
             }
 
-            className="text-[#D4AF37] ml-2"
+            className="flex items-center gap-3 text-[#C6922B] mb-10 hover:translate-x-1 transition"
           >
 
-            Login
+            <ArrowLeft size={20} />
+
+            Back To Homepage
 
           </button>
+
+
+          <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-5">
+
+            Join The
+
+          </p>
+
+          <h1 className="text-7xl font-black mb-8">
+
+            ZYVAR
+
+          </h1>
+
+          <p className="text-gray-300 text-lg leading-relaxed mb-10">
+
+            Original Cosmetics • Family Essentials • Imported Treats
+
+          </p>
+
+          {/* STATUS CARD */}
+          <div className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-xl p-8 text-center">
+
+            <div className="text-7xl mb-5 transition duration-500">
+
+              {
+                focusedField ===
+                "password"
+
+                  ? "🔐"
+
+                  : focusedField ===
+                    "email"
+
+                  ? "📧"
+
+                  : focusedField ===
+                    "name"
+
+                  ? "✨"
+
+                  : name &&
+                    email &&
+                    password &&
+                    confirmPassword
+
+                  ? "🎉"
+
+                  : "🧑‍💻"
+              }
+
+            </div>
+
+            <h3 className="text-2xl font-bold text-[#C6922B] mb-4">
+
+              {
+                focusedField ===
+                "password"
+
+                  ? "Create A Secure Password"
+
+                  : focusedField ===
+                    "email"
+
+                  ? "Enter Your Email Carefully"
+
+                  : focusedField ===
+                    "name"
+
+                  ? "Tell Us Your Name"
+
+                  : name &&
+                    email &&
+                    password &&
+                    confirmPassword
+
+                  ? "You Are Ready To Join"
+
+                  : "Welcome To ZYVAR"
+              }
+
+            </h3>
+
+            <p className="text-gray-400 leading-relaxed">
+
+              {
+                focusedField ===
+                "password"
+
+                  ? "Use a strong password to protect your account."
+
+                  : focusedField ===
+                    "email"
+
+                  ? "Your email will be used for login and notifications."
+
+                  : focusedField ===
+                    "name"
+
+                  ? "Your name helps personalize your experience."
+
+                  : name &&
+                    email &&
+                    password &&
+                    confirmPassword
+
+                  ? "Everything looks good. Create your account now."
+
+                  : "Create your premium ZYVAR account securely."
+              }
+
+            </p>
+
+          </div>
 
         </div>
 
       </div>
+
+      {/* RIGHT SIDE */}
+      <div className="flex-1 flex items-center justify-center px-6 py-10 relative">
+
+        {/* GLOW */}
+        <div className="absolute bottom-0 right-0 w-[300px] h-[300px] rounded-full bg-[#C6922B]/10 blur-[100px]" />
+
+        <div className="relative z-10 w-full max-w-md">
+
+          {/* MOBILE BACK */}
+          <button
+
+            onClick={() =>
+              navigate("/")
+            }
+
+            className="lg:hidden flex items-center gap-3 mb-10 text-[#C6922B]"
+          >
+
+            <ArrowLeft size={18} />
+
+            Back Home
+
+          </button>
+
+          {/* CARD */}
+          <div className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-2xl p-8 md:p-10">
+
+            <h2 className="text-4xl font-black mb-3">
+
+              Create Account
+
+            </h2>
+
+            <p className="text-gray-400 mb-10">
+
+              Join the premium ZYVAR experience.
+
+            </p>
+
+            {/* GOOGLE */}
+            <button
+
+              onClick={handleGoogleSignup}
+
+              className="w-full py-4 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center gap-4 hover:border-[#C6922B] transition mb-8"
+            >
+
+              <img
+
+                src="https://www.svgrepo.com/show/475656/google-color.svg"
+
+                alt="google"
+
+                className="w-6 h-6"
+              />
+
+              Continue With Google
+
+            </button>
+
+            {/* FORM */}
+            <form
+
+              onSubmit={handleSignup}
+
+              className="space-y-6"
+            >
+
+              {/* NAME */}
+              <div>
+
+                <label className="block mb-3 text-sm uppercase tracking-widest text-gray-400">
+
+                  Full Name
+
+                </label>
+
+                <input
+
+                  type="text"
+
+                  required
+
+                  value={name}
+
+                  onFocus={() =>
+                    setFocusedField(
+                      "name"
+                    )
+                  }
+
+                  onBlur={() =>
+                    setFocusedField("")
+                  }
+
+                  onChange={(e) =>
+                    setName(
+                      e.target.value
+                    )
+                  }
+
+                  placeholder="Enter your name"
+
+                  className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
+                />
+
+              </div>
+
+              {/* EMAIL */}
+              <div>
+
+                <label className="block mb-3 text-sm uppercase tracking-widest text-gray-400">
+
+                  Email Address
+
+                </label>
+
+                <div className="relative">
+
+                  <input
+
+                    type="email"
+
+                    required
+
+                    value={email}
+
+                    onFocus={() =>
+                      setFocusedField(
+                        "email"
+                      )
+                    }
+
+                    onBlur={() =>
+                      setFocusedField("")
+                    }
+
+                    onChange={(e) =>
+                      setEmail(
+                        e.target.value
+                      )
+                    }
+
+                    placeholder="Enter your email"
+
+                    className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
+                  />
+
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2">
+
+                    {
+                      email.length > 0 && (
+
+                        emailValid
+
+                          ? <CheckCircle className="text-green-500" />
+
+                          : <XCircle className="text-red-500" />
+                      )
+                    }
+
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* PASSWORD */}
+              <div>
+
+                <label className="block mb-3 text-sm uppercase tracking-widest text-gray-400">
+
+                  Password
+
+                </label>
+
+                <div className="relative">
+
+                  <input
+
+                    type={
+                      showPassword
+
+                        ? "text"
+
+                        : "password"
+                    }
+
+                    required
+
+                    value={password}
+
+                    onFocus={() =>
+                      setFocusedField(
+                        "password"
+                      )
+                    }
+
+                    onBlur={() =>
+                      setFocusedField("")
+                    }
+
+                    onChange={(e) =>
+                      setPassword(
+                        e.target.value
+                      )
+                    }
+
+                    placeholder="Create password"
+
+                    className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
+                  />
+
+                  <button
+
+                    type="button"
+
+                    onClick={() =>
+                      setShowPassword(
+                        !showPassword
+                      )
+                    }
+
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#C6922B]"
+                  >
+
+                    {
+                      showPassword
+
+                        ? <EyeOff />
+
+                        : <Eye />
+                    }
+
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* CONFIRM PASSWORD */}
+              <div>
+
+                <label className="block mb-3 text-sm uppercase tracking-widest text-gray-400">
+
+                  Confirm Password
+
+                </label>
+
+                <div className="relative">
+
+                  <input
+
+                    type={
+                      showConfirmPassword
+
+                        ? "text"
+
+                        : "password"
+                    }
+
+                    required
+
+                    value={confirmPassword}
+
+                    onFocus={() =>
+                      setFocusedField(
+                        "password"
+                      )
+                    }
+
+                    onBlur={() =>
+                      setFocusedField("")
+                    }
+
+                    onChange={(e) =>
+                      setConfirmPassword(
+                        e.target.value
+                      )
+                    }
+
+                    placeholder="Confirm password"
+
+                    className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
+                  />
+
+                  <button
+
+                    type="button"
+
+                    onClick={() =>
+                      setShowConfirmPassword(
+                        !showConfirmPassword
+                      )
+                    }
+
+                    className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#C6922B]"
+                  >
+
+                    {
+                      showConfirmPassword
+
+                        ? <EyeOff />
+
+                        : <Eye />
+                    }
+
+                  </button>
+
+                </div>
+
+                {/* PASSWORD STATUS */}
+                <div className="mt-3 space-y-2 text-sm">
+
+                  <p className={`flex items-center gap-2 ${
+                    passwordValid
+                      ? "text-green-500"
+                      : "text-red-400"
+                  }`}>
+
+                    {
+                      passwordValid
+
+                        ? <CheckCircle size={16} />
+
+                        : <XCircle size={16} />
+                    }
+
+                    Password must be at least 6 characters
+
+                  </p>
+
+                  <p className={`flex items-center gap-2 ${
+                    confirmPassword.length > 0 &&
+                    passwordMatched
+
+                      ? "text-green-500"
+
+                      : "text-red-400"
+                  }`}>
+
+                    {
+                      passwordMatched
+
+                        ? <CheckCircle size={16} />
+
+                        : <XCircle size={16} />
+                    }
+
+                    Passwords match
+
+                  </p>
+
+                </div>
+
+              </div>
+
+              {/* BUTTON */}
+              <button
+
+                type="submit"
+
+                disabled={loading}
+
+                className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black hover:scale-[1.02] transition"
+              >
+
+                {
+                  loading
+
+                    ? "Creating Account..."
+
+                    : "Create Account"
+                }
+
+              </button>
+
+            </form>
+
+            {/* LOGIN */}
+            <div className="mt-8 text-center text-gray-400">
+
+              Already have an account?
+
+              <Link
+
+                to="/login"
+
+                className="text-[#C6922B] ml-2 hover:underline"
+              >
+
+                Login
+
+              </Link>
+
+            </div>
+
+            {/* FOOTER */}
+            <div className="mt-10 text-center text-gray-500 text-sm">
+
+              © 2026 ZYVAR.
+              All Rights Reserved.
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
   );
 }

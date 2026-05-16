@@ -1,2 +1,6 @@
-export const ADMIN_EMAIL = 
-  "admin@zyvar.com";
+export const ADMIN_EMAILS = [
+
+  "admin@zyvar.com",
+  "hello.zyvar@gmail.com"
+
+];

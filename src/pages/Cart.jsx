@@ -1,206 +1,217 @@
-import { useCart } from "../context/CartContext";
 import {
-  Link,
   useNavigate,
 } from "react-router-dom";
 
+import {
+  useCart,
+} from "../context/CartContext";
+
 export default function Cart() {
 
+  const navigate =
+    useNavigate();
+
   const {
-    cartItems,
+
+    cart = [],
+
     removeFromCart,
-    increaseQuantity,
-    decreaseQuantity,
-    totalPrice,
+
+    cartTotal,
+
   } = useCart();
 
-  const navigate = useNavigate();
+  // EMPTY CART
+  if (!cart || cart.length === 0) {
+
+    return (
+
+      <div className="min-h-screen bg-[#0B0B0B] text-white flex flex-col items-center justify-center px-6">
+
+        <h1 className="text-4xl font-black text-[#C6922B] mb-6 text-center">
+
+          Your Cart Is Empty
+
+        </h1>
+
+        <button
+
+          onClick={() =>
+            navigate("/products")
+          }
+
+          className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-bold hover:scale-105 transition duration-300"
+        >
+
+          Continue Shopping
+
+        </button>
+
+      </div>
+    );
+  }
 
   return (
 
-    <div className="min-h-screen bg-[#0B0B0B] text-white p-6 lg:p-10">
+    <div className="min-h-screen bg-[#0B0B0B] text-white px-4 sm:px-6 lg:px-10 py-20">
 
       <div className="max-w-7xl mx-auto">
 
-        <div className="flex justify-between items-center mb-12">
+        <div className="flex items-center justify-between mb-12">
 
-          <div>
+          <h1 className="text-5xl font-black">
 
-            <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-sm mb-3">
-              Shopping Cart
-            </p>
+            Shopping Cart
 
-            <h1 className="text-5xl font-black">
-              Your Cart
-            </h1>
-          </div>
+          </h1>
 
-          <div className="text-2xl font-bold text-[#D4AF37]">
-            {cartItems.length} Items
-          </div>
+          <span className="text-[#C6922B] text-xl font-bold">
+
+            {cart.length} Items
+
+          </span>
+
         </div>
 
         <div className="grid lg:grid-cols-3 gap-10">
 
-          {/* CART ITEMS */}
+          {/* LEFT */}
           <div className="lg:col-span-2 space-y-6">
 
-            {cartItems.length === 0 ? (
-
-              <div className="rounded-[40px] border border-white/10 bg-white/5 p-16 text-center">
-
-                <h2 className="text-4xl font-black mb-5">
-                  Cart is Empty
-                </h2>
-
-                <p className="text-gray-400">
-                  Add products to your cart.
-                </p>
-              </div>
-
-            ) : (
-
-              cartItems.map((item) => (
+            {
+              cart.map((item) => (
 
                 <div
+
                   key={item.id}
+
                   className="rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-xl p-5 flex flex-col md:flex-row gap-6"
                 >
 
                   <img
+
                     src={item.image}
+
                     alt={item.name}
-                    className="w-full md:w-40 h-40 object-cover rounded-3xl"
+
+                    className="w-full md:w-40 h-40 rounded-2xl object-cover"
                   />
 
                   <div className="flex-1">
 
-                    <p className="uppercase tracking-widest text-[#D4AF37] text-xs mb-2">
+                    <p className="uppercase tracking-widest text-[#C6922B] text-xs mb-3">
+
                       {item.category}
+
                     </p>
 
                     <h2 className="text-3xl font-black mb-4">
+
                       {item.name}
+
                     </h2>
 
-                    <p className="text-gray-400 mb-6">
-                      Premium imported collection.
+                    <p className="text-gray-400 mb-5">
+
+                      Quantity:
+                      {" "}
+                      {item.quantity}
+
                     </p>
 
-                    <div className="flex items-center gap-4">
+                    <h3 className="text-3xl font-black text-[#C6922B]">
 
-                      <button
-                        onClick={() =>
-                          decreaseQuantity(item.id)
-                        }
-                        className="w-12 h-12 rounded-xl bg-black/30 border border-white/10"
-                      >
-                        -
-                      </button>
-
-                      <span className="text-2xl font-bold">
-                        {item.quantity}
-                      </span>
-
-                      <button
-                        onClick={() =>
-                          increaseQuantity(item.id)
-                        }
-                        className="w-12 h-12 rounded-xl bg-black/30 border border-white/10"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col justify-between items-end">
-
-                    <button
-                      onClick={() =>
-                        removeFromCart(item.id)
+                      ৳
+                      {
+                        Number(item.price) *
+                        Number(item.quantity)
                       }
-                      className="px-5 py-3 rounded-xl border border-red-500/20 text-red-400 hover:bg-red-500/10"
-                    >
-                      Remove
-                    </button>
 
-                    <div className="text-right">
+                    </h3>
 
-                      <p className="text-gray-400 mb-2">
-                        Total
-                      </p>
-
-                      <h3 className="text-3xl font-black text-[#D4AF37]">
-                        ৳
-                        {item.price * item.quantity}
-                      </h3>
-                    </div>
                   </div>
+
+                  <button
+
+                    onClick={() =>
+                      removeFromCart(
+                        item.id
+                      )
+                    }
+
+                    className="px-6 py-3 rounded-2xl border border-red-500 text-red-400 hover:bg-red-500 hover:text-white transition h-fit"
+                  >
+
+                    Remove
+
+                  </button>
+
                 </div>
               ))
-            )}
+            }
+
           </div>
 
-          {/* SUMMARY */}
-          <div className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-xl p-8 h-fit sticky top-10">
+          {/* RIGHT */}
+          <div className="rounded-[32px] border border-white/10 bg-white/5 backdrop-blur-xl p-8 h-fit sticky top-10">
 
-            <h2 className="text-3xl font-black mb-10">
+            <h2 className="text-3xl font-black mb-8">
+
               Order Summary
+
             </h2>
 
-            <div className="space-y-5 mb-10">
+            <div className="flex justify-between items-center mb-6">
 
-              <div className="flex justify-between text-gray-300">
+              <span className="text-gray-400">
 
-                <span>Subtotal</span>
+                Total Items
 
-                <span>
-                  ৳{totalPrice}
-                </span>
-              </div>
+              </span>
 
-              <div className="flex justify-between text-gray-300">
+              <span className="font-bold">
 
-                <span>Shipping</span>
+                {cart.length}
 
-                <span>
-                  ৳120
-                </span>
-              </div>
+              </span>
 
-              <div className="border-t border-white/10 pt-5 flex justify-between text-2xl font-black">
-
-                <span>Total</span>
-
-                <span className="text-[#D4AF37]">
-                  ৳{totalPrice + 120}
-                </span>
-              </div>
             </div>
 
-            {/* CHECKOUT BUTTON */}
+            <div className="border-t border-white/10 pt-6 flex justify-between items-center mb-10">
+
+              <h3 className="text-2xl font-black">
+
+                Total
+
+              </h3>
+
+              <h3 className="text-4xl font-black text-[#C6922B]">
+
+                ৳{cartTotal}
+
+              </h3>
+
+            </div>
+
             <button
+
               onClick={() =>
                 navigate("/payment")
               }
-              className="w-full py-5 rounded-2xl bg-[#D4AF37] text-black text-lg font-black hover:scale-[1.02] transition duration-300 mb-5"
+
+              className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black hover:scale-[1.02] transition"
             >
-              Proceed to Checkout
+
+              Proceed To Checkout
+
             </button>
 
-            {/* CONTINUE SHOPPING */}
-            <Link to="/shop">
-
-              <button className="w-full py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#D4AF37] hover:text-[#D4AF37] transition">
-
-                Continue Shopping
-              </button>
-
-            </Link>
-
           </div>
+
         </div>
+
       </div>
+
     </div>
   );
 }

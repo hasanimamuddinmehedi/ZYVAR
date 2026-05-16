@@ -5,91 +5,114 @@ import {
   useState,
 } from "react";
 
-const WishlistContext = createContext();
+const WishlistContext =
+  createContext();
 
-export const useWishlist = () =>
-  useContext(WishlistContext);
-
-export const WishlistProvider = ({
+export function WishlistProvider({
   children,
-}) => {
+}) {
 
-  const [wishlistItems, setWishlistItems] =
-    useState([]);
+  const [wishlist,
+    setWishlist] =
+    useState(() => {
 
-  // LOAD FROM LOCAL STORAGE
-  useEffect(() => {
+      const saved =
+        localStorage.getItem(
+          "zyvar-wishlist"
+        );
 
-    const storedWishlist =
-      localStorage.getItem(
-        "zyvar-wishlist"
-      );
-
-    if (storedWishlist) {
-
-      setWishlistItems(
-        JSON.parse(storedWishlist)
-      );
-    }
-
-  }, []);
+      return saved
+        ? JSON.parse(saved)
+        : [];
+    });
 
   // SAVE TO LOCAL STORAGE
   useEffect(() => {
 
     localStorage.setItem(
+
       "zyvar-wishlist",
-      JSON.stringify(wishlistItems)
+
+      JSON.stringify(
+        wishlist
+      )
     );
 
-  }, [wishlistItems]);
+  }, [wishlist]);
 
   // ADD TO WISHLIST
-  const addToWishlist = (product) => {
+  const addToWishlist =
+    (product) => {
 
-    const exists = wishlistItems.find(
-      (item) => item.id === product.id
-    );
+      const exists =
+        wishlist.find(
 
-    if (!exists) {
+          (item) =>
+            item.id ===
+            product.id
+        );
 
-      setWishlistItems([
-        ...wishlistItems,
+      if (exists) {
+
+        return;
+      }
+
+      setWishlist([
+        ...wishlist,
         product,
       ]);
-    }
-  };
+    };
 
   // REMOVE FROM WISHLIST
-  const removeFromWishlist = (id) => {
+  const removeFromWishlist =
+    (id) => {
 
-    const updatedWishlist =
-      wishlistItems.filter(
-        (item) => item.id !== id
+      setWishlist(
+
+        wishlist.filter(
+
+          (item) =>
+            item.id !== id
+        )
       );
+    };
 
-    setWishlistItems(updatedWishlist);
-  };
+  // CHECK IF PRODUCT EXISTS IN WISHLIST
+  const isInWishlist =
+    (id) => {
 
-  // CHECK EXIST
-  const isInWishlist = (id) => {
+      return wishlist.some(
 
-    return wishlistItems.some(
-      (item) => item.id === id
-    );
-  };
+        (item) =>
+          item.id === id
+      );
+    };
 
   return (
 
     <WishlistContext.Provider
+
       value={{
-        wishlistItems,
+
+        wishlist,
+
         addToWishlist,
+
         removeFromWishlist,
+
         isInWishlist,
       }}
     >
+
       {children}
+
     </WishlistContext.Provider>
   );
-};
+}
+
+export function useWishlist() {
+
+  return useContext(
+    WishlistContext
+  );
+}

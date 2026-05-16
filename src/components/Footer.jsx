@@ -8,7 +8,7 @@ export default function Footer() {
     href="https://facebook.com/zyvar.shop"
     target="_blank"
 
-    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#C6922B] hover:text-[#C6922B] transition"
   >
 
     <FaFacebookF />
@@ -19,7 +19,7 @@ export default function Footer() {
     href="https://instagram.com/zyvar.shop"
     target="_blank"
 
-    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#C6922B] hover:text-[#C6922B] transition"
   >
 
     <FaInstagram />
@@ -30,7 +30,7 @@ export default function Footer() {
     href="https://wa.me/8801820400999"
     target="_blank"
 
-    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+    className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#C6922B] hover:text-[#C6922B] transition"
   >
 
     <FaWhatsapp />
@@ -40,7 +40,7 @@ export default function Footer() {
 </div>
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         <div>
-          <h1 className="text-3xl font-black tracking-[0.3em] text-[#D4AF37] mb-3">
+          <h1 className="text-3xl font-black  tracking-[0.3em] text-[#C6922B] mb-3">
             ZYVAR
           </h1>
 
@@ -55,21 +55,21 @@ export default function Footer() {
 <div className="flex gap-6 text-gray-400">
   <button
     type="button"
-    className="hover:text-[#D4AF37] transition"
+    className="hover:text-[#C6922B] transition"
   >
     Facebook
   </button>
 
   <button
     type="button"
-    className="hover:text-[#D4AF37] transition"
+    className="hover:text-[#C6922B] transition"
   >
     Instagram
   </button>
 
   <button
     type="button"
-    className="hover:text-[#D4AF37] transition"
+    className="hover:text-[#C6922B] transition"
   >
     TikTok
   </button>

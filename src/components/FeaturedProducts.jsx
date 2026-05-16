@@ -55,7 +55,7 @@ export default function FeaturedProducts() {
     <section className="py-24 px-6 lg:px-10 bg-[#0B0B0B] text-white relative overflow-hidden">
 
       {/* Glow */}
-      <div className="absolute bottom-0 left-0 w-[450px] h-[450px] rounded-full bg-[#D4AF37]/10 blur-[120px]" />
+      <div className="absolute bottom-0 left-0 w-[450px] h-[450px] rounded-full bg-[#C6922B]/10 blur-[120px]" />
 
       <div className="max-w-7xl mx-auto relative z-10">
 
@@ -64,16 +64,16 @@ export default function FeaturedProducts() {
 
           <div>
 
-            <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-sm mb-4">
+            <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-4">
 
               Trending Products
 
             </p>
 
-            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight">
+            <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black  leading-tight">
 
               Featured
-              <span className="block text-[#D4AF37]">
+              <span className="block text-[#C6922B]">
 
                 Luxury Products
 
@@ -89,7 +89,7 @@ export default function FeaturedProducts() {
               navigate("/products")
             }
 
-            className="px-8 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+            className="px-8 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
           >
 
             View All Products
@@ -103,7 +103,7 @@ export default function FeaturedProducts() {
 
           <div className="rounded-[40px] border border-white/10 bg-white/5 p-16 text-center">
 
-            <h3 className="text-4xl font-black mb-5">
+            <h3 className="text-4xl font-black  mb-5">
 
               No Products Found
 
@@ -153,7 +153,7 @@ export default function FeaturedProducts() {
                   border border-white/10
                   bg-white/5
                   backdrop-blur-xl
-                  hover:border-[#D4AF37]
+                  hover:border-[#C6922B]
                   transition
                   duration-500
                   hover:-translate-y-3
@@ -178,7 +178,7 @@ export default function FeaturedProducts() {
                   />
 
                   {/* Category */}
-                  <div className="absolute top-5 left-5 px-4 py-2 rounded-full bg-[#D4AF37] text-black text-xs font-bold uppercase tracking-widest">
+                  <div className="absolute top-5 left-5 px-4 py-2 rounded-full bg-[#C6922B] text-black text-xs font-bold uppercase tracking-widest">
 
                     {product.category}
 
@@ -189,7 +189,7 @@ export default function FeaturedProducts() {
                 {/* Content */}
                 <div className="p-7">
 
-                  <h3 className="text-2xl font-black mb-3">
+                  <h3 className="text-2xl font-black  mb-3">
 
                     {product.name}
 
@@ -213,7 +213,7 @@ export default function FeaturedProducts() {
 
                       </p>
 
-                      <h4 className="text-3xl font-black text-[#D4AF37]">
+                      <h4 className="text-3xl font-black  text-[#C6922B]">
 
                         ৳{product.price}
 
@@ -248,7 +248,7 @@ export default function FeaturedProducts() {
                         addToCart(product)
                       }
 
-                      className="flex-1 py-4 rounded-2xl bg-[#D4AF37] text-black font-black hover:scale-[1.02] transition duration-300"
+                      className="flex-1 py-4 rounded-2xl bg-[#C6922B] text-black font-black  hover:scale-[1.02] transition duration-300"
                     >
 
                       Add To Cart
@@ -261,7 +261,7 @@ export default function FeaturedProducts() {
                         navigate(`/product/${product.id}`)
                       }
 
-                      className="px-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#D4AF37] transition"
+                      className="px-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] transition"
                     >
 
                       View

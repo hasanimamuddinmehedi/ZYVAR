@@ -1,12 +1,37 @@
 import { useEffect, useState } from "react";
-import {  doc,  getDoc, } from "firebase/firestore";
-import {  useParams, } from "react-router-dom";
-import {  db, } from "../firebase/firebase";
-import { useCart } from "../context/CartContext";
+
+import {
+  doc,
+  getDoc,
+} from "firebase/firestore";
+
+import {
+  useParams,
+} from "react-router-dom";
+
+import {
+  db,
+} from "../firebase/firebase";
+
+import {
+  useCart,
+} from "../context/CartContext";
+
 import ProductReviews from "../components/ProductReviews";
+
 import SEO from "../components/SEO";
-import {  trackEvent, } from "../utils/analytics";
-import { LazyLoadImage } from "react-lazy-load-image-component";
+
+import {
+  trackEvent,
+} from "../utils/analytics";
+
+import {
+  LazyLoadImage,
+} from "react-lazy-load-image-component";
+
+import {
+  useWishlist,
+} from "../context/WishlistContext";
 
 export default function ProductDetails() {
 
@@ -23,6 +48,19 @@ export default function ProductDetails() {
   const [loading,
     setLoading] =
     useState(true);
+
+    <button
+
+  onClick={() =>
+    addToWishlist(product)
+  }
+
+  className="px-10 py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+>
+
+  Wishlist
+
+</button>
 
   // FETCH PRODUCT
   useEffect(() => {
@@ -52,19 +90,31 @@ export default function ProductDetails() {
           docSnap.exists()
         ) {
 
-          setProduct({
+          const productData = {
 
             id:
               docSnap.id,
 
+            quantity: 1,
+
             ...docSnap.data(),
-          });
-        }
-        trackEvent(
+          };
+
+          setProduct(
+            productData
+          );
+
+          // TRACK VIEW
+          trackEvent(
             "Product",
-              "View Product",
-                product.name
-              );
+            "View Product",
+            productData.name
+          );
+
+        } else {
+
+          setProduct(null);
+        }
 
       } catch (error) {
 
@@ -83,7 +133,7 @@ export default function ProductDetails() {
 
       <div className="min-h-screen bg-black flex items-center justify-center">
 
-        <div className="w-16 h-16 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+        <div className="w-16 h-16 border-4 border-[#C6922B] border-t-transparent rounded-full animate-spin" />
 
       </div>
     );
@@ -94,7 +144,7 @@ export default function ProductDetails() {
 
     return (
 
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-black text-white flex items-center justify-center text-3xl font-bold">
 
         Product Not Found
 
@@ -106,30 +156,31 @@ export default function ProductDetails() {
 
     <div className="min-h-screen bg-[#0B0B0B] text-white px-6 lg:px-12 py-20">
 
+      <SEO
+
+        title={product?.name}
+
+        description={
+          product?.description
+        }
+
+        image={product?.image}
+
+      />
+
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
 
         {/* IMAGE */}
         <div>
 
-          <SEO
-          
-          title={product.name}
-          
-          description={
-                product.description
-                }
-                
-                image={product.image}
-                
-          />
-
           <LazyLoadImage
-            src={product.image}
-              //effect="blur"
 
-            alt={product.name}
+            src={product?.image}
 
-            className="w-full rounded-[40px] object-cover border border-white/10"
+            alt={product?.name}
+
+            className="w-full rounded-[40px] object-cover border border-white/10 shadow-2xl"
+
           />
 
         </div>
@@ -137,21 +188,21 @@ export default function ProductDetails() {
         {/* CONTENT */}
         <div>
 
-          <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-sm mb-5">
+          <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-5">
 
-            {product.category}
+            {product?.category}
 
           </p>
 
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black mb-8">
 
-            {product.name}
+            {product?.name}
 
           </h1>
 
           <p className="text-gray-300 text-lg leading-relaxed mb-10">
 
-            {product.description}
+            {product?.description}
 
           </p>
 
@@ -165,9 +216,9 @@ export default function ProductDetails() {
 
               </p>
 
-              <h2 className="text-5xl font-black text-[#D4AF37]">
+              <h2 className="text-5xl font-black text-[#C6922B]">
 
-                ৳{product.price}
+                ৳{product?.price}
 
               </h2>
 
@@ -183,7 +234,7 @@ export default function ProductDetails() {
 
               <h2 className="text-4xl font-black">
 
-                {product.stock}
+                {product?.stock}
 
               </h2>
 
@@ -196,20 +247,23 @@ export default function ProductDetails() {
 
             <button
 
-              onClick={() =>
-                addToCart(
-                  product
-                )
-              }
+              onClick={() => {
 
-              className="px-10 py-5 rounded-2xl bg-[#D4AF37] text-black font-black hover:scale-105 transition"
+                addToCart(product);
+
+                alert(
+                  "Added To Cart"
+                );
+              }}
+
+              className="px-10 py-5 rounded-2xl bg-[#C6922B] text-black font-black hover:scale-105 transition"
             >
 
               Add To Cart
 
             </button>
 
-            <button className="px-10 py-5 rounded-2xl border border-white/10 bg-white/5">
+            <button className="px-10 py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] transition">
 
               Wishlist
 
@@ -218,13 +272,14 @@ export default function ProductDetails() {
           </div>
 
         </div>
+
       </div>
 
       {/* REVIEWS */}
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto mt-20">
 
         <ProductReviews
-          productId={product.id}
+          productId={product?.id}
         />
 
       </div>

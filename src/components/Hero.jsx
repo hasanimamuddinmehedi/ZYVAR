@@ -5,10 +5,10 @@ import { Link } from "react-router-dom";
 export default function Hero() {
   const navigate = useNavigate();
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#0B0B0B] text-white flex items-center">
+    <section className="relative min-h-screen overflow-hidden bg-[#0B0B0B] text-white flex items-center pt-24 sm:pt-28">
       {/* GLOW */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#D4AF37]/10 rounded-full blur-[140px]" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#D4AF37]/10 rounded-full blur-[140px]" />
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#C6922B]/10 rounded-full blur-[140px]" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#C6922B]/10 rounded-full blur-[140px]" />
 
       {/* MAIN GRID */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20 grid lg:grid-cols-2 gap-16 items-center relative z-10">
@@ -23,7 +23,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="uppercase tracking-[0.4em] text-[#D4AF37] text-sm mb-6"
+            className="uppercase tracking-[0.4em] text-[#C6922B] text-sm mb-6"
           >
             Original Cosmetics • Family Essentials • Imported Treats
           </motion.p>
@@ -33,10 +33,10 @@ export default function Hero() {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="text-4xl sm:text-5xl lg:text-7xl font-black leading-tight lg:leading-[0.9] mb-8"
+            className="text-4xl sm:text-5xl lg:text-7xl font-black  leading-tight lg:leading-[0.9] mb-8"
           >
             Discover
-            <span className="block text-[#D4AF37]">
+            <span className="block text-[#C6922B]">
               Premium Luxury
             </span>
             Collections
@@ -66,9 +66,9 @@ export default function Hero() {
                 group relative
                 px-9 py-5
                 rounded-2xl
-                bg-[#D4AF37]
+                bg-[#C6922B]
                 text-black
-                font-black
+                font-black 
                 overflow-hidden
                 hover:scale-105
                 transition duration-300
@@ -90,8 +90,8 @@ export default function Hero() {
                 border border-white/10
                 bg-white/5
                 backdrop-blur-xl
-                hover:border-[#D4AF37]
-                hover:text-[#D4AF37]
+                hover:border-[#C6922B]
+                hover:text-[#C6922B]
                 transition duration-300
               "
             >
@@ -107,7 +107,7 @@ export default function Hero() {
             className="grid grid-cols-3 gap-6 mt-16"
           >
             <div>
-              <h2 className="text-4xl font-black text-[#D4AF37] mb-2">
+              <h2 className="text-4xl font-black  text-[#C6922B] mb-2">
                 10K+
               </h2>
 
@@ -117,7 +117,7 @@ export default function Hero() {
             </div>
 
             <div>
-              <h2 className="text-4xl font-black text-[#D4AF37] mb-2">
+              <h2 className="text-4xl font-black  text-[#C6922B] mb-2">
                 500+
               </h2>
 
@@ -127,7 +127,7 @@ export default function Hero() {
             </div>
 
             <div>
-              <h2 className="text-4xl font-black text-[#D4AF37] mb-2">
+              <h2 className="text-4xl font-black  text-[#C6922B] mb-2">
                 24/7
               </h2>
 
@@ -168,7 +168,7 @@ export default function Hero() {
     repeat: Infinity,
     ease: "easeInOut",
   }}
-  src="https://images.unsplash.com/photo-1483985988355-763728e1935b"
+  src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=1200"
   alt="Female Model"
   className="
     absolute
@@ -238,11 +238,11 @@ export default function Hero() {
       z-40
     "
   >
-    <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-xs mb-4">
+    <p className="uppercase tracking-[0.3em] text-[#C6922B] text-xs mb-4">
       New Arrival
     </p>
 
-    <h3 className="text-2xl sm:text-3xl font-black mb-3">
+    <h3 className="text-2xl sm:text-3xl font-black  mb-3">
       Premium Perfume
     </h3>
 
@@ -256,9 +256,9 @@ export default function Hero() {
         block text-center
         w-full py-4
         rounded-2xl
-        bg-[#D4AF37]
+        bg-[#C6922B]
         text-black
-        font-black
+        font-black 
       "
     >
       Buy Now

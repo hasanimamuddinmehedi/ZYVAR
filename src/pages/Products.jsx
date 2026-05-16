@@ -83,17 +83,17 @@ export default function Products() {
       {/* HERO */}
       <section className="relative overflow-hidden px-4 sm:px-6 lg:px-10 py-24 border-b border-white/10">
 
-        <div className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full bg-[#D4AF37]/10 blur-[120px]" />
+        <div className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full bg-[#C6922B]/10 blur-[120px]" />
 
         <div className="max-w-7xl mx-auto relative z-10">
 
-          <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-sm mb-5">
+          <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-5">
             Premium Ecommerce Store
           </p>
 
-          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black leading-[0.9] mb-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black  leading-[0.9] mb-8">
             Discover
-            <span className="block text-[#D4AF37]">
+            <span className="block text-[#C6922B]">
               Luxury Collections
             </span>
           </h1>
@@ -105,11 +105,11 @@ export default function Products() {
 
           <div className="flex flex-wrap gap-4">
 
-            <button className="px-8 py-4 rounded-2xl bg-[#D4AF37] text-black font-black hover:scale-105 transition">
+            <button className="px-8 py-4 rounded-2xl bg-[#C6922B] text-black font-black  hover:scale-105 transition">
               Shop Now
             </button>
 
-            <button className="px-8 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#D4AF37] hover:text-[#D4AF37] transition">
+            <button className="px-8 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition">
               Explore Categories
             </button>
 
@@ -128,11 +128,11 @@ export default function Products() {
 
             <div>
 
-              <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-sm mb-4">
+              <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-4">
                 Featured Products
               </p>
 
-              <h2 className="text-4xl md:text-5xl font-black">
+              <h2 className="text-4xl md:text-5xl font-black ">
                 Trending Collections
               </h2>
 
@@ -156,12 +156,12 @@ export default function Products() {
                                     );
                                   }}
 
-                className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#D4AF37] text-white placeholder-gray-500"
+                className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#C6922B] text-white placeholder-gray-500"
               />
 
             </div>
 
-            <button className="px-7 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#D4AF37] hover:text-[#D4AF37] transition">
+            <button className="px-7 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition">
               View All Products
             </button>
 
@@ -172,7 +172,7 @@ export default function Products() {
 
             <div className="flex items-center justify-center py-32">
 
-              <div className="w-16 h-16 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
+              <div className="w-16 h-16 border-4 border-[#C6922B] border-t-transparent rounded-full animate-spin" />
 
             </div>
 
@@ -180,7 +180,7 @@ export default function Products() {
 
             <div className="rounded-[40px] border border-white/10 bg-white/5 p-16 text-center">
 
-              <h2 className="text-4xl font-black mb-5">
+              <h2 className="text-4xl font-black  mb-5">
                 No Matching Products
               </h2>
 
@@ -202,7 +202,7 @@ export default function Products() {
 
                   key={product.id}
 
-                  className="group rounded-[32px] overflow-hidden border border-white/10 bg-white/5 backdrop-blur-xl hover:border-[#D4AF37] transition duration-500 hover:-translate-y-3 block"
+                  className="group rounded-[32px] overflow-hidden border border-white/10 bg-white/5 backdrop-blur-xl hover:border-[#C6922B] transition duration-500 hover:-translate-y-3 block"
                 >
 
                   {/* IMAGE */}
@@ -215,7 +215,7 @@ export default function Products() {
                       className="h-64 sm:h-72 lg:h-80 w-full object-cover group-hover:scale-110 transition duration-700"
                     />
 
-                    <div className="absolute top-5 left-5 px-4 py-2 rounded-full bg-[#D4AF37] text-black text-xs font-bold uppercase tracking-widest">
+                    <div className="absolute top-5 left-5 px-4 py-2 rounded-full bg-[#C6922B] text-black text-xs font-bold uppercase tracking-widest">
                       {product.category}
                     </div>
 
@@ -241,7 +241,7 @@ export default function Products() {
                           Price
                         </p>
 
-                        <h4 className="text-2xl sm:text-3xl font-black text-[#D4AF37]">
+                        <h4 className="text-2xl sm:text-3xl font-black  text-[#C6922B]">
                           ৳{product.price}
                         </h4>
 
@@ -272,7 +272,7 @@ export default function Products() {
                                             product.name
                                             );
                                           }}
-                        className="flex-1 py-4 rounded-2xl bg-[#D4AF37] text-black font-black hover:scale-[1.02] transition duration-300"
+                        className="flex-1 py-4 rounded-2xl bg-[#C6922B] text-black font-black  hover:scale-[1.02] transition duration-300"
                       >
                         Add to Cart
                       </button>
@@ -296,7 +296,7 @@ export default function Products() {
 
                             ? "bg-red-500 text-white border-red-500"
 
-                            : "border-white/10 bg-white/5 hover:border-[#D4AF37]"
+                            : "border-white/10 bg-white/5 hover:border-[#C6922B]"
                         }
                         `}
                       >

@@ -152,11 +152,11 @@ export default function Checkout() {
 
         <div className="max-w-2xl text-center">
 
-          <div className="w-28 h-28 rounded-full bg-[#D4AF37] text-black flex items-center justify-center text-5xl mx-auto mb-8">
+          <div className="w-28 h-28 rounded-full bg-[#C6922B] text-black flex items-center justify-center text-5xl mx-auto mb-8">
             ✓
           </div>
 
-          <h1 className="text-5xl font-black mb-6">
+          <h1 className="text-5xl font-black  mb-6">
             Order Confirmed
           </h1>
           
@@ -186,11 +186,11 @@ export default function Checkout() {
         {/* LEFT */}
         <div>
 
-          <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-sm mb-4">
+          <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-4">
             Checkout
           </p>
 
-          <h1 className="text-5xl font-black mb-10">
+          <h1 className="text-5xl font-black  mb-10">
             Shipping Details
           </h1>
 
@@ -203,7 +203,7 @@ export default function Checkout() {
               placeholder="Full Name"
               value={formData.name}
               onChange={handleChange}
-              className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#D4AF37]"
+              className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#C6922B]"
             />
 
             {/* PHONE */}
@@ -213,7 +213,7 @@ export default function Checkout() {
               placeholder="Phone Number"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#D4AF37]"
+              className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#C6922B]"
             />
 
             {/* ADDRESS */}
@@ -223,7 +223,7 @@ export default function Checkout() {
               rows="5"
               value={formData.address}
               onChange={handleChange}
-              className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#D4AF37]"
+              className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#C6922B]"
             />
 
             {/* NOTE */}
@@ -233,13 +233,13 @@ export default function Checkout() {
               rows="4"
               value={formData.note}
               onChange={handleChange}
-              className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#D4AF37]"
+              className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#C6922B]"
             />
 
             {/* PAYMENT METHOD */}
             <div className="space-y-5">
 
-              <h3 className="text-2xl font-black">
+              <h3 className="text-2xl font-black ">
                 Payment Method
               </h3>
 
@@ -260,7 +260,7 @@ export default function Checkout() {
                   ${
                     formData.paymentMethod === "COD"
 
-                      ? "bg-[#D4AF37] text-black border-[#D4AF37]"
+                      ? "bg-[#C6922B] text-black border-[#C6922B]"
 
                       : "border-white/10 bg-white/5"
                   }
@@ -329,8 +329,8 @@ export default function Checkout() {
                         Send Money To
                       </p>
 
-                      <h3 className="text-3xl font-black text-[#D4AF37]">
-                        017XXXXXXXX
+                      <h3 className="text-3xl font-black  text-[#C6922B]">
+                        01820400999
                       </h3>
 
                     </div>
@@ -341,7 +341,7 @@ export default function Checkout() {
                         Amount
                       </p>
 
-                      <h3 className="text-3xl font-black text-[#D4AF37]">
+                      <h3 className="text-3xl font-black  text-[#C6922B]">
                         ৳{totalPrice + 120}
                       </h3>
 
@@ -358,7 +358,7 @@ export default function Checkout() {
                             e.target.value,
                         })
                       }
-                      className="w-full p-5 rounded-2xl bg-black/20 border border-white/10 outline-none focus:border-[#D4AF37]"
+                      className="w-full p-5 rounded-2xl bg-black/20 border border-white/10 outline-none focus:border-[#C6922B]"
                     />
 
                   </div>
@@ -371,7 +371,7 @@ export default function Checkout() {
             <button
               onClick={placeOrder}
               disabled={loading}
-              className="w-full py-5 rounded-2xl bg-[#D4AF37] text-black text-lg font-black hover:scale-[1.02] transition disabled:opacity-50"
+              className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black  hover:scale-[1.02] transition disabled:opacity-50"
             >
               {
                 loading
@@ -387,7 +387,7 @@ export default function Checkout() {
         {/* RIGHT */}
         <div className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-xl p-8 h-fit">
 
-          <h2 className="text-3xl font-black mb-10">
+          <h2 className="text-3xl font-black  mb-10">
             Order Summary
           </h2>
 
@@ -408,7 +408,7 @@ export default function Checkout() {
 
                 <div className="flex-1">
 
-                  <h3 className="font-bold">
+                  <h3 className="font-bold ">
                     {item.name}
                   </h3>
 
@@ -418,7 +418,7 @@ export default function Checkout() {
 
                 </div>
 
-                <h4 className="font-black text-[#D4AF37]">
+                <h4 className="font-black  text-[#C6922B]">
                   ৳
                   {item.price *
                     item.quantity}
@@ -450,11 +450,11 @@ export default function Checkout() {
 
             </div>
 
-            <div className="border-t border-white/10 pt-5 flex justify-between text-2xl font-black">
+            <div className="border-t border-white/10 pt-5 flex justify-between text-2xl font-black ">
 
               <span>Total</span>
 
-              <span className="text-[#D4AF37]">
+              <span className="text-[#C6922B]">
                 ৳{totalPrice + 120}
               </span>
 

@@ -1,19 +1,34 @@
-import { useEffect, useState }
-from "react";
+import { useEffect, useState } from "react";
 
 import {
   collection,
+  query,
+  where,
   getDocs,
   orderBy,
-  query,
-  updateDoc,
-  doc,
 } from "firebase/firestore";
 
-import { db }
-from "../firebase/firebase";
+import {
+  auth,
+  db,
+} from "../firebase/firebase";
+
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  FaArrowLeft,
+  FaBoxOpen,
+  FaClock,
+  FaCheckCircle,
+  FaTruck,
+} from "react-icons/fa";
 
 export default function Orders() {
+
+  const navigate =
+    useNavigate();
 
   const [orders, setOrders] =
     useState([]);
@@ -21,7 +36,7 @@ export default function Orders() {
   const [loading, setLoading] =
     useState(true);
 
-  // FETCH ORDERS
+  // FETCH USER ORDERS
   useEffect(() => {
 
     fetchOrders();
@@ -33,33 +48,55 @@ export default function Orders() {
 
       try {
 
-        const q = query(
+        const user =
+          auth.currentUser;
 
-          collection(
-            db,
-            "orders"
-          ),
+        if (!user) {
 
-          orderBy(
-            "createdAt",
-            "desc"
-          )
-        );
+          navigate("/login");
+
+          return;
+        }
+
+        const q =
+          query(
+
+            collection(
+              db,
+              "orders"
+            ),
+
+            where(
+              "userId",
+              "==",
+              user.uid
+            ),
+
+            orderBy(
+              "createdAt",
+              "desc"
+            )
+          );
 
         const querySnapshot =
           await getDocs(q);
 
-        const orderList =
-          querySnapshot.docs.map(
-            (doc) => ({
+        const fetchedOrders =
+          [];
 
-              id: doc.id,
+        querySnapshot.forEach((doc) => {
 
-              ...doc.data(),
-            })
-          );
+          fetchedOrders.push({
 
-        setOrders(orderList);
+            id: doc.id,
+
+            ...doc.data(),
+          });
+        });
+
+        setOrders(
+          fetchedOrders
+        );
 
       } catch (error) {
 
@@ -71,299 +108,307 @@ export default function Orders() {
       }
     };
 
-  // UPDATE STATUS
-  const updateStatus =
-    async (
-      orderId,
-      status
-    ) => {
+  // STATUS STYLE
+  const getStatusStyle =
+    (status) => {
 
-      try {
+      switch (status) {
 
-        await updateDoc(
+        case "Delivered":
 
-          doc(
-            db,
-            "orders",
-            orderId
-          ),
+          return "bg-green-500/20 text-green-400 border-green-500/30";
 
-          {
-            status,
-          }
-        );
+        case "Shipping":
 
-        fetchOrders();
+          return "bg-blue-500/20 text-blue-400 border-blue-500/30";
 
-      } catch (error) {
+        case "Pending":
 
-        console.log(error);
+          return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+
+        default:
+
+          return "bg-gray-500/20 text-gray-300 border-gray-500/30";
       }
     };
 
+  // STATUS ICON
+  const getStatusIcon =
+    (status) => {
+
+      switch (status) {
+
+        case "Delivered":
+
+          return <FaCheckCircle />;
+
+        case "Shipping":
+
+          return <FaTruck />;
+
+        default:
+
+          return <FaClock />;
+      }
+    };
+
+  // LOADING
+  if (loading) {
+
+    return (
+
+      <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center">
+
+        <div className="w-16 h-16 border-4 border-[#C6922B] border-t-transparent rounded-full animate-spin" />
+
+      </div>
+    );
+  }
+
   return (
 
-    <div className="min-h-screen bg-[#0B0B0B] text-white p-6 lg:p-10">
+    <div className="min-h-screen bg-[#0B0B0B] text-white px-4 sm:px-6 lg:px-10 py-10">
 
-      {/* HEADER */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-12">
+      <div className="max-w-7xl mx-auto">
 
-        <div>
+        {/* TOP */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-12">
 
-          <p className="uppercase tracking-[0.3em] text-[#D4AF37] text-sm mb-3">
-            Admin Dashboard
-          </p>
+          <div>
 
-          <h1 className="text-5xl font-black">
-            Order Management
-          </h1>
-        </div>
+            <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-4">
 
-        <div className="px-6 py-4 rounded-2xl border border-white/10 bg-white/5">
+              Your Orders
 
-          <span className="text-gray-400 mr-3">
-            Total Orders:
-          </span>
-
-          <span className="text-3xl font-black text-[#D4AF37]">
-            {orders.length}
-          </span>
-        </div>
-      </div>
-
-      {/* LOADING */}
-      {
-        loading ? (
-
-          <div className="flex justify-center py-32">
-
-            <div className="w-16 h-16 border-4 border-[#D4AF37] border-t-transparent rounded-full animate-spin" />
-
-          </div>
-
-        ) : orders.length === 0 ? (
-
-          <div className="rounded-[40px] border border-white/10 bg-white/5 p-16 text-center">
-
-            <h2 className="text-4xl font-black mb-5">
-              No Orders Found
-            </h2>
-
-            <p className="text-gray-400">
-              Orders will appear here.
             </p>
+
+            <h1 className="text-4xl md:text-6xl font-black leading-tight">
+
+              Order
+              <span className="block text-[#C6922B]">
+                History
+              </span>
+
+            </h1>
+
           </div>
 
-        ) : (
+          {/* BACK */}
+          <button
 
-          <div className="space-y-8">
+            onClick={() =>
+              navigate("/profile")
+            }
 
-            {
-              orders.map((order) => (
+            className="flex items-center gap-3 px-6 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition duration-300"
+          >
 
-                <div
+            <FaArrowLeft />
 
-                  key={order.id}
+            Back To Profile
 
-                  className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-xl p-8"
-                >
+          </button>
 
-                  {/* TOP */}
-                  <div className="flex flex-col lg:flex-row justify-between gap-6 mb-8">
+        </div>
 
-                    <div>
+        {/* EMPTY */}
+        {
+          orders.length === 0 && (
 
-                      <p className="text-gray-400 uppercase tracking-widest text-sm mb-2">
-                        Order ID
-                      </p>
+            <div className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-xl p-14 text-center">
 
-                      <h2 className="text-2xl font-black">
-                        {order.id}
-                      </h2>
-                    </div>
+              <div className="w-24 h-24 rounded-full bg-[#C6922B]/10 flex items-center justify-center mx-auto mb-8 text-[#C6922B] text-4xl">
 
-                    <div className="flex gap-4 flex-wrap">
+                <FaBoxOpen />
 
-                      <button
+              </div>
 
-                        onClick={() =>
-                          updateStatus(
-                            order.id,
-                            "Processing"
-                          )
-                        }
+              <h2 className="text-3xl font-black mb-4">
 
-                        className="px-5 py-3 rounded-2xl bg-yellow-500 text-black font-bold"
-                      >
+                No Orders Yet
 
-                        Processing
-                      </button>
+              </h2>
 
-                      <button
+              <p className="text-gray-400 mb-10 max-w-xl mx-auto">
 
-                        onClick={() =>
-                          updateStatus(
-                            order.id,
-                            "Shipped"
-                          )
-                        }
+                Looks like you haven’t placed any order yet.
+                Explore premium collections and start shopping.
 
-                        className="px-5 py-3 rounded-2xl bg-blue-500 text-white font-bold"
-                      >
+              </p>
 
-                        Shipped
-                      </button>
+              <button
 
-                      <button
+                onClick={() =>
+                  navigate("/products")
+                }
 
-                        onClick={() =>
-                          updateStatus(
-                            order.id,
-                            "Delivered"
-                          )
-                        }
+                className="px-8 py-4 rounded-2xl bg-[#C6922B] text-black font-black hover:scale-105 transition duration-300"
+              >
 
-                        className="px-5 py-3 rounded-2xl bg-green-500 text-black font-bold"
-                      >
+                Explore Products
 
-                        Delivered
-                      </button>
-                    </div>
-                  </div>
+              </button>
 
-                  {/* CUSTOMER */}
-                  <div className="grid md:grid-cols-3 gap-6 mb-10">
+            </div>
+          )
+        }
 
-                    <div>
+        {/* ORDERS */}
+        <div className="space-y-8">
 
-                      <p className="text-gray-400 mb-2">
-                        Customer Name
-                      </p>
+          {
+            orders.map((order) => (
 
-                      <h3 className="text-xl font-bold">
-                        {order.name}
-                      </h3>
-                    </div>
+              <div
 
-                    <div>
+                key={order.id}
 
-                      <p className="text-gray-400 mb-2">
-                        Phone
-                      </p>
+                className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-xl overflow-hidden"
+              >
 
-                      <h3 className="text-xl font-bold">
-                        {order.phone}
-                      </h3>
-                    </div>
+                {/* HEADER */}
+                <div className="border-b border-white/10 p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
 
-                    <div>
+                  <div>
 
-                      <p className="text-gray-400 mb-2">
-                        Status
-                      </p>
+                    <p className="text-gray-400 text-sm mb-2">
 
-                      <h3 className="text-xl font-bold text-[#D4AF37]">
-                        {
-                          order.status ||
-                          "Pending"
-                        }
-                      </h3>
-                    </div>
-                  </div>
+                      Order ID
 
-                  {/* ADDRESS */}
-                  <div className="mb-10">
-
-                    <p className="text-gray-400 mb-2">
-                      Shipping Address
                     </p>
 
-                    <h3 className="text-lg font-medium leading-relaxed">
-                      {order.address}
-                    </h3>
+                    <h2 className="text-xl font-black text-[#C6922B] break-all">
+
+                      #{order.id}
+
+                    </h2>
+
                   </div>
 
-                  {/* PRODUCTS */}
-                  <div className="mb-10">
+                  <div>
 
-                    <h3 className="text-2xl font-black mb-6">
-                      Ordered Products
-                    </h3>
+                    <p className="text-gray-400 text-sm mb-2">
 
-                    <div className="space-y-5">
+                      Payment Method
 
-                      {
-                        order.items?.map(
-                          (
-                            item,
-                            index
-                          ) => (
+                    </p>
 
-                            <div
+                    <h2 className="text-lg font-bold">
 
-                              key={index}
+                      {order.paymentMethod}
 
-                              className="flex items-center gap-5 rounded-3xl border border-white/10 bg-black/20 p-5"
-                            >
+                    </h2>
 
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="w-24 h-24 rounded-2xl object-cover"
-                              />
-
-                              <div className="flex-1">
-
-                                <h4 className="text-xl font-bold mb-2">
-                                  {item.name}
-                                </h4>
-
-                                <p className="text-gray-400">
-                                  Qty:
-                                  {" "}
-                                  {
-                                    item.quantity
-                                  }
-                                </p>
-                              </div>
-
-                              <h3 className="text-2xl font-black text-[#D4AF37]">
-
-                                ৳
-                                {
-                                  item.price
-                                }
-                              </h3>
-                            </div>
-                          )
-                        )
-                      }
-                    </div>
                   </div>
 
-                  {/* TOTAL */}
-                  <div className="flex justify-between items-center border-t border-white/10 pt-8">
+                  <div>
 
-                    <h2 className="text-2xl font-black">
+                    <p className="text-gray-400 text-sm mb-2">
+
                       Total Amount
+
+                    </p>
+
+                    <h2 className="text-3xl font-black text-[#C6922B]">
+
+                      ৳{order.total}
+
                     </h2>
 
-                    <h2 className="text-4xl font-black text-[#D4AF37]">
+                  </div>
 
-                      ৳
-                      {
-                        order.total
-                      }
-                    </h2>
+                  {/* STATUS */}
+                  <div>
+
+                    <div className={`inline-flex items-center gap-3 px-5 py-3 rounded-2xl border text-sm font-bold ${getStatusStyle(order.status)}`}>
+
+                      {getStatusIcon(order.status)}
+
+                      {order.status}
+
+                    </div>
+
                   </div>
 
                 </div>
-              ))
-            }
 
-          </div>
-        )
-      }
+                {/* PRODUCTS */}
+                <div className="p-6 space-y-6">
+
+                  {
+                    order.items?.map((item, index) => (
+
+                      <div
+
+                        key={index}
+
+                        className="flex flex-col md:flex-row gap-6 md:items-center rounded-3xl border border-white/10 bg-black/20 p-5"
+                      >
+
+                        {/* IMAGE */}
+                        <img
+
+                          src={item.image}
+
+                          alt={item.name}
+
+                          className="w-full md:w-32 h-32 rounded-2xl object-cover"
+                        />
+
+                        {/* CONTENT */}
+                        <div className="flex-1">
+
+                          <p className="uppercase tracking-widest text-xs text-[#C6922B] mb-2">
+
+                            {item.category}
+
+                          </p>
+
+                          <h3 className="text-2xl font-black mb-3">
+
+                            {item.name}
+
+                          </h3>
+
+                          <p className="text-gray-400">
+
+                            Quantity:
+                            {" "}
+                            {item.quantity}
+
+                          </p>
+
+                        </div>
+
+                        {/* PRICE */}
+                        <div>
+
+                          <h3 className="text-3xl font-black text-[#C6922B]">
+
+                            ৳
+                            {
+                              item.price *
+                              item.quantity
+                            }
+
+                          </h3>
+
+                        </div>
+
+                      </div>
+                    ))
+                  }
+
+                </div>
+
+              </div>
+            ))
+          }
+
+        </div>
+
+      </div>
+
     </div>
   );
 }

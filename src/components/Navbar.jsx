@@ -63,10 +63,10 @@ export default function Navbar() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
 
-        <div className="h-20 flex items-center justify-between">
+        <div className="h-16 flex items-center justify-between">
 
           {/* LEFT */}
-          <div className="flex items-center gap-10">
+          <div className="flex items-center gap-6">
 
             {/* LOGO */}
             <Link
@@ -75,24 +75,23 @@ export default function Navbar() {
             >
 
               {/* LOGO IMAGE */}
-              <div className="w-14 h-14 flex items-center justify-center overflow-visible">
+              <div className="w-9 h-9 flex items-center justify-center">
 
-                <img
-                  src="https://res.cloudinary.com/dhppdatrl/image/upload/v1778734083/w3ehnytbwrugrxptj9py.png"
-                  alt="ZYVAR Logo"
+  <img
+    src="https://res.cloudinary.com/dhppdatrl/image/upload/v1778734083/w3ehnytbwrugrxptj9py.png"
+    alt="ZYVAR Logo"
 
-                  className="
-                    w-full
-                    h-full
-                    object-contain
-                    scale-[1.8]
-                  "
-                />
+    className="
+      w-full
+      h-full
+      object-contain
+    "
+  />
 
-              </div>
+</div>
 
               {/* BRAND NAME */}
-              <h1 className="text-2xl font-black tracking-[0.25em] text-[#D4AF37]">
+              <h1 className="text-xl font-black  tracking-[0.2em] text-[#C6922B]">
 
                 ZYVAR
 
@@ -105,7 +104,7 @@ export default function Navbar() {
 
               <Link
                 to="/"
-                className="flex items-center gap-2 hover:text-[#D4AF37] transition"
+                className="flex items-center gap-2 hover:text-[#C6922B] transition"
               >
 
                 <Home size={18} />
@@ -116,7 +115,7 @@ export default function Navbar() {
 
               <Link
                 to="/products"
-                className="flex items-center gap-2 hover:text-[#D4AF37] transition"
+                className="flex items-center gap-2 hover:text-[#C6922B] transition"
               >
 
                 <ShoppingBag size={18} />
@@ -127,7 +126,7 @@ export default function Navbar() {
 
               <Link
                 to="/about"
-                className="flex items-center gap-2 hover:text-[#D4AF37] transition"
+                className="flex items-center gap-2 hover:text-[#C6922B] transition"
               >
 
                 <Info size={18} />
@@ -138,7 +137,7 @@ export default function Navbar() {
 
               <Link
                 to="/contact"
-                className="flex items-center gap-2 hover:text-[#D4AF37] transition"
+                className="flex items-center gap-2 hover:text-[#C6922B] transition"
               >
 
                 <Phone size={18} />
@@ -162,7 +161,7 @@ export default function Navbar() {
                 target="_blank"
                 rel="noreferrer"
 
-                className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+                className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#C6922B] hover:text-[#C6922B] transition"
               >
 
                 <FaFacebookF />
@@ -174,7 +173,7 @@ export default function Navbar() {
                 target="_blank"
                 rel="noreferrer"
 
-                className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+                className="w-10 h-10 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#C6922B] hover:text-[#C6922B] transition"
               >
 
                 <FaInstagram />
@@ -189,7 +188,7 @@ export default function Navbar() {
                 navigate("/wishlist")
               }
 
-              className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+              className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
             >
 
               <Heart size={20} />
@@ -202,7 +201,7 @@ export default function Navbar() {
                 navigate("/cart")
               }
 
-              className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+              className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
             >
 
               <ShoppingBag size={20} />
@@ -215,7 +214,7 @@ export default function Navbar() {
                 navigate("/profile")
               }
 
-              className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+              className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
             >
 
               <User size={20} />
@@ -232,7 +231,7 @@ export default function Navbar() {
                     navigate("/login")
                   }
 
-                  className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-white/10 bg-white/5 text-white hover:border-[#D4AF37] hover:text-[#D4AF37] transition"
+                  className="flex items-center gap-2 px-5 py-3 rounded-2xl border border-white/10 bg-white/5 text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
                 >
 
                   <LogIn size={18} />
@@ -246,7 +245,7 @@ export default function Navbar() {
                     navigate("/signup")
                   }
 
-                  className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#D4AF37] text-black font-bold hover:scale-105 transition"
+                  className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#C6922B] text-black font-bold hover:scale-105 transition"
                 >
 
                   <UserPlus size={18} />
@@ -418,7 +417,7 @@ export default function Navbar() {
                     setMenuOpen(false);
                   }}
 
-                  className="w-full py-4 rounded-2xl bg-[#D4AF37] text-black font-bold"
+                  className="w-full py-4 rounded-2xl bg-[#C6922B] text-black font-bold"
                 >
 
                   Signup
