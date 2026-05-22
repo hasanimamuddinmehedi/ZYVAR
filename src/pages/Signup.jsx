@@ -1,9 +1,12 @@
-import { useState } from "react";
+import React, {
+  useState,
+} from "react";
 
 import {
   createUserWithEmailAndPassword,
   updateProfile,
   GoogleAuthProvider,
+  sendEmailVerification,
   signInWithPopup,
 } from "firebase/auth";
 
@@ -138,6 +141,9 @@ export default function Signup() {
           }
         );
 
+        // SEND EMAIL VERIFICATION
+        await sendEmailVerification(user);
+
         // SAVE TO FIRESTORE
         await setDoc(
 
@@ -184,10 +190,10 @@ export default function Signup() {
         );
 
         alert(
-          "Account Created Successfully"
+          "Account created successfully. Please verify your email before login."
         );
 
-        navigate("/");
+        navigate("/login");
 
       } catch (error) {
 
@@ -217,11 +223,13 @@ export default function Signup() {
       }
     };
 
-  // GOOGLE SIGNUP
+  // GOOGLE SIGNUP — using signInWithPopup
   const handleGoogleSignup =
     async () => {
 
       try {
+
+        setLoading(true);
 
         const result =
           await signInWithPopup(
@@ -291,9 +299,19 @@ export default function Signup() {
 
         console.log(error);
 
-        alert(
-          error.message
-        );
+        if (
+          error.code !==
+          "auth/popup-closed-by-user"
+        ) {
+
+          alert(
+            error.message
+          );
+        }
+
+      } finally {
+
+        setLoading(false);
       }
     };
 
@@ -487,7 +505,9 @@ export default function Signup() {
 
               onClick={handleGoogleSignup}
 
-              className="w-full py-4 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center gap-4 hover:border-[#C6922B] transition mb-8"
+              disabled={loading}
+
+              className="w-full py-4 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center gap-4 hover:border-[#C6922B] transition mb-8 disabled:opacity-50 disabled:cursor-not-allowed"
             >
 
               <img
@@ -546,7 +566,7 @@ export default function Signup() {
 
                   placeholder="Enter your name"
 
-                  className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
+                  className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B] text-white placeholder-gray-500 transition duration-300"
                 />
 
               </div>
@@ -588,7 +608,7 @@ export default function Signup() {
 
                     placeholder="Enter your email"
 
-                    className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
+                    className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B] text-white placeholder-gray-500 transition duration-300"
                   />
 
                   <div className="absolute right-5 top-1/2 -translate-y-1/2">
@@ -653,7 +673,7 @@ export default function Signup() {
 
                     placeholder="Create password"
 
-                    className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
+                    className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B] text-white placeholder-gray-500 transition duration-300"
                   />
 
                   <button
@@ -726,7 +746,7 @@ export default function Signup() {
 
                     placeholder="Confirm password"
 
-                    className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
+                    className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B] text-white placeholder-gray-500 transition duration-300"
                   />
 
                   <button
@@ -807,7 +827,7 @@ export default function Signup() {
 
                 disabled={loading}
 
-                className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black hover:scale-[1.02] transition"
+                className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
 
                 {

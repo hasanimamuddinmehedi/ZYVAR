@@ -16,7 +16,7 @@ export default function Home() {
       <SEO
         title="ZYVAR"
         description="Shop premium skincare, watches, perfumes, fashion, imported foods and lifestyle products from ZYVAR."
-        image="https://yourdomain.com/banner.jpg"
+        image="https://res.cloudinary.com/dhppdatrl/image/upload/v1779428106/gn6qmcgvjwbgnfhmsbrf.png"
         />
       <Navbar />
       <Hero />

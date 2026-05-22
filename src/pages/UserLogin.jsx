@@ -1,10 +1,14 @@
-import { useState }
-from "react";
+import {
+  useState,
+  useEffect,
+} from "react";
 
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
+  signInWithRedirect,
   signInWithPopup,
+  getRedirectResult,
 } from "firebase/auth";
 
 import {
@@ -30,6 +34,21 @@ export default function UserLogin() {
   const [loading,
     setLoading] =
     useState(false);
+
+  useEffect(() => {
+
+    getRedirectResult(auth)
+      .then((result) => {
+
+        if (result?.user) {
+
+          console.log(result.user);
+
+        }
+
+      });
+
+  }, []);
 
   // LOGIN
   const handleLogin =
@@ -75,7 +94,7 @@ export default function UserLogin() {
         const provider =
           new GoogleAuthProvider();
 
-        await signInWithPopup(
+        await signInWithRedirect(
           auth,
           provider
         );
@@ -98,7 +117,7 @@ export default function UserLogin() {
 
         <div className="text-center mb-10">
 
-          <h1 className="text-5xl font-black  tracking-[0.3em] text-[#C6922B] mb-4">
+          <h1 className="text-5xl font-black tracking-[0.3em] text-[#C6922B] mb-4">
             ZYVAR
           </h1>
 
@@ -159,7 +178,7 @@ export default function UserLogin() {
 
             disabled={loading}
 
-            className="w-full py-5 rounded-2xl bg-[#C6922B] text-black font-black "
+            className="w-full py-5 rounded-2xl bg-[#C6922B] text-black font-black"
           >
 
             {
@@ -213,7 +232,9 @@ export default function UserLogin() {
           </button>
 
         </div>
+
       </div>
+
     </div>
   );
 }

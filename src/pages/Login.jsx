@@ -1,10 +1,13 @@
-import { useState } from "react";
+import React, {
+  useState,
+} from "react";
 
 import {
   signInWithEmailAndPassword,
-  signInWithPopup,
   GoogleAuthProvider,
   sendPasswordResetEmail,
+  signInWithPopup,
+  sendEmailVerification,
 } from "firebase/auth";
 
 import {
@@ -32,6 +35,7 @@ import {
 import {
   trackEvent,
 } from "../utils/analytics";
+
 
 export default function Login() {
 
@@ -77,6 +81,11 @@ export default function Login() {
       localStorage.setItem(
         "zyvar-user",
         "true"
+      );
+
+      localStorage.setItem(
+        "zyvar-user-id",
+        user.uid
       );
 
       localStorage.setItem(
@@ -167,6 +176,7 @@ export default function Login() {
 
         setLoading(true);
 
+        // STEP 1 — SIGN IN USER
         const userCredential =
 
           await signInWithEmailAndPassword(
@@ -175,11 +185,30 @@ export default function Login() {
             password
           );
 
-        await saveUserData(
-          userCredential.user
-        );
+        // STEP 2 — GET USER OBJECT
+        const user =
+          userCredential.user;
 
-        // REMEMBER ME
+        // STEP 3 — REFRESH VERIFICATION STATUS
+        // (Firebase doesn't always reflect it instantly)
+        await user.reload();
+
+        // STEP 4 — CHECK EMAIL VERIFICATION
+        if (!user.emailVerified) {
+
+          await sendEmailVerification(user);
+
+          alert(
+            "Please verify your email first. Verification email sent again."
+          );
+
+          return;
+        }
+
+        // STEP 5 — SAVE USER DATA
+        await saveUserData(user);
+
+        // STEP 6 — REMEMBER ME
         if (rememberMe) {
 
           localStorage.setItem(
@@ -194,6 +223,7 @@ export default function Login() {
           email
         );
 
+        // STEP 7 — SUCCESS
         alert(
           "Successfully Logged In"
         );
@@ -261,14 +291,15 @@ export default function Login() {
       }
     };
 
-  // GOOGLE LOGIN
+  // GOOGLE LOGIN — using signInWithPopup
   const handleGoogleLogin =
     async () => {
 
       try {
 
-        const result =
+        setLoading(true);
 
+        const result =
           await signInWithPopup(
             auth,
             provider
@@ -288,9 +319,19 @@ export default function Login() {
 
         console.log(error);
 
-        alert(
-          error.message
-        );
+        if (
+          error.code !==
+          "auth/popup-closed-by-user"
+        ) {
+
+          alert(
+            error.message
+          );
+        }
+
+      } finally {
+
+        setLoading(false);
       }
     };
 
@@ -476,7 +517,9 @@ export default function Login() {
                 handleGoogleLogin
               }
 
-              className="w-full py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] transition duration-300 flex items-center justify-center gap-4 font-bold mb-8"
+              disabled={loading}
+
+              className="w-full py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] transition duration-300 flex items-center justify-center gap-4 font-bold mb-8 disabled:opacity-50 disabled:cursor-not-allowed"
             >
 
               <img
@@ -531,7 +574,7 @@ export default function Login() {
 
                   required
 
-                  className={`w-full px-6 py-5 rounded-2xl bg-black/30 border outline-none transition ${
+                  className={`w-full px-6 py-5 rounded-2xl bg-black/30 border outline-none transition text-white placeholder-gray-500 ${
                     isEmailValid || !email
                       ? "border-white/10 focus:border-[#C6922B]"
                       : "border-red-500"
@@ -599,7 +642,7 @@ export default function Login() {
 
                     required
 
-                    className={`w-full px-6 py-5 rounded-2xl bg-black/30 border outline-none transition ${
+                    className={`w-full px-6 py-5 rounded-2xl bg-black/30 border outline-none transition text-white placeholder-gray-500 ${
                       isPasswordValid || !password
                         ? "border-white/10 focus:border-[#C6922B]"
                         : "border-red-500"
@@ -702,7 +745,7 @@ export default function Login() {
 
                 disabled={loading}
 
-                className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black hover:scale-[1.02] transition duration-300"
+                className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black hover:scale-[1.02] transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
 
                 {
@@ -720,7 +763,7 @@ export default function Login() {
 
               <p className="text-gray-400">
 
-                Don’t have an account?
+                Don't have an account?
 
                 <Link
 

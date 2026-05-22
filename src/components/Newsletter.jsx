@@ -1,4 +1,64 @@
+import {
+  useState,
+} from "react";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+
+import {
+  db,
+} from "../firebase/firebase";
+
 export default function Newsletter() {
+  const [newsletterEmail,
+  setNewsletterEmail] =
+  useState("");
+  const handleNewsletterSubscribe =
+  async () => {
+
+    if (!newsletterEmail) {
+
+      return alert(
+        "Please enter your email."
+      );
+    }
+
+    try {
+
+      await addDoc(
+
+        collection(
+          db,
+          "newsletterSubscribers"
+        ),
+
+        {
+
+          email:
+            newsletterEmail,
+
+          createdAt:
+            serverTimestamp(),
+        }
+      );
+
+      alert(
+        "Subscribed Successfully!"
+      );
+
+      setNewsletterEmail("");
+
+    } catch (error) {
+
+      console.log(error);
+
+      alert(
+        error.message
+      );
+    }
+  };
   return (
     <section className="px-4 sm:px-6 lg:px-10 py-24">
       <div className="max-w-4xl mx-auto text-center">
@@ -17,11 +77,22 @@ export default function Newsletter() {
         <div className="flex flex-col md:flex-row gap-5">
           <input
             type="email"
+            value={newsletterEmail}
+
+onChange={(e) =>
+  setNewsletterEmail(
+    e.target.value
+  )
+}
             placeholder="Enter your email"
             className="flex-1 px-6 py-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#C6922B]"
           />
 
-          <button className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-black ">
+          <button
+  onClick={
+    handleNewsletterSubscribe
+  }
+  className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-black ">
             Subscribe
           </button>
         </div>

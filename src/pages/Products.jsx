@@ -1,45 +1,89 @@
-import { useEffect, useState } from "react";
-import {  collection,  getDocs, } from "firebase/firestore";
-import { db } from "../firebase/firebase";
-import { useCart } from "../context/CartContext";
-import {  useWishlist, } from "../context/WishlistContext";
-import {  Link, } from "react-router-dom";
-import {  trackEvent, } from "../utils/analytics";
-import { LazyLoadImage } from "react-lazy-load-image-component";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  collection,
+  getDocs,
+} from "firebase/firestore";
+
+import {
+  db,
+} from "../firebase/firebase";
+
+import {
+  useCart,
+} from "../context/CartContext";
+
+import {
+  useWishlist,
+} from "../context/WishlistContext";
+
+import {
+  Link,
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  trackEvent,
+} from "../utils/analytics";
+
+import {
+  LazyLoadImage,
+} from "react-lazy-load-image-component";
+
+import {
+  ShoppingBag,
+  Heart,
+  Zap,
+  Sparkles,
+  ArrowRight,
+} from "lucide-react";
+
+import RequestProductModal from "../components/RequestProductModal";
+import Footer from "../components/Footer";
 
 export default function Products() {
 
-  const [products, setProducts] = useState([]);
-  const [search, setSearch] = useState("");
-  const { addToCart } = useCart();
+  const [products,
+    setProducts] =
+    useState([]);
 
-  const filteredProducts =
-    products.filter((product) =>
+  const [search,
+    setSearch] =
+    useState("");
 
-      product.name
-        ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
+  const [requestOpen,
+    setRequestOpen] =
+    useState(false);
 
-      ||
+  const [loading,
+    setLoading] =
+    useState(true);
 
-      product.category
-        ?.toLowerCase()
-        .includes(
-          search.toLowerCase()
-        )
-    );
+  const [selectedCategory,
+    setSelectedCategory] =
+    useState("All");
 
-  const [loading, setLoading] = useState(true);
-
-  // ✅ Hooks must be INSIDE component
+  const {
+    addToCart,
+  } = useCart();
 
   const {
     addToWishlist,
     removeFromWishlist,
     isInWishlist,
   } = useWishlist();
+
+  const navigate =
+    useNavigate();
+
+  const isLoggedIn =
+    localStorage.getItem(
+      "zyvar-user"
+    ) === "true";
 
   // FETCH PRODUCTS
   useEffect(() => {
@@ -72,253 +116,523 @@ export default function Products() {
     } finally {
 
       setLoading(false);
-
     }
   };
 
+  // CATEGORIES
+  const categories =
+    useMemo(() => {
+
+      const uniqueCategories = [
+        "All",
+
+        ...new Set(
+          products
+            .map((product) =>
+              product.category
+            )
+            .filter(Boolean)
+        ),
+      ];
+
+      return uniqueCategories;
+
+    }, [products]);
+
+  // FILTER PRODUCTS
+  const filteredProducts =
+    products.filter((product) => {
+
+      const matchesSearch =
+        product.name
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          )
+
+        ||
+
+        product.category
+          ?.toLowerCase()
+          .includes(
+            search.toLowerCase()
+          );
+
+      const matchesCategory =
+        selectedCategory === "All"
+
+          ? true
+
+          : product.category ===
+            selectedCategory;
+
+      return (
+        matchesSearch &&
+        matchesCategory
+      );
+    });
+
+  // BUY NOW
+  const handleBuyNow =
+    (product) => {
+
+      if (!isLoggedIn) {
+
+        navigate("/login");
+
+        return;
+      }
+
+      addToCart(product);
+
+      navigate("/payment");
+    };
+
   return (
 
-    <div className="min-h-screen bg-[#0B0B0B] text-white">
+    <>
+      <div className="min-h-screen bg-[#0B0B0B] text-white overflow-hidden">
 
-      {/* HERO */}
-      <section className="relative overflow-hidden px-4 sm:px-6 lg:px-10 py-24 border-b border-white/10">
+        {/* HERO */}
+        <section className="relative overflow-hidden pt-28 lg:pt-36 pb-24 border-b border-white/10">
 
-        <div className="absolute top-0 left-0 w-[400px] h-[400px] rounded-full bg-[#C6922B]/10 blur-[120px]" />
+          {/* BACKGROUND IMAGE — opacity raised from 20 to 60 so it's clearly visible */}
+          <div className="absolute inset-0 opacity-60">
 
-        <div className="max-w-7xl mx-auto relative z-10">
-
-          <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-5">
-            Premium Ecommerce Store
-          </p>
-
-          <h1 className="text-2xl sm:text-3xl lg:text-5xl font-black  leading-[0.9] mb-8">
-            Discover
-            <span className="block text-[#C6922B]">
-              Luxury Collections
-            </span>
-          </h1>
-
-          <p className="text-gray-300 text-lg max-w-3xl leading-relaxed mb-10">
-            Explore premium skincare, luxury watches, imported perfumes,
-            fashion accessories, bodycare and lifestyle products from ZYVAR.
-          </p>
-
-          <div className="flex flex-wrap gap-4">
-
-            <button className="px-8 py-4 rounded-2xl bg-[#C6922B] text-black font-black  hover:scale-105 transition">
-              Shop Now
-            </button>
-
-            <button className="px-8 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition">
-              Explore Categories
-            </button>
+            <img
+              src="https://res.cloudinary.com/dhppdatrl/image/upload/v1779428106/gn6qmcgvjwbgnfhmsbrf.png"
+              alt="ZYVAR Products"
+              className="w-full h-full object-cover"
+            />
 
           </div>
 
-        </div>
-      </section>
+          {/* OVERLAY — lightened so the image shows through more */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-[#0B0B0B]" />
 
-      {/* PRODUCTS */}
-      <section className="px-4 sm:px-6 lg:px-10 py-20">
+          {/* GLOW */}
+          <div className="absolute top-0 left-0 w-[500px] h-[500px] rounded-full bg-[#C6922B]/10 blur-[150px]" />
 
-        <div className="max-w-7xl mx-auto">
+          <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
 
-          {/* Header */}
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-14">
+            <div className="max-w-3xl">
 
-            <div>
+              <div className="inline-flex items-center gap-3 px-5 py-3 rounded-full border border-[#C6922B]/20 bg-[#C6922B]/10 backdrop-blur-xl mb-8">
 
-              <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-4">
-                Featured Products
+                <Sparkles size={18} className="text-[#C6922B]" />
+
+                <p className="uppercase tracking-[0.25em] text-xs text-[#C6922B] font-semibold">
+                  Premium Luxury Collections
+                </p>
+
+              </div>
+
+              <h1 className="text-4xl sm:text-5xl lg:text-7xl font-black leading-[0.95] mb-8">
+                Explore
+                <span className="block text-[#C6922B]">
+                  ZYVAR Products
+                </span>
+              </h1>
+
+              <p className="text-gray-300 text-lg md:text-xl leading-relaxed max-w-2xl mb-10">
+                Premium skincare, imported perfumes, luxury accessories,
+                watches, lifestyle essentials and curated collections.
               </p>
 
-              <h2 className="text-4xl md:text-5xl font-black ">
-                Trending Collections
-              </h2>
+              <div className="flex flex-wrap gap-4">
 
-            </div>
+                <button
+                  onClick={() => {
 
-            <div className="mt-6 max-w-xl">
-
-              <input
-                type="text"
-                placeholder="Search products..."
-                value={search}
-                onChange={(e) => {
-                    setSearchTerm(
-                          e.target.value
-                          );
-
-                          trackEvent(
-                                "Search",
-                                "Product Search",
-                                    e.target.value
-                                    );
-                                  }}
-
-                className="w-full px-6 py-4 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#C6922B] text-white placeholder-gray-500"
-              />
-
-            </div>
-
-            <button className="px-7 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition">
-              View All Products
-            </button>
-
-          </div>
-
-          {/* LOADING */}
-          {loading ? (
-
-            <div className="flex items-center justify-center py-32">
-
-              <div className="w-16 h-16 border-4 border-[#C6922B] border-t-transparent rounded-full animate-spin" />
-
-            </div>
-
-          ) : filteredProducts.length === 0 ? (
-
-            <div className="rounded-[40px] border border-white/10 bg-white/5 p-16 text-center">
-
-              <h2 className="text-4xl font-black  mb-5">
-                No Matching Products
-              </h2>
-
-              <p className="text-gray-400">
-                Upload products from the admin panel.
-              </p>
-
-            </div>
-
-          ) : (
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8">
-
-              {filteredProducts.map((product) => (
-
-                <Link
-
-                  to={`/product/${product.id}`}
-
-                  key={product.id}
-
-                  className="group rounded-[32px] overflow-hidden border border-white/10 bg-white/5 backdrop-blur-xl hover:border-[#C6922B] transition duration-500 hover:-translate-y-3 block"
+                    document
+                      .getElementById("products-section")
+                      ?.scrollIntoView({
+                        behavior: "smooth",
+                      });
+                  }}
+                  className="px-8 py-4 rounded-2xl bg-[#C6922B] text-black font-black hover:scale-105 transition duration-300"
                 >
+                  Explore Products
+                </button>
 
-                  {/* IMAGE */}
-                  <div className="relative overflow-hidden">
+                <button
+                  onClick={() =>
+                    setRequestOpen(true)
+                  }
+                  className="px-8 py-4 rounded-2xl border border-[#C6922B]/30 bg-[#C6922B]/10 text-[#C6922B] font-bold hover:bg-[#C6922B] hover:text-black transition duration-300"
+                >
+                  Request Product
+                </button>
 
-                    <LazyLoadImage
-                      src={product.image}
-                        //effect="blur"
-                      alt={product.name}
-                      className="h-64 sm:h-72 lg:h-80 w-full object-cover group-hover:scale-110 transition duration-700"
-                    />
+              </div>
 
-                    <div className="absolute top-5 left-5 px-4 py-2 rounded-full bg-[#C6922B] text-black text-xs font-bold uppercase tracking-widest">
-                      {product.category}
-                    </div>
+            </div>
 
-                  </div>
+          </div>
 
-                  {/* CONTENT */}
-                  <div className="p-7">
+        </section>
 
-                    <h3 className="text-xl sm:text-2xl font-bold mb-3 leading-snug">
-                      {product.name}
-                    </h3>
+        {/* PRODUCTS */}
+        <section
+          id="products-section"
+          className="px-4 sm:px-6 lg:px-10 py-20"
+        >
 
-                    <p className="text-gray-400 mb-6 line-clamp-2">
-                      {product.description ||
-                        "Premium imported luxury collection."}
-                    </p>
+          <div className="max-w-7xl mx-auto">
 
-                    <div className="flex justify-between items-center mb-6">
+            {/* HEADER */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-8 mb-14">
 
-                      <div>
+              <div>
 
-                        <p className="text-gray-400 text-sm mb-1">
-                          Price
-                        </p>
+                <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-4">
+                  Product Collections
+                </p>
 
-                        <h4 className="text-2xl sm:text-3xl font-black  text-[#C6922B]">
-                          ৳{product.price}
-                        </h4>
+                <h2 className="text-4xl md:text-5xl font-black leading-tight">
+                  Shop By
+                  <span className="block text-[#C6922B]">
+                    Categories
+                  </span>
+                </h2>
 
-                      </div>
+              </div>
 
-                      <div className="text-right">
+              {/* REQUEST PRODUCT CTA */}
+              <button
+                onClick={() =>
+                  setRequestOpen(true)
+                }
+                className="group relative overflow-hidden px-8 py-5 rounded-[24px] bg-gradient-to-r from-[#C6922B] to-[#E8BE56] text-black font-black shadow-2xl shadow-yellow-500/20 hover:scale-[1.03] transition duration-300"
+              >
 
-                        <p className="text-gray-400 text-sm mb-1">
-                          Stock
-                        </p>
+                <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition duration-1000" />
 
-                        <h4 className="text-xl font-bold">
-                          {product.stock}
-                        </h4>
+                <div className="relative flex items-center gap-3">
 
-                      </div>
+                  <Zap size={20} />
 
-                    </div>
+                  Can't Find Product? Request It
 
-                    <div className="flex gap-3">
+                  <ArrowRight size={18} />
 
-                      <button
-                        onClick={() => {
-                            addToCart(product);
-                              trackEvent(
-                                    "Cart",
-                                        "Add To Cart",
-                                            product.name
-                                            );
-                                          }}
-                        className="flex-1 py-4 rounded-2xl bg-[#C6922B] text-black font-black  hover:scale-[1.02] transition duration-300"
-                      >
-                        Add to Cart
-                      </button>
+                </div>
 
-                      <button
-                        onClick={() => {
-                            addToWishlist(
-                                  product
-                                  );
-                                    trackEvent(
-                                          "Wishlist",
-                                              "Add Wishlist",
-                                                  product.name
-                                                  );
-                                                }}
+              </button>
 
-                        className={`w-14 rounded-2xl border transition text-xl
+            </div>
 
-                        ${
-                          isInWishlist(product.id)
+            {/* CATEGORY FILTERS */}
+            <div className="flex flex-wrap gap-4 mb-14">
 
-                            ? "bg-red-500 text-white border-red-500"
+              {categories.map((category, index) => (
 
-                            : "border-white/10 bg-white/5 hover:border-[#C6922B]"
-                        }
-                        `}
-                      >
-                        ❤
-                      </button>
+                <button
+                  key={index}
+                  onClick={() =>
+                    setSelectedCategory(category)
+                  }
+                  className={`px-6 py-3 rounded-2xl font-semibold transition duration-300 border
 
-                    </div>
+                  ${
+                    selectedCategory === category
 
-                  </div>
+                      ? "bg-[#C6922B] text-black border-[#C6922B]"
 
-                </Link>
+                      : "border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B]"
+                  }
+                  `}
+                >
+                  {category}
+                </button>
 
               ))}
 
             </div>
 
-          )}
+            {/* LOADING */}
+            {loading ? (
 
-        </div>
+              <div className="flex items-center justify-center py-32">
 
-      </section>
+                <div className="w-16 h-16 border-4 border-[#C6922B] border-t-transparent rounded-full animate-spin" />
 
-    </div>
+              </div>
+
+            ) : filteredProducts.length === 0 ? (
+
+              <div className="rounded-[40px] border border-white/10 bg-white/5 p-16 text-center backdrop-blur-xl">
+
+                <h2 className="text-4xl font-black mb-5">
+                  No Matching Products
+                </h2>
+
+                <p className="text-gray-400 mb-8 text-lg">
+                  We couldn't find your desired product.
+                </p>
+
+                <button
+                  onClick={() =>
+                    setRequestOpen(true)
+                  }
+                  className="px-8 py-4 rounded-2xl bg-[#C6922B] text-black font-black hover:scale-105 transition"
+                >
+                  Request This Product
+                </button>
+
+              </div>
+
+            ) : (
+
+              <>
+                {/* PRODUCTS GRID */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8">
+
+                  {filteredProducts.map((product) => (
+
+                    <div
+                      key={product.id}
+                      className="group rounded-[32px] overflow-hidden border border-white/10 bg-white/5 backdrop-blur-xl hover:border-[#C6922B] transition duration-500 hover:-translate-y-3"
+                    >
+
+                      {/* IMAGE */}
+                      <Link
+                        to={`/product/${product.id}`}
+                        className="block"
+                      >
+
+                        <div className="relative overflow-hidden">
+
+                          <LazyLoadImage
+                            src={product.image}
+                            alt={product.name}
+                            className="h-64 sm:h-72 lg:h-80 w-full object-cover group-hover:scale-110 transition duration-700"
+                          />
+
+                          <div className="absolute top-5 left-5 px-4 py-2 rounded-full bg-[#C6922B] text-black text-xs font-bold uppercase tracking-widest">
+                            {product.category}
+                          </div>
+
+                        </div>
+
+                      </Link>
+
+                      {/* CONTENT */}
+                      <div className="p-7">
+
+                        <Link to={`/product/${product.id}`}>
+
+                          <h3 className="text-xl sm:text-2xl font-bold mb-3 leading-snug group-hover:text-[#C6922B] transition">
+                            {product.name}
+                          </h3>
+
+                        </Link>
+
+                        <p className="text-gray-400 mb-6 line-clamp-2 min-h-[48px]">
+                          {
+                            product.description ||
+                            "Premium imported luxury collection."
+                          }
+                        </p>
+
+                        {/* PRICE */}
+                        <div className="flex justify-between items-center mb-6">
+
+                          <div>
+
+                            <p className="text-gray-400 text-sm mb-1">
+                              Price
+                            </p>
+
+                            <h4 className="text-2xl sm:text-3xl font-black text-[#C6922B]">
+                              ৳{product.price}
+                            </h4>
+
+                          </div>
+
+                          <div className="text-right">
+
+                            <p className="text-gray-400 text-sm mb-1">
+                              Stock
+                            </p>
+
+                            <h4 className="text-xl font-bold">
+                              {product.stock}
+                            </h4>
+
+                          </div>
+
+                        </div>
+
+                        {/* BUTTONS */}
+                        <div className="space-y-3">
+
+                          {/* BUY NOW */}
+                          <button
+                            onClick={() =>
+                              handleBuyNow(product)
+                            }
+                            className="w-full py-4 rounded-2xl bg-[#C6922B] text-black font-black hover:scale-[1.02] transition duration-300 flex items-center justify-center gap-3"
+                          >
+
+                            <Zap size={20} />
+
+                            Buy Now
+
+                          </button>
+
+                          {/* CART + WISHLIST */}
+                          <div className="flex gap-3">
+
+                            <button
+                              onClick={() => {
+
+                                addToCart(product);
+
+                                trackEvent(
+                                  "Cart",
+                                  "Add To Cart",
+                                  product.name
+                                );
+
+                              }}
+                              className="flex-1 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition duration-300 flex items-center justify-center gap-2"
+                            >
+
+                              <ShoppingBag size={18} />
+
+                              Cart
+
+                            </button>
+
+                            <button
+                              onClick={() => {
+
+                                if (
+                                  isInWishlist(product.id)
+                                ) {
+
+                                  removeFromWishlist(
+                                    product.id
+                                  );
+
+                                } else {
+
+                                  addToWishlist(
+                                    product
+                                  );
+
+                                  trackEvent(
+                                    "Wishlist",
+                                    "Add Wishlist",
+                                    product.name
+                                  );
+                                }
+
+                              }}
+                              className={`w-14 rounded-2xl border transition text-xl flex items-center justify-center
+
+                              ${
+                                isInWishlist(product.id)
+
+                                  ? "bg-red-500 text-white border-red-500"
+
+                                  : "border-white/10 bg-white/5 hover:border-[#C6922B]"
+                              }
+                              `}
+                            >
+                              <Heart size={20} />
+                            </button>
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  ))}
+
+                </div>
+
+                {/* REQUEST PRODUCT SECTION */}
+                {search.length > 0 && (
+
+                  <div className="mt-16 relative overflow-hidden rounded-[40px] border border-[#C6922B]/20 bg-gradient-to-r from-[#1A1A1A] to-[#101010] p-10 text-center">
+
+                    <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-[#C6922B]/10 blur-[120px]" />
+
+                    <div className="relative z-10">
+
+                      <div className="inline-flex items-center gap-3 px-5 py-3 rounded-full border border-[#C6922B]/20 bg-[#C6922B]/10 mb-8">
+
+                        <Sparkles size={18} className="text-[#C6922B]" />
+
+                        <span className="text-[#C6922B] uppercase tracking-[0.25em] text-xs font-semibold">
+                          Product Not Found?
+                        </span>
+
+                      </div>
+
+                      <h3 className="text-4xl font-black mb-5 leading-tight">
+                        Request Any
+                        <span className="block text-[#C6922B]">
+                          Premium Product
+                        </span>
+                      </h3>
+
+                      <p className="text-gray-400 mb-10 max-w-2xl mx-auto text-lg leading-relaxed">
+                        ZYVAR can source luxury skincare, imported perfumes,
+                        fashion accessories, watches and exclusive collections
+                        specially for you.
+                      </p>
+
+                      <button
+                        onClick={() =>
+                          setRequestOpen(true)
+                        }
+                        className="group px-10 py-5 rounded-2xl bg-[#C6922B] text-black font-black hover:scale-105 transition duration-300 shadow-2xl shadow-yellow-500/20"
+                      >
+
+                        <span className="flex items-center gap-3">
+
+                          <Zap size={20} />
+
+                          Request Product Now
+
+                          <ArrowRight className="group-hover:translate-x-1 transition" size={18} />
+
+                        </span>
+
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                )}
+
+              </>
+
+            )}
+
+          </div>
+
+        </section>
+
+        {/* FOOTER */}
+        <Footer />
+
+      </div>
+
+      {/* REQUEST MODAL */}
+      <RequestProductModal
+        open={requestOpen}
+        setOpen={setRequestOpen}
+        searchText={search}
+      />
+
+    </>
   );
 }

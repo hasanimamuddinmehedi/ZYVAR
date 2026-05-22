@@ -1,4 +1,9 @@
+import {
+  useNavigate,
+} from "react-router-dom";
 export default function BrandBanner() {
+  const navigate =
+  useNavigate();
   return (
     <section className="px-4 sm:px-6 lg:px-10 py-24">
       <div className="max-w-7xl mx-auto rounded-[50px] border border-white/10 bg-gradient-to-r from-[#1A1A1A] to-[#0B0B0B] p-12 lg:p-20 text-center">
@@ -13,7 +18,13 @@ export default function BrandBanner() {
           </span>
         </h2>
 
-        <button className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-black  hover:scale-105 transition">
+        <button
+
+  onClick={() =>
+    navigate("/products")
+  }
+
+  className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-black  hover:scale-105 transition">
           Explore Now
         </button>
       </div>

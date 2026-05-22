@@ -16,23 +16,38 @@ import Cart from "./pages/Cart";
 import Wishlist from "./pages/Wishlist";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
-import Admin from "./pages/Admin";
 import Payment from "./pages/Payment";
 import Signup from "./pages/Signup";
 import UserLogin from "./pages/UserLogin";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
-import Navbar from "./components/Navbar";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import ProfileSettings from "./pages/ProfileSettings";
+import OrderSuccess from "./pages/OrderSuccess";
+import OrderTracking from "./pages/OrderTracking";
+import MyOrders from "./pages/MyOrders";
+
+import Navbar from "./components/Navbar";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 
 import {
   trackPage,
 } from "./utils/analytics";
 
-export default function App() {
+/* ADMIN LAYOUT */
+import AdminLayout from "./pages/admin/AdminLayout";
+
+/* ADMIN PAGES */
+import DashboardPage from "./pages/admin/DashboardPage";
+import OrdersPage from "./pages/admin/OrdersPage";
+import ProductsPage from "./pages/admin/ProductsPage";
+import UploadPage from "./pages/admin/UploadPage";
+import SettingsPage from "./pages/admin/SettingsPage";
+import ProductRequestsPage from "./pages/admin/ProductRequestsPage";
+
+function AppContent() {
 
   const location =
     useLocation();
@@ -46,7 +61,7 @@ export default function App() {
 
   }, [location]);
 
-  // HIDE NAVBAR ON AUTH PAGES
+  // HIDE NAVBAR ON AUTH + ADMIN PAGES
   const hideNavbarRoutes = [
     "/login",
     "/signup",
@@ -54,8 +69,13 @@ export default function App() {
   ];
 
   const shouldHideNavbar =
+
     hideNavbarRoutes.includes(
       location.pathname
+    ) ||
+
+    location.pathname.startsWith(
+      "/admin"
     );
 
   return (
@@ -179,23 +199,29 @@ export default function App() {
           }
         />
 
-        {/* ADMIN PANEL */}
+        {/* USER ORDERS */}
         <Route
-          path="/admin"
+          path="/my-orders"
           element={
-            <AdminRoute>
-              <Admin />
-            </AdminRoute>
+            <ProtectedRoute>
+              <MyOrders />
+            </ProtectedRoute>
           }
         />
 
-        {/* ORDERS */}
+        {/* ORDER SUCCESS */}
         <Route
-          path="/orders"
+          path="/order-success/:id"
           element={
-            <AdminRoute>
-              <Orders />
-            </AdminRoute>
+            <OrderSuccess />
+          }
+        />
+
+        {/* ORDER TRACKING */}
+        <Route
+          path="/order-tracking/:id"
+          element={
+            <OrderTracking />
           }
         />
 
@@ -215,7 +241,88 @@ export default function App() {
           }
         />
 
+        {/* ADMIN PANEL */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          }
+        >
+
+          {/* DASHBOARD */}
+          <Route
+            index
+            element={
+              <DashboardPage />
+            }
+          />
+
+          <Route
+            path="dashboard"
+            element={
+              <DashboardPage />
+            }
+          />
+
+          {/* ORDERS */}
+          <Route
+            path="orders"
+            element={
+              <OrdersPage />
+            }
+          />
+
+          {/* PRODUCTS */}
+          <Route
+            path="products"
+            element={
+              <ProductsPage />
+            }
+          />
+
+          {/* UPLOAD */}
+          <Route
+            path="upload"
+            element={
+              <UploadPage />
+            }
+          />
+
+          {/* SETTINGS */}
+          <Route
+            path="settings"
+            element={
+              <SettingsPage />
+            }
+          />
+
+          <Route
+  path="product-requests"
+  element={<ProductRequestsPage />}
+/>
+
+
+        </Route>
+
+        {/* LEGACY ADMIN ORDERS PAGE */}
+        <Route
+          path="/orders"
+          element={
+            <AdminRoute>
+              <Orders />
+            </AdminRoute>
+          }
+        />
       </Routes>
     </>
+  );
+}
+
+export default function App() {
+
+  return (
+    <AppContent />
   );
 }

@@ -414,7 +414,7 @@ export default function Profile() {
                 <button
 
                   onClick={() =>
-                    navigate("/orders")
+                    navigate("/my-orders")
                   }
 
                   className="px-6 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] transition flex items-center gap-3"

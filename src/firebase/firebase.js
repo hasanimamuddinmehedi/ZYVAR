@@ -1,14 +1,14 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  initializeApp,
+} from "firebase/app";
 
+import {
+  getAuth,
+} from "firebase/auth";
 
-// 🔍 DEBUG: verify environment variables are loaded
-console.log("🔥 FIREBASE ENV CHECK");
-console.log("API KEY:", import.meta.env.VITE_FIREBASE_API_KEY);
-console.log("AUTH DOMAIN:", import.meta.env.VITE_FIREBASE_AUTH_DOMAIN);
-console.log("PROJECT ID:", import.meta.env.VITE_FIREBASE_PROJECT_ID);
-
+import {
+  getFirestore,
+} from "firebase/firestore";
 
 const firebaseConfig = {
 
@@ -34,19 +34,23 @@ const firebaseConfig = {
     import.meta.env.VITE_FIREBASE_APP_ID,
 
   measurementId:
-    import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+    import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-
-// 🚨 Safety check (prevents silent invalid API errors)
 if (!firebaseConfig.apiKey) {
-  throw new Error("Firebase API key is missing. Check your .env file.");
+
+  throw new Error(
+    "Firebase API key is missing. Check your .env file."
+  );
 }
 
-const app = initializeApp(firebaseConfig);
+const app =
+  initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+export const auth =
+  getAuth(app);
 
-export const db = getFirestore(app);
+export const db =
+  getFirestore(app);
 
 export default app;

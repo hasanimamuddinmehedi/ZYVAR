@@ -31,6 +31,8 @@ import {
 
 export default function Payment() {
 
+  const [orderPlaced, setOrderPlaced] = useState(false);
+
 
 const bkashLogo =
   "https://www.logo.wine/a/logo/BKash/BKash-Logo.wine.svg";
@@ -47,6 +49,10 @@ const nagadLogo =
   } = useCart();
 
   const [name, setName] =
+    useState("");
+
+  // EMAIL STATE
+  const [email, setEmail] =
     useState("");
 
   const [phone, setPhone] =
@@ -138,6 +144,13 @@ const nagadLogo =
               ""
             );
 
+            // AUTO FILL EMAIL FROM FIREBASE AUTH
+            setEmail(
+              user.email ||
+              savedProfile?.email ||
+              ""
+            );
+
             setPhone(
 
               savedProfile?.phone ||
@@ -185,15 +198,15 @@ const nagadLogo =
   // EMPTY CART
   useEffect(() => {
 
-    if (
-      !cart ||
-      cart.length === 0
-    ) {
+  if (
+    !orderPlaced &&
+    (!cart || cart.length === 0)
+  ) {
 
-      navigate("/cart");
-    }
+    navigate("/cart");
+  }
 
-  }, [cart]);
+}, [cart, orderPlaced, navigate]);
 
   // TOTAL
   const total = cart.reduce(
@@ -257,6 +270,7 @@ ${address}
           JSON.stringify({
 
             name,
+            email,
             phone,
             division,
             district,
@@ -276,11 +290,17 @@ ${address}
 
           {
 
-            userId:
-              auth.currentUser.uid,
+            userId: auth.currentUser?.uid || "",
 
             userEmail:
-              auth.currentUser.email,
+              auth.currentUser?.email ||
+              email ||
+              "",
+
+            email:
+              auth.currentUser?.email ||
+              email ||
+              "",
 
             name,
             phone,
@@ -317,13 +337,15 @@ ${address}
           }
         );
 
-        alert(
-          "Order Placed Successfully"
-        );
+        alert("Order Placed Successfully");
 
-        clearCart();
+setOrderPlaced(true);
 
-        navigate("/orders");
+clearCart();
+
+navigate("/orders", {
+  replace: true,
+});
 
       } catch (error) {
 
@@ -418,6 +440,36 @@ ${address}
                 }
 
                 placeholder="Enter your full name"
+
+                className="w-full px-6 py-5 rounded-2xl bg-black/40 border border-white/10 outline-none focus:border-[#C6922B] transition"
+              />
+
+            </div>
+
+            {/* EMAIL */}
+            <div>
+
+              <label className="block mb-3 text-sm uppercase tracking-widest text-gray-400">
+
+                Email Address
+
+              </label>
+
+              <input
+
+                type="email"
+
+                required
+
+                value={email}
+
+                onChange={(e) =>
+                  setEmail(
+                    e.target.value
+                  )
+                }
+
+                placeholder="Enter your email"
 
                 className="w-full px-6 py-5 rounded-2xl bg-black/40 border border-white/10 outline-none focus:border-[#C6922B] transition"
               />
@@ -581,7 +633,7 @@ ${address}
               {/* UPAZILA */}
               <div>
 
-                <label className="block mb-3 text-sm uppercase tracking-widest text-gray-400">
+                <label className="block mb-3 text-sm uppercase tracking-widests text-gray-400">
 
                   Thana / Upazila
 

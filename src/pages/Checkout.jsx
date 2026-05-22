@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { useNavigate } from "react-router-dom";
+
 import { useCart } from "../context/CartContext";
 
 import {
@@ -8,9 +10,15 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
-import { db } from "../firebase/firebase";
+import {
+  db,
+  auth,
+} from "../firebase/firebase";
 
 export default function Checkout() {
+
+  const navigate =
+    useNavigate();
 
   const {
     cartItems,
@@ -19,9 +27,6 @@ export default function Checkout() {
   } = useCart();
 
   const [loading, setLoading] =
-    useState(false);
-
-  const [success, setSuccess] =
     useState(false);
 
   const [formData, setFormData] =
@@ -33,6 +38,7 @@ export default function Checkout() {
       note: "",
 
       paymentMethod: "COD",
+
       transactionId: "",
     });
 
@@ -41,7 +47,8 @@ export default function Checkout() {
 
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]:
+        e.target.value,
     });
   };
 
@@ -70,7 +77,7 @@ export default function Checkout() {
       return;
     }
 
-    // TRANSACTION ID VALIDATION
+    // TRANSACTION VALIDATION
     if (
       formData.paymentMethod !== "COD" &&
       !formData.transactionId
@@ -87,49 +94,95 @@ export default function Checkout() {
 
       setLoading(true);
 
-      // SAVE ORDER TO FIREBASE
-      await addDoc(
-        collection(db, "orders"),
-        {
+      // USER ID
+      const customerId =
+        localStorage.getItem(
+          "zyvar-user-id"
+        ) || "guest-user";
 
-          name: formData.name,
+      // SAVE ORDER
+        const user = auth.currentUser;
+        
+        await addDoc(
+          collection(db, "orders"),
+          {
 
-          phone: formData.phone,
+    // USER INFO
+    userId: user?.uid || "",
+    userEmail: user?.email || "",
 
-          address: formData.address,
+    // CUSTOMER INFO
+    name: formData.name,
+    phone: formData.phone,
+    address: formData.address,
+    note: formData.note,
 
-          note: formData.note,
+    // PRODUCTS
+    items: cartItems,
 
-          items: cartItems,
+    // PRICE
+    subtotal: totalPrice,
+    shipping: 0,
 
-          subtotal: totalPrice,
+total: totalPrice,
 
-          shipping: 120,
+    // PAYMENT
+    paymentMethod:
+      formData.paymentMethod,
 
-          total: totalPrice + 120,
+    transactionId:
+      formData.transactionId,
 
-          paymentMethod:
-            formData.paymentMethod,
+    paymentStatus: "Pending",
 
-          transactionId:
-            formData.transactionId,
+    // ORDER STATUS
+    status: "Pending",
 
-          paymentStatus:
-            formData.paymentMethod === "COD"
-              ? "Pending"
-              : "Paid",
+    // TRACKING
+    trackingSteps: [
+      {
+        title: "Order Placed",
+        completed: true,
+      },
+      {
+        title: "Confirmed",
+        completed: false,
+      },
+      {
+        title: "Shipping",
+        completed: false,
+      },
+      {
+        title: "Delivered",
+        completed: false,
+      },
+    ],
 
-          status: "Pending",
+    createdAt:
+      serverTimestamp(),
+  }
+);
 
-          createdAt:
-            serverTimestamp(),
-        }
-      );
+      // ANALYTICS
+      if (
+        typeof trackEvent !==
+        "undefined"
+      ) {
+
+        trackEvent(
+          "Order",
+          "Place Order",
+          "Checkout Success"
+        );
+      }
 
       // CLEAR CART
       clearCart();
 
-      setSuccess(true);
+      // REDIRECT
+      navigate(
+        `/order-success/${orderRef.id}`
+      );
 
     } catch (error) {
 
@@ -142,40 +195,6 @@ export default function Checkout() {
       setLoading(false);
     }
   };
-
-  // SUCCESS PAGE
-  if (success) {
-
-    return (
-
-      <div className="min-h-screen bg-[#0B0B0B] text-white flex items-center justify-center px-6">
-
-        <div className="max-w-2xl text-center">
-
-          <div className="w-28 h-28 rounded-full bg-[#C6922B] text-black flex items-center justify-center text-5xl mx-auto mb-8">
-            ✓
-          </div>
-
-          <h1 className="text-5xl font-black  mb-6">
-            Order Confirmed
-          </h1>
-          
-          trackEvent(
-              "Order",
-                "Place Order",
-                  "Checkout Success"
-                  );
-
-          <p className="text-gray-400 text-lg leading-relaxed">
-            Thank you for shopping with ZYVAR.
-            Your order has been placed successfully.
-          </p>
-
-        </div>
-
-      </div>
-    );
-  }
 
   return (
 
@@ -190,7 +209,7 @@ export default function Checkout() {
             Checkout
           </p>
 
-          <h1 className="text-5xl font-black  mb-10">
+          <h1 className="text-5xl font-black mb-10">
             Shipping Details
           </h1>
 
@@ -236,14 +255,13 @@ export default function Checkout() {
               className="w-full p-5 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#C6922B]"
             />
 
-            {/* PAYMENT METHOD */}
+            {/* PAYMENT */}
             <div className="space-y-5">
 
-              <h3 className="text-2xl font-black ">
+              <h3 className="text-2xl font-black">
                 Payment Method
               </h3>
 
-              {/* OPTIONS */}
               <div className="grid md:grid-cols-3 gap-4">
 
                 {/* COD */}
@@ -252,13 +270,15 @@ export default function Checkout() {
                   onClick={() =>
                     setFormData({
                       ...formData,
-                      paymentMethod: "COD",
+                      paymentMethod:
+                        "COD",
                     })
                   }
                   className={`p-5 rounded-2xl border transition
 
                   ${
-                    formData.paymentMethod === "COD"
+                    formData.paymentMethod ===
+                    "COD"
 
                       ? "bg-[#C6922B] text-black border-[#C6922B]"
 
@@ -275,13 +295,15 @@ export default function Checkout() {
                   onClick={() =>
                     setFormData({
                       ...formData,
-                      paymentMethod: "bKash",
+                      paymentMethod:
+                        "bKash",
                     })
                   }
                   className={`p-5 rounded-2xl border transition
 
                   ${
-                    formData.paymentMethod === "bKash"
+                    formData.paymentMethod ===
+                    "bKash"
 
                       ? "bg-pink-500 text-white border-pink-500"
 
@@ -298,13 +320,15 @@ export default function Checkout() {
                   onClick={() =>
                     setFormData({
                       ...formData,
-                      paymentMethod: "Nagad",
+                      paymentMethod:
+                        "Nagad",
                     })
                   }
                   className={`p-5 rounded-2xl border transition
 
                   ${
-                    formData.paymentMethod === "Nagad"
+                    formData.paymentMethod ===
+                    "Nagad"
 
                       ? "bg-orange-500 text-white border-orange-500"
 
@@ -319,7 +343,8 @@ export default function Checkout() {
 
               {/* PAYMENT INFO */}
               {
-                formData.paymentMethod !== "COD" && (
+                formData.paymentMethod !==
+                  "COD" && (
 
                   <div className="rounded-3xl border border-white/10 bg-white/5 p-6 space-y-5">
 
@@ -329,7 +354,7 @@ export default function Checkout() {
                         Send Money To
                       </p>
 
-                      <h3 className="text-3xl font-black  text-[#C6922B]">
+                      <h3 className="text-3xl font-black text-[#C6922B]">
                         01820400999
                       </h3>
 
@@ -341,8 +366,9 @@ export default function Checkout() {
                         Amount
                       </p>
 
-                      <h3 className="text-3xl font-black  text-[#C6922B]">
-                        ৳{totalPrice + 120}
+                      <h3 className="text-3xl font-black text-[#C6922B]">
+                        ৳
+                        {totalPrice + 120}
                       </h3>
 
                     </div>
@@ -350,7 +376,9 @@ export default function Checkout() {
                     <input
                       type="text"
                       placeholder="Transaction ID"
-                      value={formData.transactionId}
+                      value={
+                        formData.transactionId
+                      }
                       onChange={(e) =>
                         setFormData({
                           ...formData,
@@ -371,13 +399,15 @@ export default function Checkout() {
             <button
               onClick={placeOrder}
               disabled={loading}
-              className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black  hover:scale-[1.02] transition disabled:opacity-50"
+              className="w-full py-5 rounded-2xl bg-[#C6922B] text-black text-lg font-black hover:scale-[1.02] transition disabled:opacity-50"
             >
+
               {
                 loading
                   ? "Processing..."
                   : "Place Order"
               }
+
             </button>
 
           </div>
@@ -387,7 +417,7 @@ export default function Checkout() {
         {/* RIGHT */}
         <div className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-xl p-8 h-fit">
 
-          <h2 className="text-3xl font-black  mb-10">
+          <h2 className="text-3xl font-black mb-10">
             Order Summary
           </h2>
 
@@ -408,17 +438,19 @@ export default function Checkout() {
 
                 <div className="flex-1">
 
-                  <h3 className="font-bold ">
+                  <h3 className="font-bold">
                     {item.name}
                   </h3>
 
                   <p className="text-gray-400 text-sm">
-                    Qty: {item.quantity}
+                    Qty:
+                    {" "}
+                    {item.quantity}
                   </p>
 
                 </div>
 
-                <h4 className="font-black  text-[#C6922B]">
+                <h4 className="font-black text-[#C6922B]">
                   ৳
                   {item.price *
                     item.quantity}
@@ -434,7 +466,9 @@ export default function Checkout() {
 
             <div className="flex justify-between text-gray-400">
 
-              <span>Subtotal</span>
+              <span>
+                Subtotal
+              </span>
 
               <span>
                 ৳{totalPrice}
@@ -444,18 +478,25 @@ export default function Checkout() {
 
             <div className="flex justify-between text-gray-400">
 
-              <span>Shipping</span>
+              <span>
+                Shipping
+              </span>
 
-              <span>৳120</span>
+              <span>
+                ৳120
+              </span>
 
             </div>
 
-            <div className="border-t border-white/10 pt-5 flex justify-between text-2xl font-black ">
+            <div className="border-t border-white/10 pt-5 flex justify-between text-2xl font-black">
 
-              <span>Total</span>
+              <span>
+                Total
+              </span>
 
               <span className="text-[#C6922B]">
-                ৳{totalPrice + 120}
+                ৳
+                {totalPrice + 120}
               </span>
 
             </div>
