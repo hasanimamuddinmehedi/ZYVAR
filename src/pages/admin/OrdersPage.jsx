@@ -131,6 +131,27 @@ export default function OrdersPage() {
         // SEND EMAIL NOTIFICATION TO CUSTOMER
         if (order?.email) {
 
+          await fetch(
+            "https://zyvar-email-server.onrender.com",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+              body: JSON.stringify({
+                customer_name:
+                  order.name,
+                customer_email:
+                  order.email,
+                order_status:
+                  status,
+                tracking_id:
+                  order.id,
+              }),
+            }
+          );
+
         }
 
       } catch (error) {
