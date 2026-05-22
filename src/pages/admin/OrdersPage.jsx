@@ -132,7 +132,7 @@ export default function OrdersPage() {
         if (order?.email) {
 
           await fetch(
-            "https://zyvar-email-server.onrender.com",
+            "https://zyvar-email-server.onrender.com/send-order-email",
             {
               method: "POST",
               headers: {
