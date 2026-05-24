@@ -656,8 +656,24 @@ export default function ProductsPage() {
                             Skincare
                           </option>
 
+                          <option value="Haircare">
+                            Haircare
+                          </option>
+
+                          <option value="Makeup">
+                            Makeup
+                          </option>
+
+                          <option value="Beauty">
+                            Beauty
+                          </option>
+
                           <option value="Perfume">
                             Perfume
+                          </option>
+
+                          <option value="Fragrance">
+                            Fragrance
                           </option>
 
                           <option value="Watch">
@@ -674,6 +690,10 @@ export default function ProductsPage() {
 
                           <option value="Bodycare">
                             Bodycare
+                          </option>
+
+                          <option value="Babycare">
+                            Babycare
                           </option>
 
                         </select>
