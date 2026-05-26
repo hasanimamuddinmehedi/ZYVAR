@@ -5,9 +5,8 @@ import React, {
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  sendPasswordResetEmail,
-  signInWithPopup,
   sendEmailVerification,
+  signInWithPopup,
 } from "firebase/auth";
 
 import {
@@ -335,7 +334,7 @@ export default function Login() {
       }
     };
 
-  // FORGOT PASSWORD
+  // FORGOT PASSWORD — using custom email server
   const handleForgotPassword =
     async () => {
 
@@ -350,9 +349,23 @@ export default function Login() {
 
       try {
 
-        await sendPasswordResetEmail(
-          auth,
-          email
+        // SEND CUSTOM PASSWORD RESET EMAIL
+        await fetch(
+          "https://zyvar-email-server.onrender.com/send-custom-reset",
+
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+
+              email,
+            }),
+          }
         );
 
         alert(

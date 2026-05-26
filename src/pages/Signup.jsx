@@ -6,7 +6,6 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   GoogleAuthProvider,
-  sendEmailVerification,
   signInWithPopup,
 } from "firebase/auth";
 
@@ -141,8 +140,26 @@ export default function Signup() {
           }
         );
 
-        // SEND EMAIL VERIFICATION
-        await sendEmailVerification(user);
+        // SEND CUSTOM VERIFICATION EMAIL
+        await fetch(
+          "https://zyvar-email-server.onrender.com/send-custom-verification",
+
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+
+              email,
+
+              name,
+            }),
+          }
+        );
 
         // SAVE TO FIRESTORE
         await setDoc(

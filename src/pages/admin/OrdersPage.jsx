@@ -20,6 +20,8 @@ import {
   FaCheckCircle,
   FaClock,
   FaTruck,
+  FaTimesCircle,
+  FaTrashAlt,
 } from "react-icons/fa";
 
 import {
@@ -87,6 +89,40 @@ export default function OrdersPage() {
 
   }, []);
 
+  // HELPER — DETERMINE AUTO PAYMENT STATUS
+  const resolvePaymentStatus =
+    (order, newOrderStatus) => {
+
+      const method =
+        (order.paymentMethod || "")
+          .toLowerCase();
+
+      // BKASH / NAGAD — AUTO PAID ON CONFIRMED
+      if (
+        method.includes("bkash") ||
+        method.includes("nagad")
+      ) {
+
+        if (newOrderStatus === "Confirmed") {
+          return "Paid";
+        }
+      }
+
+      // COD — AUTO PAID ON DELIVERED
+      if (
+        method.includes("cod") ||
+        method.includes("cash")
+      ) {
+
+        if (newOrderStatus === "Delivered") {
+          return "Paid";
+        }
+      }
+
+      // ALL OTHER CASES — KEEP EXISTING
+      return order.paymentStatus || "Pending";
+    };
+
   // UPDATE ORDER STATUS
   const updateOrderStatus =
     async (
@@ -102,6 +138,53 @@ export default function OrdersPage() {
             (o) => o.id === id
           );
 
+        // RESOLVE PAYMENT STATUS AUTOMATICALLY
+        const newPaymentStatus =
+          resolvePaymentStatus(
+            order,
+            status
+          );
+
+        const currentSubtotal =
+
+          Number(
+            order.productSubtotal
+          ) ||
+
+          Number(
+            order.subtotal
+          ) ||
+
+          (Array.isArray(order.items)
+
+            ? order.items.reduce(
+                (acc, item) =>
+
+                  acc +
+
+                  Number(
+                    item.price || 0
+                  ) *
+
+                    Number(
+                      item.quantity || 1
+                    ),
+
+                0
+              )
+
+            : 0);
+
+        const shippingCharge =
+          Number(
+            order.shipping || 0
+          );
+
+        const grandTotal =
+          currentSubtotal +
+          shippingCharge;
+
+        // UPDATE FIRESTORE — STATUS + AUTO PAYMENT STATUS
         await updateDoc(
           doc(
             db,
@@ -110,21 +193,23 @@ export default function OrdersPage() {
           ),
           {
             status,
+            paymentStatus: newPaymentStatus,
           }
         );
 
         setOrders(
           orders.map(
-            (order) =>
+            (o) =>
 
-              order.id === id
+              o.id === id
 
                 ? {
-                    ...order,
+                    ...o,
                     status,
+                    paymentStatus: newPaymentStatus,
                   }
 
-                : order
+                : o
           )
         );
 
@@ -140,14 +225,33 @@ export default function OrdersPage() {
                   "application/json",
               },
               body: JSON.stringify({
-                customer_name:
+
+                customerName:
                   order.name,
-                customer_email:
+
+                customerEmail:
                   order.email,
-                order_status:
-                  status,
-                tracking_id:
+
+                orderId:
                   order.id,
+
+                orderStatus:
+                  status,
+
+                paymentStatus:
+                  newPaymentStatus,
+
+                products:
+                  order.items,
+
+                subtotal:
+                  currentSubtotal,
+
+                shipping:
+                  shippingCharge,
+
+                total:
+                  grandTotal,
               }),
             }
           );
@@ -697,7 +801,7 @@ export default function OrdersPage() {
 
                 </div>
 
-                {/* PAYMENT STATUS BUTTONS */}
+                {/* PAYMENT STATUS BUTTONS — ADMIN CAN ALWAYS OVERRIDE */}
                 <div className="flex flex-wrap gap-3 mb-8">
 
                   <button
@@ -794,72 +898,30 @@ export default function OrdersPage() {
 
                 </div>
 
-                {/* SHIPPING */}
-                {order.status ===
-                  "Shipping" && (
+                {/* SHIPPING CHARGE — ONLY SHOW WHEN SHIPPING STATUS */}
+                {
+                  order.status === "Shipping" && (
 
-                  <div className="rounded-3xl border border-white/10 bg-black/20 p-6 mb-8">
+                    <div className="rounded-3xl border border-white/10 bg-black/20 p-6 mb-8">
 
-                    <p className="text-gray-400 mb-4">
-                      Shipping Charge
-                    </p>
+                      <p className="text-gray-400 mb-4">
+                        Shipping Charge
+                      </p>
 
-                    <div className="flex flex-col md:flex-row gap-3">
+                      <div className="flex flex-col md:flex-row gap-3">
 
-                      <input
-                        type="number"
-                        placeholder="Shipping"
-                        value={
-                          order.shipping || ""
-                        }
-                        onChange={(e) => {
+                        <input
+                          type="number"
+                          placeholder="Shipping"
+                          value={
+                            order.shipping || ""
+                          }
+                          onChange={(e) => {
 
-                          const value =
-                            Number(
-                              e.target.value
-                            );
-
-                          setOrders(
-                            orders.map(
-                              (item) =>
-
-                                item.id ===
-                                order.id
-
-                                  ? {
-                                      ...item,
-                                      shipping:
-                                        value,
-                                    }
-
-                                  : item
-                            )
-                          );
-                        }}
-                        className="flex-1 px-5 py-3 rounded-2xl bg-black/20 border border-white/10 outline-none focus:border-[#C6922B]"
-                      />
-
-                      <button
-                        onClick={async () => {
-
-                          try {
-
-                            await updateDoc(
-                              doc(
-                                db,
-                                "orders",
-                                order.id
-                              ),
-                              {
-
-                                shipping:
-                                  shippingCharge,
-
-                                total:
-                                  currentSubtotal +
-                                  shippingCharge,
-                              }
-                            );
+                            const value =
+                              Number(
+                                e.target.value
+                              );
 
                             setOrders(
                               orders.map(
@@ -871,35 +933,78 @@ export default function OrdersPage() {
                                     ? {
                                         ...item,
                                         shipping:
-                                          shippingCharge,
-
-                                        total:
-                                          currentSubtotal +
-                                          shippingCharge,
+                                          value,
                                       }
 
                                     : item
                               )
                             );
+                          }}
+                          className="flex-1 px-5 py-3 rounded-2xl bg-black/20 border border-white/10 outline-none focus:border-[#C6922B]"
+                        />
 
-                            alert(
-                              "Shipping Updated"
-                            );
+                        <button
+                          onClick={async () => {
 
-                          } catch (error) {
+                            try {
 
-                            console.log(error);
-                          }
-                        }}
-                        className="px-5 py-3 rounded-2xl bg-[#C6922B] text-black font-bold hover:opacity-90 transition"
-                      >
-                        Save
-                      </button>
+                              await updateDoc(
+                                doc(
+                                  db,
+                                  "orders",
+                                  order.id
+                                ),
+                                {
+
+                                  shipping:
+                                    shippingCharge,
+
+                                  total:
+                                    currentSubtotal +
+                                    shippingCharge,
+                                }
+                              );
+
+                              setOrders(
+                                orders.map(
+                                  (item) =>
+
+                                    item.id ===
+                                    order.id
+
+                                      ? {
+                                          ...item,
+                                          shipping:
+                                            shippingCharge,
+
+                                          total:
+                                            currentSubtotal +
+                                            shippingCharge,
+                                        }
+
+                                      : item
+                                )
+                              );
+
+                              alert(
+                                "Shipping Updated"
+                              );
+
+                            } catch (error) {
+
+                              console.log(error);
+                            }
+                          }}
+                          className="px-5 py-3 rounded-2xl bg-[#C6922B] text-black font-bold hover:opacity-90 transition"
+                        >
+                          Save
+                        </button>
+
+                      </div>
 
                     </div>
-
-                  </div>
-                )}
+                  )
+                }
 
                 {/* STATUS BUTTONS */}
                 <div className="flex flex-wrap gap-3">
@@ -1019,7 +1124,8 @@ export default function OrdersPage() {
                     }
                     `}
                   >
-                    ❌ Cancel
+                    <FaTimesCircle />
+                    Cancel
                   </button>
 
                   {/* DELETE */}
@@ -1031,7 +1137,8 @@ export default function OrdersPage() {
                     }
                     className="px-5 py-3 rounded-2xl border border-gray-500 text-gray-300 font-bold transition flex items-center gap-3 hover:bg-gray-500 hover:text-black"
                   >
-                    🗑️ Delete
+                    <FaTrashAlt />
+                    Delete
                   </button>
 
                 </div>

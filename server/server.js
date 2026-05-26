@@ -1,10 +1,21 @@
-require("dotenv").config();
-
 const express = require("express");
 const cors = require("cors");
+const axios = require("axios");
+const admin =
+  require("firebase-admin");
 
-const SibApiV3Sdk =
-  require("sib-api-v3-sdk");
+const serviceAccount =
+  require("./firebase-adminsdk.json");
+
+require("dotenv").config();
+
+admin.initializeApp({
+
+  credential:
+    admin.credential.cert(
+      serviceAccount
+    ),
+});
 
 const app = express();
 
@@ -12,85 +23,182 @@ app.use(cors());
 
 app.use(express.json());
 
-const client =
-  SibApiV3Sdk.ApiClient
-    .instance;
+/* =========================================
+   ROOT
+========================================= */
 
-const apiKey =
-  client.authentications["api-key"];
+app.get("/", (req, res) => {
 
-apiKey.apiKey =
-  process.env.BREVO_API_KEY;
+  res.send("ZYVAR Email Server Running");
 
-const tranEmailApi =
-  new SibApiV3Sdk.TransactionalEmailsApi();
+});
+
+/* =========================================
+   BREVO EMAIL FUNCTION
+========================================= */
+
+const sendBrevoEmail = async ({
+  to,
+  templateId,
+  params,
+}) => {
+
+  try {
+
+    const response =
+      await axios.post(
+
+        "https://api.brevo.com/v3/smtp/email",
+
+        {
+          to: [
+            {
+              email: to,
+            },
+          ],
+
+          templateId,
+
+          params,
+        },
+
+        {
+          headers: {
+
+            "api-key":
+              process.env.BREVO_API_KEY,
+
+            "Content-Type":
+              "application/json",
+          },
+        }
+      );
+
+    console.log(
+      "Brevo Email Sent:",
+      response.data
+    );
+
+    return response.data;
+
+  } catch (error) {
+
+    console.log(
+      "Brevo Error:",
+      error.response?.data ||
+      error.message
+    );
+
+    throw error;
+  }
+};
+
+/* =========================================
+   EMAIL VERIFICATION
+========================================= */
 
 app.post(
-  "/send-order-email",
+  "/send-verification-email",
+
   async (req, res) => {
 
     try {
 
       const {
-        customer_name,
-        customer_email,
-        order_status,
-        tracking_id,
+        email,
+        name,
+        verificationLink,
       } = req.body;
 
-      await tranEmailApi.sendTransacEmail({
+      await sendBrevoEmail({
 
-        sender: {
+        to: email,
 
-          email:
-            "hello.zyvar@gmail.com",
+        templateId: 1,
 
-          name:
-            "ZYVAR",
+        params: {
+
+          USER_NAME:
+            name ||
+
+            "Customer",
+
+          VERIFY_LINK:
+            verificationLink,
         },
-
-        to: [
-          {
-            email:
-              customer_email,
-          },
-        ],
-
-        subject:
-          `ZYVAR Order ${order_status}`,
-
-        htmlContent: `
-
-          <div style="font-family:sans-serif;padding:20px">
-
-            <h2>
-              Hello ${customer_name}
-            </h2>
-
-            <p>
-              Your order status is now:
-            </p>
-
-            <h1>
-              ${order_status}
-            </h1>
-
-            <p>
-              Tracking ID:
-              ${tracking_id}
-            </p>
-
-            <br/>
-
-            <p>
-              Thank you for shopping with ZYVAR.
-            </p>
-
-          </div>
-        `,
       });
 
       res.status(200).json({
+
+        success: true,
+
+        message:
+          "Verification email sent successfully",
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to send verification email",
+      });
+    }
+  }
+);
+
+/* =========================================
+   CUSTOM VERIFY EMAIL
+========================================= */
+
+app.post(
+  "/send-custom-verification",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        email,
+        name,
+      } = req.body;
+
+      const verificationLink =
+        await admin
+          .auth()
+          .generateEmailVerificationLink(
+            email,
+            {
+              url:
+                process.env.FRONTEND_URL +
+                "/login",
+            }
+          );
+
+      await sendBrevoEmail({
+
+        to: email,
+
+        templateId: 1,
+
+        params: {
+
+          USER_NAME:
+            name ||
+
+            "Customer",
+
+          VERIFY_LINK:
+            verificationLink,
+        },
+      });
+
+      res.status(200).json({
+
         success: true,
       });
 
@@ -99,18 +207,488 @@ app.post(
       console.log(error);
 
       res.status(500).json({
+
         success: false,
       });
     }
   }
 );
 
-app.listen(
-  process.env.PORT || 5000,
-  () => {
+/* =========================================
+   RESET PASSWORD EMAIL
+========================================= */
 
-    console.log(
-      "Server running"
-    );
+app.post(
+  "/send-reset-password-email",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        email,
+        name,
+        resetLink,
+      } = req.body;
+
+      await sendBrevoEmail({
+
+        to: email,
+
+        templateId: 2,
+
+        params: {
+
+          USER_NAME:
+            name ||
+
+            "Customer",
+
+          RESET_LINK:
+            resetLink,
+        },
+      });
+
+      res.status(200).json({
+
+        success: true,
+
+        message:
+          "Password reset email sent successfully",
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to send reset password email",
+      });
+    }
   }
 );
+
+/* =========================================
+   CUSTOM RESET PASSWORD
+========================================= */
+
+app.post(
+  "/send-custom-reset",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        email,
+        name,
+      } = req.body;
+
+      const resetLink =
+        await admin
+          .auth()
+          .generatePasswordResetLink(
+            email,
+            {
+              url:
+                process.env.FRONTEND_URL +
+                "/login",
+            }
+          );
+
+      await sendBrevoEmail({
+
+        to: email,
+
+        templateId: 2,
+
+        params: {
+
+          USER_NAME:
+            name ||
+
+            "Customer",
+
+          RESET_LINK:
+            resetLink,
+        },
+      });
+
+      res.status(200).json({
+
+        success: true,
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        success: false,
+      });
+    }
+  }
+);
+
+/* =========================================
+   ORDER CONFIRMED
+========================================= */
+
+app.post(
+  "/send-order-confirmed-email",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        order,
+      } = req.body;
+
+      await sendBrevoEmail({
+
+        to: order.email,
+
+        templateId: 3,
+
+        params: {
+
+          CUSTOMER_NAME:
+            order.name,
+
+          ORDER_ID:
+            order.id,
+
+          PRODUCT_NAME:
+            order.items?.[0]?.name ||
+
+            "ZYVAR Product",
+
+          PRODUCT_IMAGE:
+            order.items?.[0]?.image ||
+
+            "",
+
+          TOTAL:
+            order.total ||
+
+            0,
+
+          PAYMENT_STATUS:
+            order.paymentStatus ||
+
+            "Pending",
+
+          TRACKING_LINK:
+            "https://zyvar.vercel.app/my-orders",
+        },
+      });
+
+      res.status(200).json({
+
+        success: true,
+
+        message:
+          "Order confirmed email sent",
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to send order confirmed email",
+      });
+    }
+  }
+);
+
+/* =========================================
+   SHIPPING UPDATE
+========================================= */
+
+app.post(
+  "/send-shipping-email",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        order,
+      } = req.body;
+
+      await sendBrevoEmail({
+
+        to: order.email,
+
+        templateId: 4,
+
+        params: {
+
+          CUSTOMER_NAME:
+            order.name,
+
+          ORDER_ID:
+            order.id,
+
+          PRODUCT_NAME:
+            order.items?.[0]?.name ||
+
+            "ZYVAR Product",
+
+          PRODUCT_IMAGE:
+            order.items?.[0]?.image ||
+
+            "",
+
+          TOTAL:
+            order.total ||
+
+            0,
+
+          PAYMENT_STATUS:
+            order.paymentStatus ||
+
+            "Pending",
+
+          TRACKING_LINK:
+            "https://zyvar.vercel.app/my-orders",
+        },
+      });
+
+      res.status(200).json({
+
+        success: true,
+
+        message:
+          "Shipping update email sent",
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to send shipping email",
+      });
+    }
+  }
+);
+
+/* =========================================
+   DELIVERED UPDATE
+========================================= */
+
+app.post(
+  "/send-delivered-email",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        order,
+      } = req.body;
+
+      await sendBrevoEmail({
+
+        to: order.email,
+
+        templateId: 5,
+
+        params: {
+
+          CUSTOMER_NAME:
+            order.name,
+
+          ORDER_ID:
+            order.id,
+
+          PRODUCT_NAME:
+            order.items?.[0]?.name ||
+
+            "ZYVAR Product",
+
+          PRODUCT_IMAGE:
+            order.items?.[0]?.image ||
+
+            "",
+
+          TOTAL:
+            order.total ||
+
+            0,
+
+          PAYMENT_STATUS:
+            order.paymentStatus ||
+
+            "Paid",
+
+          TRACKING_LINK:
+            "https://zyvar.vercel.app/my-orders",
+        },
+      });
+
+      res.status(200).json({
+
+        success: true,
+
+        message:
+          "Delivered email sent",
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to send delivered email",
+      });
+    }
+  }
+);
+
+/* =========================================
+   NEWSLETTER EMAIL
+========================================= */
+
+app.post(
+  "/send-newsletter-email",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        email,
+      } = req.body;
+
+      await sendBrevoEmail({
+
+        to: email,
+
+        templateId: 6,
+
+        params: {
+
+          EMAIL:
+            email,
+        },
+      });
+
+      res.status(200).json({
+
+        success: true,
+
+        message:
+          "Newsletter email sent",
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to send newsletter email",
+      });
+    }
+  }
+);
+
+/* =========================================
+   PRODUCT REQUEST COMPLETED
+========================================= */
+
+app.post(
+  "/send-product-request-email",
+
+  async (req, res) => {
+
+    try {
+
+      const {
+        request,
+      } = req.body;
+
+      await sendBrevoEmail({
+
+        to: request.email,
+
+        templateId: 7,
+
+        params: {
+
+          CUSTOMER_NAME:
+            request.name ||
+
+            "Customer",
+
+          PRODUCT_NAME:
+            request.productName ||
+
+            "Requested Product",
+
+          PRODUCTS_LINK:
+            "https://zyvar.vercel.app/products",
+        },
+      });
+
+      res.status(200).json({
+
+        success: true,
+
+        message:
+          "Product request email sent",
+      });
+
+    } catch (error) {
+
+      console.log(error);
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Failed to send product request email",
+      });
+    }
+  }
+);
+
+/* =========================================
+   SERVER
+========================================= */
+
+const PORT =
+  process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+
+  console.log(
+    `ZYVAR Server Running On Port ${PORT}`
+  );
+
+});

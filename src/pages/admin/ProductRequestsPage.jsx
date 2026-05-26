@@ -24,11 +24,15 @@ import {
 
 export default function ProductRequestsPage() {
 
-  const [requests,
-    setRequests] = useState([]);
+  const [
+    requests,
+    setRequests,
+  ] = useState([]);
 
-  const [loading,
-    setLoading] = useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
   // FETCH REQUESTS
   useEffect(() => {
@@ -121,7 +125,10 @@ export default function ProductRequestsPage() {
   };
 
   // MARK AS COMPLETED
-  const handleComplete = async (id) => {
+  const handleComplete = async (
+    id,
+    request
+  ) => {
 
     try {
 
@@ -133,6 +140,30 @@ export default function ProductRequestsPage() {
         ),
         {
           status: "completed",
+        }
+      );
+
+      await fetch(
+        "https://zyvar-email-server.onrender.com/product-request-complete",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+
+          body: JSON.stringify({
+
+            customerName:
+              request.name,
+
+            customerEmail:
+              request.email,
+
+            productName:
+              request.productName,
+          }),
         }
       );
 
@@ -300,7 +331,10 @@ export default function ProductRequestsPage() {
 
                           <button
                             onClick={() =>
-                              handleComplete(request.id)
+                              handleComplete(
+                                request.id,
+                                request
+                              )
                             }
                             className="px-6 py-4 rounded-2xl bg-[#C6922B] text-black font-black hover:scale-[1.02] transition flex items-center gap-3"
                           >
