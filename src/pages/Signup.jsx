@@ -142,7 +142,7 @@ export default function Signup() {
 
         // SEND CUSTOM VERIFICATION EMAIL
         await fetch(
-          "https://zyvar-email-server.onrender.com/send-custom-verification",
+          "https://zyvar-email-server.onrender.com/send-verification-email",
 
           {
             method: "POST",
@@ -154,9 +154,11 @@ export default function Signup() {
 
             body: JSON.stringify({
 
-              email,
+              email: user.email,
 
-              name,
+              uid: user.uid,
+
+              name: user.displayName || "Customer",
             }),
           }
         );
