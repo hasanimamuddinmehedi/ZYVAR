@@ -112,8 +112,8 @@ export default function ProductRequestsPage() {
         )
       );
 
-      setRequests(
-        requests.filter(
+      setRequests((prev) =>
+        prev.filter(
           (item) => item.id !== id
         )
       );
@@ -139,48 +139,76 @@ export default function ProductRequestsPage() {
           id
         ),
         {
-          status: "completed",
+          status: "Completed",
         }
       );
 
-      await fetch(
-        "https://zyvar-email-server.onrender.com/product-request-complete",
-        {
-          method: "POST",
+      const response =
+        await fetch(
+          "https://zyvar-email-server.onrender.com/send-product-request-email",
+          {
+            method: "POST",
 
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
+            headers: {
+              "Content-Type": "application/json",
+            },
 
-          body: JSON.stringify({
+            body: JSON.stringify({
 
-            customerName:
-              request.name,
+              request: {
 
-            customerEmail:
-              request.email,
+                name:
+                  request.name ||
+                  "Customer",
 
-            productName:
-              request.productName,
-          }),
-        }
-      );
+                email:
+                  request.email,
 
-      setRequests(
-        requests.map((item) =>
+                productName:
+                  request.productName ||
+                  "Requested Product",
+              },
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+
+        throw new Error(
+          data.message ||
+          "Failed to send email"
+        );
+      }
+
+      setRequests((prev) =>
+        prev.map((item) =>
+
           item.id === id
+
             ? {
                 ...item,
-                status: "completed",
+                status: "Completed",
               }
+
             : item
         )
+      );
+
+      alert(
+        "Request marked as completed and email sent successfully."
       );
 
     } catch (error) {
 
       console.log(error);
+
+      alert(
+        error.message ||
+        "Something went wrong."
+      );
     }
   };
 
@@ -286,7 +314,7 @@ export default function ProductRequestsPage() {
                         </div>
 
                         {
-                          request.status === "completed"
+                          request.status === "Completed"
                             ? (
 
                               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-semibold">
@@ -316,7 +344,7 @@ export default function ProductRequestsPage() {
                         </h2>
 
                         <p className="text-gray-300 leading-relaxed whitespace-pre-line">
-                          {request.message || "No additional message provided."}
+                          {request.details || "No additional message provided."}
                         </p>
 
                       </div>
@@ -327,7 +355,7 @@ export default function ProductRequestsPage() {
                     <div className="flex flex-wrap gap-4">
 
                       {
-                        request.status !== "completed" && (
+                        request.status !== "Completed" && (
 
                           <button
                             onClick={() =>

@@ -5,7 +5,6 @@ import React, {
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
-  sendEmailVerification,
   signInWithPopup,
 } from "firebase/auth";
 
@@ -195,7 +194,28 @@ export default function Login() {
         // STEP 4 — CHECK EMAIL VERIFICATION
         if (!user.emailVerified) {
 
-          await sendEmailVerification(user);
+          // SEND BREVO VERIFICATION EMAIL AGAIN
+          await fetch(
+            "https://zyvar-email-server.onrender.com/send-custom-verification",
+
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+
+                email: user.email,
+
+                name:
+                  user.displayName ||
+                  "Customer",
+              }),
+            }
+          );
 
           alert(
             "Please verify your email first. Verification email sent again."

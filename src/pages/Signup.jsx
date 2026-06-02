@@ -140,30 +140,7 @@ export default function Signup() {
           }
         );
 
-        // SEND CUSTOM VERIFICATION EMAIL
-        await fetch(
-          "https://zyvar-email-server.onrender.com/send-verification-email",
-
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-
-              email: user.email,
-
-              uid: user.uid,
-
-              name: user.displayName || "Customer",
-            }),
-          }
-        );
-
-        // SAVE TO FIRESTORE
+        // SAVE USER TO FIRESTORE
         await setDoc(
 
           doc(
@@ -208,6 +185,56 @@ export default function Signup() {
           }
         );
 
+        /* =========================================
+           SEND BREVO VERIFICATION EMAIL
+        ========================================= */
+
+        const response =
+          await fetch(
+
+            "https://zyvar-email-server.onrender.com/send-verification-email",
+
+            {
+
+              method: "POST",
+
+              headers: {
+
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+
+                email:
+                  user.email,
+
+                name:
+                  user.displayName ||
+                  name ||
+                  "Customer",
+              }),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        console.log(
+          "Verification Email Response:",
+          data
+        );
+
+        if (!response.ok) {
+
+          throw new Error(
+
+            data.message ||
+
+            "Failed to send verification email"
+          );
+        }
+
         alert(
           "Account created successfully. Please verify your email before login."
         );
@@ -242,7 +269,7 @@ export default function Signup() {
       }
     };
 
-  // GOOGLE SIGNUP — using signInWithPopup
+  // GOOGLE SIGNUP
   const handleGoogleSignup =
     async () => {
 
@@ -361,7 +388,6 @@ export default function Signup() {
             Back To Homepage
 
           </button>
-
 
           <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-5">
 
@@ -664,9 +690,7 @@ export default function Signup() {
 
                     type={
                       showPassword
-
                         ? "text"
-
                         : "password"
                     }
 
@@ -710,9 +734,7 @@ export default function Signup() {
 
                     {
                       showPassword
-
                         ? <EyeOff />
-
                         : <Eye />
                     }
 
@@ -737,9 +759,7 @@ export default function Signup() {
 
                     type={
                       showConfirmPassword
-
                         ? "text"
-
                         : "password"
                     }
 
@@ -783,9 +803,7 @@ export default function Signup() {
 
                     {
                       showConfirmPassword
-
                         ? <EyeOff />
-
                         : <Eye />
                     }
 
@@ -804,9 +822,7 @@ export default function Signup() {
 
                     {
                       passwordValid
-
                         ? <CheckCircle size={16} />
-
                         : <XCircle size={16} />
                     }
 
@@ -817,17 +833,13 @@ export default function Signup() {
                   <p className={`flex items-center gap-2 ${
                     confirmPassword.length > 0 &&
                     passwordMatched
-
                       ? "text-green-500"
-
                       : "text-red-400"
                   }`}>
 
                     {
                       passwordMatched
-
                         ? <CheckCircle size={16} />
-
                         : <XCircle size={16} />
                     }
 
@@ -851,9 +863,7 @@ export default function Signup() {
 
                 {
                   loading
-
                     ? "Creating Account..."
-
                     : "Create Account"
                 }
 

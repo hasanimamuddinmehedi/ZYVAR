@@ -216,45 +216,57 @@ export default function OrdersPage() {
         // SEND EMAIL NOTIFICATION TO CUSTOMER
         if (order?.email) {
 
-          await fetch(
-            "https://zyvar-email-server.onrender.com/send-order-email",
-            {
+          // DETERMINE EMAIL API
+          let emailEndpoint = "";
+
+          if (status === "Confirmed") {
+
+            emailEndpoint =
+              "https://zyvar-email-server.onrender.com/send-order-confirmed-email";
+
+          } else if (status === "Shipping") {
+
+            emailEndpoint =
+              "https://zyvar-email-server.onrender.com/send-shipping-email";
+
+          } else if (status === "Delivered") {
+
+            emailEndpoint =
+              "https://zyvar-email-server.onrender.com/send-delivered-email";
+          }
+
+          // SEND EMAIL
+          if (emailEndpoint) {
+
+            await fetch(emailEndpoint, {
+
               method: "POST",
+
               headers: {
-                "Content-Type":
-                  "application/json",
+                "Content-Type": "application/json",
               },
+
               body: JSON.stringify({
 
-                customerName:
-                  order.name,
+                order: {
 
-                customerEmail:
-                  order.email,
+                  ...order,
 
-                orderId:
-                  order.id,
+                  id: order.id,
 
-                orderStatus:
                   status,
 
-                paymentStatus:
-                  newPaymentStatus,
+                  paymentStatus: newPaymentStatus,
 
-                products:
-                  order.items,
+                  subtotal: currentSubtotal,
 
-                subtotal:
-                  currentSubtotal,
+                  shipping: shippingCharge,
 
-                shipping:
-                  shippingCharge,
-
-                total:
-                  grandTotal,
+                  total: grandTotal,
+                },
               }),
-            }
-          );
+            });
+          }
 
         }
 

@@ -20,10 +20,16 @@ export default function RequestProductModal({
   searchText = "",
 }) {
 
-  // Support both setOpen (from Products.jsx) and onClose prop patterns
+  // SUPPORT BOTH CLOSE METHODS
   const handleClose = () => {
-    if (typeof setOpen === "function") setOpen(false);
-    if (typeof onClose === "function") onClose();
+
+    if (typeof setOpen === "function") {
+      setOpen(false);
+    }
+
+    if (typeof onClose === "function") {
+      onClose();
+    }
   };
 
   const isLoggedIn =
@@ -32,39 +38,44 @@ export default function RequestProductModal({
   const user =
     auth.currentUser;
 
-  const [loading,
-    setLoading] =
-    useState(false);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
-  // SEPARATE EMAIL STATE
-  const [email,
-    setEmail] =
-    useState(
-      user?.email || ""
-    );
+  // EMAIL STATE
+  const [
+    email,
+    setEmail,
+  ] = useState(
+    user?.email || ""
+  );
 
-  const [formData,
-    setFormData] =
-    useState({
+  // FORM DATA
+  const [
+    formData,
+    setFormData,
+  ] = useState({
 
-      name:
-        user?.displayName || "",
+    name:
+      user?.displayName || "",
 
-      email:
-        user?.email || "",
+    email:
+      user?.email || "",
 
-      phone: "",
+    phone: "",
 
-      productName:
-        searchText || "",
+    productName:
+      searchText || "",
 
-      details: "",
+    details: "",
 
-      referenceLink: "",
-    });
+    referenceLink: "",
+  });
 
   if (!open) return null;
 
+  // INPUT CHANGE
   const handleChange =
     (e) => {
 
@@ -77,6 +88,7 @@ export default function RequestProductModal({
       });
     };
 
+  // SUBMIT
   const handleSubmit =
     async (e) => {
 
@@ -86,6 +98,7 @@ export default function RequestProductModal({
 
         setLoading(true);
 
+        // SAVE TO FIREBASE
         await addDoc(
 
           collection(
@@ -101,14 +114,13 @@ export default function RequestProductModal({
             email:
               user?.email ||
               email ||
-              formData.email ||
               "",
 
             userId:
               user?.uid || null,
 
             status:
-              "Pending",
+              "pending",
 
             createdAt:
               serverTimestamp(),
@@ -116,9 +128,10 @@ export default function RequestProductModal({
         );
 
         alert(
-          "Product Request Submitted"
+          "Product Request Submitted Successfully!"
         );
 
+        // CLOSE MODAL
         handleClose();
 
         // RESET FORM
@@ -140,7 +153,7 @@ export default function RequestProductModal({
           referenceLink: "",
         });
 
-        // RESET EMAIL STATE
+        // RESET EMAIL
         setEmail(
           user?.email || ""
         );
@@ -191,20 +204,22 @@ export default function RequestProductModal({
           my-10
           max-h-[90vh]
           overflow-y-auto
+          hide-scrollbar
         "
         style={{
-          scrollbarWidth: "none",       /* Firefox */
-          msOverflowStyle: "none",      /* IE / Edge */
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
         }}
       >
 
-        {/* Hide scrollbar for WebKit browsers (Chrome, Safari) */}
+        {/* HIDE SCROLLBAR */}
         <style>{`
           .hide-scrollbar::-webkit-scrollbar {
             display: none;
           }
         `}</style>
 
+        {/* HEADER */}
         <div className="flex items-center justify-between mb-8">
 
           <div>
@@ -219,7 +234,7 @@ export default function RequestProductModal({
 
           </div>
 
-          {/* CLOSE BUTTON — now calls handleClose which supports both prop patterns */}
+          {/* CLOSE BUTTON */}
           <button
             onClick={handleClose}
             className="text-3xl text-white hover:text-[#C6922B] transition duration-300 leading-none"
@@ -229,39 +244,13 @@ export default function RequestProductModal({
 
         </div>
 
+        {/* FORM */}
         <form
           onSubmit={handleSubmit}
           className="space-y-6"
         >
 
-          {/* NON LOGGED USER */}
-          {!user && (
-
-            <>
-
-              <input
-                type="text"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Your Name"
-                className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none text-white placeholder-gray-500 focus:border-[#C6922B] transition duration-300"
-              />
-
-              <input
-                type="text"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="Phone Number"
-                className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none text-white placeholder-gray-500 focus:border-[#C6922B] transition duration-300"
-              />
-
-            </>
-          )}
-
+          {/* NON LOGGED USERS */}
           {
             !isLoggedIn && (
 
@@ -271,13 +260,14 @@ export default function RequestProductModal({
                 <input
                   type="text"
                   name="name"
-                  placeholder="Your Name"
+                  required
                   value={formData.name}
                   onChange={handleChange}
+                  placeholder="Your Name"
                   className="
                     w-full
-                    px-5
-                    py-4
+                    px-6
+                    py-5
                     rounded-2xl
                     bg-black/30
                     border
@@ -295,13 +285,14 @@ export default function RequestProductModal({
                 <input
                   type="text"
                   name="phone"
-                  placeholder="Phone Number"
+                  required
                   value={formData.phone}
                   onChange={handleChange}
+                  placeholder="Phone Number"
                   className="
                     w-full
-                    px-5
-                    py-4
+                    px-6
+                    py-5
                     rounded-2xl
                     bg-black/30
                     border
@@ -316,11 +307,10 @@ export default function RequestProductModal({
                 />
 
               </>
-
             )
           }
 
-          {/* EMAIL — ALWAYS VISIBLE FOR ALL USERS */}
+          {/* EMAIL */}
           <input
             type="email"
             name="email"
@@ -332,7 +322,21 @@ export default function RequestProductModal({
               )
             }
             placeholder="Your Email"
-            className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none text-white placeholder-gray-500 focus:border-[#C6922B] transition duration-300"
+            className="
+              w-full
+              px-6
+              py-5
+              rounded-2xl
+              bg-black/30
+              border
+              border-white/10
+              outline-none
+              text-white
+              placeholder-gray-500
+              focus:border-[#C6922B]
+              transition
+              duration-300
+            "
           />
 
           {/* PRODUCT NAME */}
@@ -343,7 +347,21 @@ export default function RequestProductModal({
             value={formData.productName}
             onChange={handleChange}
             placeholder="Product Name"
-            className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none text-white placeholder-gray-500 focus:border-[#C6922B] transition duration-300"
+            className="
+              w-full
+              px-6
+              py-5
+              rounded-2xl
+              bg-black/30
+              border
+              border-white/10
+              outline-none
+              text-white
+              placeholder-gray-500
+              focus:border-[#C6922B]
+              transition
+              duration-300
+            "
           />
 
           {/* DETAILS */}
@@ -353,19 +371,49 @@ export default function RequestProductModal({
             value={formData.details}
             onChange={handleChange}
             placeholder="Describe the product..."
-            className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none resize-none text-white placeholder-gray-500 focus:border-[#C6922B] transition duration-300"
+            className="
+              w-full
+              px-6
+              py-5
+              rounded-2xl
+              bg-black/30
+              border
+              border-white/10
+              outline-none
+              resize-none
+              text-white
+              placeholder-gray-500
+              focus:border-[#C6922B]
+              transition
+              duration-300
+            "
           />
 
-          {/* LINK */}
+          {/* REFERENCE LINK */}
           <input
             type="text"
             name="referenceLink"
             value={formData.referenceLink}
             onChange={handleChange}
             placeholder="Reference Link (optional)"
-            className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none text-white placeholder-gray-500 focus:border-[#C6922B] transition duration-300"
+            className="
+              w-full
+              px-6
+              py-5
+              rounded-2xl
+              bg-black/30
+              border
+              border-white/10
+              outline-none
+              text-white
+              placeholder-gray-500
+              focus:border-[#C6922B]
+              transition
+              duration-300
+            "
           />
 
+          {/* SUBMIT BUTTON */}
           <button
             type="submit"
             disabled={loading}

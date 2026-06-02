@@ -6,6 +6,9 @@ import {
   collection,
   addDoc,
   serverTimestamp,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
 
 import {
@@ -19,6 +22,11 @@ export default function Newsletter() {
     setNewsletterEmail,
   ] = useState("");
 
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
+
   const handleNewsletterSubscribe =
     async () => {
 
@@ -31,12 +39,41 @@ export default function Newsletter() {
 
       try {
 
-        await addDoc(
+        setLoading(true);
 
+        // CHECK EXISTING EMAIL
+        const newsletterRef =
           collection(
             db,
             "newsletterSubscribers"
-          ),
+          );
+
+        const q =
+          query(
+            newsletterRef,
+            where(
+              "email",
+              "==",
+              newsletterEmail
+            )
+          );
+
+        const existingUser =
+          await getDocs(q);
+
+        if (!existingUser.empty) {
+
+          alert(
+            "You are already subscribed."
+          );
+
+          return;
+        }
+
+        // SAVE NEW SUBSCRIBER
+        await addDoc(
+
+          newsletterRef,
 
           {
 
@@ -48,22 +85,38 @@ export default function Newsletter() {
           }
         );
 
-        await fetch(
-          "https://zyvar-email-server.onrender.com/send-newsletter-welcome",
+        // SEND BREVO EMAIL
+        const response = await fetch(
+          "https://zyvar-email-server.onrender.com/send-newsletter-email",
           {
             method: "POST",
 
             headers: {
-              "Content-Type":
-                "application/json",
+              "Content-Type": "application/json",
             },
 
             body: JSON.stringify({
-              email:
-                newsletterEmail,
+              email: newsletterEmail,
             }),
           }
         );
+
+        const responseData =
+          await response.json();
+
+        console.log(
+          "Newsletter Response:",
+          responseData
+        );
+
+        // CHECK API RESPONSE
+        if (!response.ok) {
+
+          throw new Error(
+            responseData.message ||
+            "Failed to send newsletter email"
+          );
+        }
 
         alert(
           "Subscribed Successfully!"
@@ -78,6 +131,10 @@ export default function Newsletter() {
         alert(
           error.message
         );
+
+      } finally {
+
+        setLoading(false);
       }
     };
 
@@ -121,9 +178,17 @@ export default function Newsletter() {
               handleNewsletterSubscribe
             }
 
-            className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-black "
+            disabled={loading}
+
+            className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-black disabled:opacity-60"
           >
-            Subscribe
+
+            {
+              loading
+                ? "Subscribing..."
+                : "Subscribe"
+            }
+
           </button>
 
         </div>
