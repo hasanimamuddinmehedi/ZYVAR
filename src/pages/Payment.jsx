@@ -29,6 +29,12 @@ import {
   bangladeshData,
 } from "../data/bangladeshData";
 
+import {
+  successAlert,
+  errorAlert,
+  warningAlert,
+} from "../utils/alerts";
+
 export default function Payment() {
 
   const [orderPlaced, setOrderPlaced] = useState(false);
@@ -253,8 +259,9 @@ ${address}
 
         ) {
 
-          alert(
-            "Please enter transaction ID"
+          await warningAlert(
+            "Transaction ID Required",
+            "Please enter your transaction ID to continue."
           );
 
           setLoading(false);
@@ -337,22 +344,26 @@ ${address}
           }
         );
 
-        alert("Order Placed Successfully");
+        await successAlert(
+          "Order Placed!",
+          "Your order has been placed successfully."
+        );
 
-setOrderPlaced(true);
+        setOrderPlaced(true);
 
-clearCart();
+        clearCart();
 
-navigate("/orders", {
-  replace: true,
-});
+        navigate("/my-orders", {
+          replace: true,
+        });
 
       } catch (error) {
 
         console.log(error);
 
-        alert(
-          "Payment Failed"
+        await errorAlert(
+          "Payment Failed",
+          "Something went wrong. Please try again."
         );
 
       } finally {

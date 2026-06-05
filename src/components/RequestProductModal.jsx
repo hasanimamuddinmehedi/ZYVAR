@@ -13,6 +13,11 @@ import {
   db,
 } from "../firebase/firebase";
 
+import {
+  successAlert,
+  errorAlert,
+} from "../utils/alerts";
+
 export default function RequestProductModal({
   open,
   setOpen,
@@ -127,8 +132,9 @@ export default function RequestProductModal({
           }
         );
 
-        alert(
-          "Product Request Submitted Successfully!"
+        await successAlert(
+          "Request Submitted!",
+          "Your product request has been submitted successfully."
         );
 
         // CLOSE MODAL
@@ -162,7 +168,8 @@ export default function RequestProductModal({
 
         console.log(error);
 
-        alert(
+        await errorAlert(
+          "Submission Failed",
           error.message
         );
 

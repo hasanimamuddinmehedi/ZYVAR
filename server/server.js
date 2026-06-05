@@ -289,6 +289,9 @@ app.post(
     try {
       const { order } = req.body;
 
+      const firstProduct =
+        order.items?.[0] || {};
+
       await sendBrevoEmail({
         to: order.email,
 
@@ -302,12 +305,24 @@ app.post(
             order.id,
 
           PRODUCT_NAME:
-            order.items?.[0]?.name ||
+            firstProduct.name ||
             "ZYVAR Product",
 
           PRODUCT_IMAGE:
-            order.items?.[0]?.image ||
-            "",
+            firstProduct.image || "",
+
+          PRODUCT_QTY:
+            firstProduct.quantity || 1,
+
+          PRODUCT_PRICE:
+            firstProduct.price || 0,
+
+          SUBTOTAL:
+            order.subtotal ||
+            order.total || 0,
+
+          SHIPPING:
+            order.shipping || 0,
 
           TOTAL:
             order.total || 0,
@@ -348,6 +363,9 @@ app.post(
     try {
       const { order } = req.body;
 
+      const firstProduct =
+        order.items?.[0] || {};
+
       await sendBrevoEmail({
         to: order.email,
 
@@ -361,12 +379,24 @@ app.post(
             order.id,
 
           PRODUCT_NAME:
-            order.items?.[0]?.name ||
+            firstProduct.name ||
             "ZYVAR Product",
 
           PRODUCT_IMAGE:
-            order.items?.[0]?.image ||
-            "",
+            firstProduct.image || "",
+
+          PRODUCT_QTY:
+            firstProduct.quantity || 1,
+
+          PRODUCT_PRICE:
+            firstProduct.price || 0,
+
+          SUBTOTAL:
+            order.subtotal ||
+            order.total || 0,
+
+          SHIPPING:
+            order.shipping || 0,
 
           TOTAL:
             order.total || 0,
@@ -407,6 +437,9 @@ app.post(
     try {
       const { order } = req.body;
 
+      const firstProduct =
+        order.items?.[0] || {};
+
       await sendBrevoEmail({
         to: order.email,
 
@@ -420,12 +453,24 @@ app.post(
             order.id,
 
           PRODUCT_NAME:
-            order.items?.[0]?.name ||
+            firstProduct.name ||
             "ZYVAR Product",
 
           PRODUCT_IMAGE:
-            order.items?.[0]?.image ||
-            "",
+            firstProduct.image || "",
+
+          PRODUCT_QTY:
+            firstProduct.quantity || 1,
+
+          PRODUCT_PRICE:
+            firstProduct.price || 0,
+
+          SUBTOTAL:
+            order.subtotal ||
+            order.total || 0,
+
+          SHIPPING:
+            order.shipping || 0,
 
           TOTAL:
             order.total || 0,
@@ -502,6 +547,9 @@ app.post(
         templateId = 5;
       }
 
+      const firstProduct =
+        products?.[0] || {};
+
       await sendBrevoEmail({
 
         to: customerEmail,
@@ -517,12 +565,23 @@ app.post(
             orderId,
 
           PRODUCT_NAME:
-            products?.[0]?.name ||
+            firstProduct.name ||
             "ZYVAR Product",
 
           PRODUCT_IMAGE:
-            products?.[0]?.image ||
-            "",
+            firstProduct.image || "",
+
+          PRODUCT_QTY:
+            firstProduct.quantity || 1,
+
+          PRODUCT_PRICE:
+            firstProduct.price || 0,
+
+          SUBTOTAL:
+            subtotal || total || 0,
+
+          SHIPPING:
+            shipping || 0,
 
           TOTAL:
             total || 0,

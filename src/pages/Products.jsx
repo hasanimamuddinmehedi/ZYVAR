@@ -45,6 +45,18 @@ import {
 import RequestProductModal from "../components/RequestProductModal";
 import Footer from "../components/Footer";
 
+import {
+  successAlert,
+} from "../utils/alerts";
+
+// SLUG UTILITY
+const toSlug = (name) =>
+  name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+
 export default function Products() {
 
   const [products,
@@ -196,7 +208,7 @@ export default function Products() {
         {/* HERO */}
         <section className="relative overflow-hidden pt-28 lg:pt-36 pb-24 border-b border-white/10">
 
-          {/* BACKGROUND IMAGE — opacity raised from 20 to 60 so it's clearly visible */}
+          {/* BACKGROUND IMAGE */}
           <div className="absolute inset-0 opacity-60">
 
             <img
@@ -207,7 +219,7 @@ export default function Products() {
 
           </div>
 
-          {/* OVERLAY — lightened so the image shows through more */}
+          {/* OVERLAY */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/50 to-[#0B0B0B]" />
 
           {/* GLOW */}
@@ -322,6 +334,23 @@ export default function Products() {
 
             </div>
 
+            {/* SEARCH */}
+            <div className="mb-10">
+
+              <input
+                type="text"
+                value={search}
+                onChange={(e) =>
+                  setSearch(
+                    e.target.value
+                  )
+                }
+                placeholder="Search products..."
+                className="w-full max-w-xl px-6 py-4 rounded-2xl bg-white/5 border border-white/10 outline-none focus:border-[#C6922B] text-white placeholder-gray-500 transition"
+              />
+
+            </div>
+
             {/* CATEGORY FILTERS */}
             <div className="flex flex-wrap gap-4 mb-14">
 
@@ -397,7 +426,7 @@ export default function Products() {
 
                       {/* IMAGE */}
                       <Link
-                        to={`/product/${product.id}`}
+                        to={`/product/${product.slug || toSlug(product.name)}`}
                         className="block"
                       >
 
@@ -420,7 +449,9 @@ export default function Products() {
                       {/* CONTENT */}
                       <div className="p-7">
 
-                        <Link to={`/product/${product.id}`}>
+                        <Link
+                          to={`/product/${product.slug || toSlug(product.name)}`}
+                        >
 
                           <h3 className="text-xl sm:text-2xl font-bold mb-3 leading-snug group-hover:text-[#C6922B] transition">
                             {product.name}
@@ -485,7 +516,7 @@ export default function Products() {
                           <div className="flex gap-3">
 
                             <button
-                              onClick={() => {
+                              onClick={async () => {
 
                                 addToCart(product);
 
@@ -495,6 +526,10 @@ export default function Products() {
                                   product.name
                                 );
 
+                                await successAlert(
+                                  "Added To Cart!",
+                                  `${product.name} has been added to your cart.`
+                                );
                               }}
                               className="flex-1 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition duration-300 flex items-center justify-center gap-2"
                             >
@@ -506,7 +541,7 @@ export default function Products() {
                             </button>
 
                             <button
-                              onClick={() => {
+                              onClick={async () => {
 
                                 if (
                                   isInWishlist(product.id)
@@ -514,6 +549,11 @@ export default function Products() {
 
                                   removeFromWishlist(
                                     product.id
+                                  );
+
+                                  await successAlert(
+                                    "Removed From Wishlist",
+                                    `${product.name} has been removed from your wishlist.`
                                   );
 
                                 } else {
@@ -527,8 +567,12 @@ export default function Products() {
                                     "Add Wishlist",
                                     product.name
                                   );
-                                }
 
+                                  await successAlert(
+                                    "Added To Wishlist!",
+                                    `${product.name} has been added to your wishlist.`
+                                  );
+                                }
                               }}
                               className={`w-14 rounded-2xl border transition text-xl flex items-center justify-center
 

@@ -28,6 +28,20 @@ import {
   db,
 } from "../../firebase/firebase";
 
+import {
+  successAlert,
+  errorAlert,
+  confirmAlert,
+} from "../../utils/alerts";
+
+// SLUG UTILITY — same as Products.jsx
+const toSlug = (name = "") =>
+  name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+
 export default function OrdersPage() {
 
   const navigate =
@@ -273,6 +287,11 @@ export default function OrdersPage() {
       } catch (error) {
 
         console.log(error);
+
+        await errorAlert(
+          "Update Failed",
+          "Failed to update order status. Please try again."
+        );
       }
     };
 
@@ -282,12 +301,13 @@ export default function OrdersPage() {
 
       try {
 
-        const confirmCancel =
-          window.confirm(
-            "Cancel this order?"
+        const result =
+          await confirmAlert(
+            "Cancel Order?",
+            "Are you sure you want to cancel this order?"
           );
 
-        if (!confirmCancel)
+        if (!result.isConfirmed)
           return;
 
         await updateDoc(
@@ -319,6 +339,11 @@ export default function OrdersPage() {
       } catch (error) {
 
         console.log(error);
+
+        await errorAlert(
+          "Cancel Failed",
+          "Failed to cancel order. Please try again."
+        );
       }
     };
 
@@ -328,12 +353,13 @@ export default function OrdersPage() {
 
       try {
 
-        const confirmDelete =
-          window.confirm(
-            "Delete this order permanently?"
+        const result =
+          await confirmAlert(
+            "Delete Order?",
+            "This will permanently delete the order. This action cannot be undone."
           );
 
-        if (!confirmDelete)
+        if (!result.isConfirmed)
           return;
 
         await deleteDoc(
@@ -354,6 +380,11 @@ export default function OrdersPage() {
       } catch (error) {
 
         console.log(error);
+
+        await errorAlert(
+          "Delete Failed",
+          "Failed to delete order. Please try again."
+        );
       }
     };
 
@@ -552,7 +583,7 @@ export default function OrdersPage() {
                           <div
                             onClick={() =>
                               navigate(
-                                `/product/${item.id}`
+                                `/product/${item.slug || toSlug(item.name)}`
                               )
                             }
                             className="cursor-pointer"
@@ -579,7 +610,7 @@ export default function OrdersPage() {
                             <h4
                               onClick={() =>
                                 navigate(
-                                  `/product/${item.id}`
+                                  `/product/${item.slug || toSlug(item.name)}`
                                 )
                               }
                               className="text-2xl font-black cursor-pointer hover:text-[#C6922B] transition"
@@ -707,13 +738,19 @@ export default function OrdersPage() {
                                       )
                                     );
 
-                                    alert(
-                                      "Product Price Updated"
+                                    await successAlert(
+                                      "Price Updated!",
+                                      "Product price has been updated successfully."
                                     );
 
                                   } catch (error) {
 
                                     console.log(error);
+
+                                    await errorAlert(
+                                      "Update Failed",
+                                      "Failed to update product price. Please try again."
+                                    );
                                   }
                                 }}
                                 className="w-full px-5 py-3 rounded-2xl bg-[#C6922B] text-black font-bold hover:opacity-90 transition"
@@ -819,33 +856,45 @@ export default function OrdersPage() {
                   <button
                     onClick={async () => {
 
-                      await updateDoc(
-                        doc(
-                          db,
-                          "orders",
-                          order.id
-                        ),
-                        {
-                          paymentStatus:
-                            "Pending",
-                        }
-                      );
+                      try {
 
-                      setOrders(
-                        orders.map(
-                          (o) =>
+                        await updateDoc(
+                          doc(
+                            db,
+                            "orders",
+                            order.id
+                          ),
+                          {
+                            paymentStatus:
+                              "Pending",
+                          }
+                        );
 
-                            o.id === order.id
+                        setOrders(
+                          orders.map(
+                            (o) =>
 
-                              ? {
-                                  ...o,
-                                  paymentStatus:
-                                    "Pending",
-                                }
+                              o.id === order.id
 
-                              : o
-                        )
-                      );
+                                ? {
+                                    ...o,
+                                    paymentStatus:
+                                      "Pending",
+                                  }
+
+                                : o
+                          )
+                        );
+
+                      } catch (error) {
+
+                        console.log(error);
+
+                        await errorAlert(
+                          "Update Failed",
+                          "Failed to update payment status."
+                        );
+                      }
                     }}
                     className={`px-5 py-3 rounded-2xl border font-bold transition
 
@@ -865,33 +914,45 @@ export default function OrdersPage() {
                   <button
                     onClick={async () => {
 
-                      await updateDoc(
-                        doc(
-                          db,
-                          "orders",
-                          order.id
-                        ),
-                        {
-                          paymentStatus:
-                            "Paid",
-                        }
-                      );
+                      try {
 
-                      setOrders(
-                        orders.map(
-                          (o) =>
+                        await updateDoc(
+                          doc(
+                            db,
+                            "orders",
+                            order.id
+                          ),
+                          {
+                            paymentStatus:
+                              "Paid",
+                          }
+                        );
 
-                            o.id === order.id
+                        setOrders(
+                          orders.map(
+                            (o) =>
 
-                              ? {
-                                  ...o,
-                                  paymentStatus:
-                                    "Paid",
-                                }
+                              o.id === order.id
 
-                              : o
-                        )
-                      );
+                                ? {
+                                    ...o,
+                                    paymentStatus:
+                                      "Paid",
+                                  }
+
+                                : o
+                          )
+                        );
+
+                      } catch (error) {
+
+                        console.log(error);
+
+                        await errorAlert(
+                          "Update Failed",
+                          "Failed to update payment status."
+                        );
+                      }
                     }}
                     className={`px-5 py-3 rounded-2xl border font-bold transition
 
@@ -998,13 +1059,19 @@ export default function OrdersPage() {
                                 )
                               );
 
-                              alert(
-                                "Shipping Updated"
+                              await successAlert(
+                                "Shipping Updated!",
+                                "Shipping charge has been saved successfully."
                               );
 
                             } catch (error) {
 
                               console.log(error);
+
+                              await errorAlert(
+                                "Update Failed",
+                                "Failed to save shipping charge. Please try again."
+                              );
                             }
                           }}
                           className="px-5 py-3 rounded-2xl bg-[#C6922B] text-black font-bold hover:opacity-90 transition"

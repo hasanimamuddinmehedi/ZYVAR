@@ -14,11 +14,24 @@ import {
   db,
 } from "../firebase/firebase";
 
+import {
+  useNavigate,
+} from "react-router-dom";
+
+import {
+  successAlert,
+  errorAlert,
+  warningAlert,
+} from "../utils/alerts";
+
 export default function ProductReviews({
 
   productId,
 
 }) {
+
+  const navigate =
+    useNavigate();
 
   const [reviews,
     setReviews] =
@@ -27,6 +40,10 @@ export default function ProductReviews({
   const [loading,
     setLoading] =
     useState(true);
+
+  const [submitting,
+    setSubmitting] =
+    useState(false);
 
   const [comment,
     setComment] =
@@ -98,16 +115,21 @@ export default function ProductReviews({
 
       e.preventDefault();
 
+      if (!auth.currentUser) {
+
+        await warningAlert(
+          "Login Required",
+          "Please login to submit a review."
+        );
+
+        navigate("/login");
+
+        return;
+      }
+
       try {
 
-        if (!auth.currentUser) {
-
-          alert(
-            "Please login first"
-          );
-
-          return;
-        }
+        setSubmitting(true);
 
         await addDoc(
 
@@ -127,8 +149,10 @@ export default function ProductReviews({
               auth.currentUser.displayName ||
               "User",
 
-            userEmail:
-              auth.currentUser.email,
+            // SAVE PHOTO URL FOR DISPLAY
+            userPhoto:
+              auth.currentUser.photoURL ||
+              "",
 
             rating,
 
@@ -139,8 +163,9 @@ export default function ProductReviews({
           }
         );
 
-        alert(
-          "Review Added"
+        await successAlert(
+          "Review Added!",
+          "Your review has been submitted successfully."
         );
 
         setComment("");
@@ -153,9 +178,14 @@ export default function ProductReviews({
 
         console.log(error);
 
-        alert(
-          "Failed To Add Review"
+        await errorAlert(
+          "Failed",
+          "Failed to add review. Please try again."
         );
+
+      } finally {
+
+        setSubmitting(false);
       }
     };
 
@@ -192,7 +222,7 @@ export default function ProductReviews({
 
           </p>
 
-          <h2 className="text-5xl font-black ">
+          <h2 className="text-5xl font-black">
 
             Product Reviews
 
@@ -208,7 +238,7 @@ export default function ProductReviews({
 
           </p>
 
-          <h3 className="text-4xl font-black  text-[#C6922B]">
+          <h3 className="text-4xl font-black text-[#C6922B]">
 
             ⭐ {averageRating}
 
@@ -221,7 +251,7 @@ export default function ProductReviews({
       {/* REVIEW FORM */}
       <div className="rounded-[35px] border border-white/10 bg-white/5 p-8 mb-10">
 
-        <h3 className="text-3xl font-black  mb-8">
+        <h3 className="text-3xl font-black mb-8">
 
           Write A Review
 
@@ -314,10 +344,16 @@ export default function ProductReviews({
 
             type="submit"
 
-            className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-black "
+            disabled={submitting}
+
+            className="px-8 py-5 rounded-2xl bg-[#C6922B] text-black font-black disabled:opacity-50 disabled:cursor-not-allowed transition"
           >
 
-            Submit Review
+            {
+              submitting
+                ? "Submitting..."
+                : "Submit Review"
+            }
 
           </button>
 
@@ -338,7 +374,7 @@ export default function ProductReviews({
 
         <div className="rounded-[35px] border border-white/10 bg-white/5 p-16 text-center">
 
-          <h3 className="text-3xl font-black  mb-4">
+          <h3 className="text-3xl font-black mb-4">
 
             No Reviews Yet
 
@@ -367,23 +403,90 @@ export default function ProductReviews({
 
               <div className="flex justify-between items-start mb-5">
 
-                <div>
+                {/* REVIEWER — NAME + PHOTO, NO EMAIL */}
+                <div className="flex items-center gap-4">
 
-                  <h4 className="text-2xl font-black  mb-2">
+                  {/* PROFILE PICTURE */}
+                  {
+                    review.userPhoto ? (
 
-                    {review.userName}
+                      <img
+                        src={review.userPhoto}
+                        alt={review.userName}
+                        className="
+                          w-14
+                          h-14
+                          rounded-full
+                          object-cover
+                          border-2
+                          border-[#C6922B]/40
+                          flex-shrink-0
+                        "
+                      />
 
-                  </h4>
+                    ) : (
 
-                  <p className="text-gray-400">
+                      // FALLBACK AVATAR WITH INITIAL
+                      <div
+                        className="
+                          w-14
+                          h-14
+                          rounded-full
+                          bg-[#C6922B]/20
+                          border-2
+                          border-[#C6922B]/40
+                          flex
+                          items-center
+                          justify-center
+                          text-[#C6922B]
+                          text-xl
+                          font-black
+                          flex-shrink-0
+                        "
+                      >
+                        {
+                          review.userName
+                            ?.charAt(0)
+                            ?.toUpperCase() ||
+                          "U"
+                        }
+                      </div>
+                    )
+                  }
 
-                    {review.userEmail}
+                  <div>
 
-                  </p>
+                    <h4 className="text-xl font-black mb-1">
+
+                      {review.userName}
+
+                    </h4>
+
+                    <p className="text-gray-500 text-sm">
+
+                      {
+                        review.createdAt?.toDate
+                          ? review.createdAt
+                              .toDate()
+                              .toLocaleDateString(
+                                "en-US",
+                                {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                }
+                              )
+                          : ""
+                      }
+
+                    </p>
+
+                  </div>
 
                 </div>
 
-                <div className="text-2xl">
+                {/* STAR RATING */}
+                <div className="text-2xl flex-shrink-0">
 
                   {"⭐".repeat(
                     review.rating

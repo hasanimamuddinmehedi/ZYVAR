@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   auth,
@@ -39,10 +39,22 @@ import {
   bangladeshData,
 } from "../data/bangladeshData";
 
+import {
+  uploadImage,
+} from "../utils/cloudinary";
+
+import {
+  successAlert,
+  errorAlert,
+} from "../utils/alerts";
+
 export default function Profile() {
 
   const navigate =
     useNavigate();
+
+  const photoInputRef =
+    useRef(null);
 
   const [user, setUser] =
     useState(null);
@@ -70,6 +82,10 @@ export default function Profile() {
     useState(false);
 
   const [saving, setSaving] =
+    useState(false);
+
+  const [photoUploading,
+    setPhotoUploading] =
     useState(false);
 
   // ADMIN CHECK
@@ -215,6 +231,74 @@ export default function Profile() {
       });
     };
 
+  // PROFILE PICTURE UPLOAD
+  const handlePhotoChange =
+    async (e) => {
+
+      const selectedFile =
+        e.target.files?.[0];
+
+      if (!selectedFile)
+        return;
+
+      try {
+
+        setPhotoUploading(true);
+
+        // UPLOAD TO CLOUDINARY
+        const imageUrl =
+          await uploadImage(
+            selectedFile
+          );
+
+        // UPDATE FIRESTORE
+        await updateDoc(
+
+          doc(
+            db,
+            "users",
+            user.uid
+          ),
+
+          {
+            photoURL: imageUrl,
+          }
+        );
+
+        // UPDATE LOCAL STATE
+        setProfile((prev) => ({
+
+          ...prev,
+
+          photoURL: imageUrl,
+        }));
+
+        await successAlert(
+          "Photo Updated!",
+          "Profile picture updated successfully."
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+        await errorAlert(
+          "Upload Failed",
+          "Failed to upload profile picture. Please try again."
+        );
+
+      } finally {
+
+        setPhotoUploading(false);
+
+        // RESET INPUT SO SAME FILE CAN BE RE-SELECTED
+        if (photoInputRef.current) {
+
+          photoInputRef.current.value = "";
+        }
+      }
+    };
+
   // SAVE PROFILE
   const saveProfile =
     async () => {
@@ -268,8 +352,9 @@ export default function Profile() {
           }
         );
 
-        alert(
-          "Profile Updated Successfully"
+        await successAlert(
+          "Profile Updated!",
+          "Your profile has been updated successfully."
         );
 
         setEditing(
@@ -282,8 +367,9 @@ export default function Profile() {
           error
         );
 
-        alert(
-          "Failed To Update Profile"
+        await errorAlert(
+          "Update Failed",
+          "Failed to update profile. Please try again."
         );
 
       } finally {
@@ -353,13 +439,45 @@ export default function Profile() {
                 )
               }
 
-              {/* CAMERA */}
+              {/* HIDDEN FILE INPUT */}
+              <input
+
+                ref={photoInputRef}
+
+                type="file"
+
+                accept="image/*"
+
+                onChange={
+                  handlePhotoChange
+                }
+
+                className="hidden"
+              />
+
+              {/* CAMERA BUTTON */}
               <button
 
-                className="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-[#C6922B] text-black flex items-center justify-center"
+                type="button"
+
+                disabled={photoUploading}
+
+                onClick={() =>
+                  photoInputRef.current?.click()
+                }
+
+                className="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-[#C6922B] text-black flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
 
-                <FaCamera />
+                {
+                  photoUploading
+
+                    ? (
+                        <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                      )
+
+                    : <FaCamera />
+                }
 
               </button>
 

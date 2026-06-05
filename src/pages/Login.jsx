@@ -6,6 +6,7 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
 } from "firebase/auth";
 
 import {
@@ -33,6 +34,12 @@ import {
 import {
   trackEvent,
 } from "../utils/analytics";
+
+import {
+  successAlert,
+  errorAlert,
+  warningAlert,
+} from "../utils/alerts";
 
 
 export default function Login() {
@@ -71,6 +78,12 @@ export default function Login() {
   // PASSWORD VALIDATION
   const isPasswordValid =
     password.length >= 6;
+
+  // DETECT MOBILE
+  const isMobile =
+    /iPhone|iPad|iPod|Android/i.test(
+      navigator.userAgent
+    );
 
   // SAVE USER TO LOCAL STORAGE
   const saveUserData =
@@ -217,7 +230,8 @@ export default function Login() {
             }
           );
 
-          alert(
+          await warningAlert(
+            "Email Not Verified",
             "Please verify your email first. Verification email sent again."
           );
 
@@ -243,7 +257,8 @@ export default function Login() {
         );
 
         // STEP 7 — SUCCESS
-        alert(
+        await successAlert(
+          "Welcome Back!",
           "Successfully Logged In"
         );
 
@@ -259,7 +274,8 @@ export default function Login() {
           "auth/user-not-found"
         ) {
 
-          alert(
+          await errorAlert(
+            "Account Not Found",
             "Account not found. Please sign up first."
           );
         }
@@ -270,7 +286,8 @@ export default function Login() {
           "auth/wrong-password"
         ) {
 
-          alert(
+          await errorAlert(
+            "Wrong Password",
             "Password not matched."
           );
         }
@@ -281,7 +298,8 @@ export default function Login() {
           "auth/invalid-email"
         ) {
 
-          alert(
+          await errorAlert(
+            "Invalid Email",
             "Email not matched."
           );
         }
@@ -292,14 +310,16 @@ export default function Login() {
           "auth/invalid-credential"
         ) {
 
-          alert(
+          await errorAlert(
+            "Invalid Credentials",
             "Invalid email or password."
           );
         }
 
         else {
 
-          alert(
+          await errorAlert(
+            "Login Failed",
             error.message
           );
         }
@@ -310,7 +330,9 @@ export default function Login() {
       }
     };
 
-  // GOOGLE LOGIN — using signInWithPopup
+  // GOOGLE LOGIN
+  // Uses signInWithRedirect on mobile (popups are blocked by mobile browsers)
+  // Uses signInWithPopup on desktop
   const handleGoogleLogin =
     async () => {
 
@@ -318,6 +340,21 @@ export default function Login() {
 
         setLoading(true);
 
+        if (isMobile) {
+
+          // MOBILE — redirect flow
+          await signInWithRedirect(
+            auth,
+            provider
+          );
+
+          // signInWithRedirect navigates away;
+          // result is handled via getRedirectResult
+          // in a useEffect on mount (see below)
+          return;
+        }
+
+        // DESKTOP — popup flow
         const result =
           await signInWithPopup(
             auth,
@@ -328,7 +365,8 @@ export default function Login() {
           result.user
         );
 
-        alert(
+        await successAlert(
+          "Welcome!",
           "Google Login Successful"
         );
 
@@ -343,7 +381,8 @@ export default function Login() {
           "auth/popup-closed-by-user"
         ) {
 
-          alert(
+          await errorAlert(
+            "Google Login Failed",
             error.message
           );
         }
@@ -360,7 +399,8 @@ export default function Login() {
 
       if (!email) {
 
-        alert(
+        await warningAlert(
+          "Email Required",
           "Please enter your email first."
         );
 
@@ -388,13 +428,15 @@ export default function Login() {
           }
         );
 
-        alert(
+        await successAlert(
+          "Email Sent",
           "Password reset email sent."
         );
 
       } catch (error) {
 
-        alert(
+        await errorAlert(
+          "Failed",
           error.message
         );
       }

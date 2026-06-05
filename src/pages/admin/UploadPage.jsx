@@ -25,6 +25,20 @@ import {
   uploadImage,
 } from "../../utils/cloudinary";
 
+import {
+  successAlert,
+  errorAlert,
+  warningAlert,
+} from "../../utils/alerts";
+
+// SLUG UTILITY
+const toSlug = (name = "") =>
+  name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+
 export default function UploadPage({
   products = [],
   orders = [],
@@ -95,9 +109,12 @@ export default function UploadPage({
 
         if (!file) {
 
-          alert(
-            "Please select image"
+          await warningAlert(
+            "Image Required",
+            "Please select an image before uploading."
           );
+
+          setUploading(false);
 
           return;
         }
@@ -128,13 +145,18 @@ export default function UploadPage({
             image:
               imageUrl,
 
+            // SLUG — used for clean URL navigation
+            slug:
+              toSlug(name),
+
             createdAt:
               serverTimestamp(),
           }
         );
 
-        alert(
-          "Product Uploaded Successfully"
+        await successAlert(
+          "Product Uploaded!",
+          "Product has been uploaded successfully."
         );
 
         // RESET
@@ -153,8 +175,9 @@ export default function UploadPage({
 
         console.log(error);
 
-        alert(
-          "Upload Failed"
+        await errorAlert(
+          "Upload Failed",
+          "Something went wrong. Please try again."
         );
 
       } finally {

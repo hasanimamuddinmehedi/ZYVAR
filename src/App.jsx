@@ -107,7 +107,7 @@ function AppContent() {
           }
         />
 
-        {/* PRODUCT DETAILS */}
+        {/* PRODUCT DETAILS — clean slug URL: /product/product-name */}
         <Route
           path="/product/:id"
           element={
@@ -298,11 +298,13 @@ function AppContent() {
             }
           />
 
+          {/* PRODUCT REQUESTS */}
           <Route
-  path="product-requests"
-  element={<ProductRequestsPage />}
-/>
-
+            path="product-requests"
+            element={
+              <ProductRequestsPage />
+            }
+          />
 
         </Route>
 
@@ -315,6 +317,7 @@ function AppContent() {
             </AdminRoute>
           }
         />
+
       </Routes>
     </>
   );

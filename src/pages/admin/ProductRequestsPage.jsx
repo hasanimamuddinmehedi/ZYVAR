@@ -22,6 +22,12 @@ import {
   FaClock,
 } from "react-icons/fa";
 
+import {
+  successAlert,
+  errorAlert,
+  confirmAlert,
+} from "../../utils/alerts";
+
 export default function ProductRequestsPage() {
 
   const [
@@ -92,17 +98,16 @@ export default function ProductRequestsPage() {
   // DELETE REQUEST
   const handleDelete = async (id) => {
 
-    const confirmDelete =
-      window.confirm(
-        "Delete this request?"
-      );
-
-    if (!confirmDelete) {
-
-      return;
-    }
-
     try {
+
+      const result =
+        await confirmAlert(
+          "Delete Request?",
+          "This will permanently delete the product request. This action cannot be undone."
+        );
+
+      if (!result.isConfirmed)
+        return;
 
       await deleteDoc(
         doc(
@@ -121,6 +126,11 @@ export default function ProductRequestsPage() {
     } catch (error) {
 
       console.log(error);
+
+      await errorAlert(
+        "Delete Failed",
+        "Failed to delete the request. Please try again."
+      );
     }
   };
 
@@ -197,17 +207,19 @@ export default function ProductRequestsPage() {
         )
       );
 
-      alert(
-        "Request marked as completed and email sent successfully."
+      await successAlert(
+        "Request Completed!",
+        "Request marked as completed and email sent to the customer."
       );
 
     } catch (error) {
 
       console.log(error);
 
-      alert(
+      await errorAlert(
+        "Action Failed",
         error.message ||
-        "Something went wrong."
+        "Something went wrong. Please try again."
       );
     }
   };

@@ -39,6 +39,14 @@ import { db } from "../firebase/firebase";
 
 import RequestProductModal from "./RequestProductModal";
 
+// SLUG UTILITY
+const toSlug = (name = "") =>
+  name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+
 export default function Navbar() {
 
   const [menuOpen, setMenuOpen] =
@@ -99,11 +107,6 @@ export default function Navbar() {
             productsData
           );
 
-          console.log(
-            "Firebase Products:",
-            productsData
-          );
-
         } catch (error) {
 
           console.log(
@@ -160,7 +163,7 @@ export default function Navbar() {
       path: "/my-orders",
     },
 
-    // REAL PRODUCTS
+    // REAL PRODUCTS — clean slug URL: /product/product-name
     ...products.map(
       (product) => ({
 
@@ -168,7 +171,7 @@ export default function Navbar() {
           product.name || "",
 
         path:
-          `/products/${product._id}`,
+          `/product/${product.slug || toSlug(product.name)}`,
 
         image:
           product.image,
@@ -336,7 +339,6 @@ export default function Navbar() {
             <button
 
               onClick={() =>
-
                 setShowSearch(
                   !showSearch
                 )
@@ -454,21 +456,27 @@ export default function Navbar() {
 
           </div>
 
-          {/* MOBILE RIGHT */}
+          {/* MOBILE RIGHT — search button only, no X here since menu has its own */}
           <div className="lg:hidden flex items-center gap-3">
 
             {/* MOBILE SEARCH BUTTON */}
             <button
 
-              onClick={() =>
+              onClick={() => {
+
                 setShowSearch(
                   !showSearch
-                )
-              }
+                );
+
+                // CLOSE MENU WHEN OPENING SEARCH
+                if (!showSearch) {
+                  setMenuOpen(false);
+                }
+              }}
 
               className="
-                w-12
-                h-12
+                w-10
+                h-10
                 rounded-2xl
                 border
                 border-white/10
@@ -480,19 +488,22 @@ export default function Navbar() {
               "
             >
 
-              {
-                showSearch
-                  ? <X size={20} />
-                  : <Search size={20} />
-              }
+              {/* ONLY SHOW SEARCH ICON — X is handled inside the search bar */}
+              <Search size={20} />
 
             </button>
 
-            {/* MOBILE BUTTON */}
+            {/* MOBILE MENU TOGGLE */}
             <button
-              onClick={() =>
-                setMenuOpen(!menuOpen)
-              }
+              onClick={() => {
+
+                setMenuOpen(!menuOpen);
+
+                // CLOSE SEARCH WHEN OPENING MENU
+                if (!menuOpen) {
+                  setShowSearch(false);
+                }
+              }}
               className="w-10 h-10 rounded-2xl border border-white/10 bg-white/5 text-white flex items-center justify-center"
             >
 
@@ -560,6 +571,7 @@ export default function Navbar() {
                     )
                   }
                   placeholder="Search premium products..."
+                  autoFocus
                   className="
                     flex-1
                     bg-transparent
@@ -570,38 +582,65 @@ export default function Navbar() {
                   "
                 />
 
+                {/* SINGLE CLOSE BUTTON INSIDE SEARCH BAR */}
+                <button
+                  onClick={() => {
+
+                    setShowSearch(false);
+
+                    setSearch("");
+                  }}
+                  className="
+                    w-9
+                    h-9
+                    rounded-xl
+                    border
+                    border-white/10
+                    bg-white/5
+                    flex
+                    items-center
+                    justify-center
+                    text-gray-400
+                    hover:text-white
+                    hover:border-white/30
+                    transition
+                    flex-shrink-0
+                  "
+                >
+                  <X size={18} />
+                </button>
+
               </div>
 
               <button
-  onClick={() => {
+                onClick={() => {
 
-  // CLOSE SEARCH BAR
-  setShowSearch(false);
+                  // CLOSE SEARCH BAR
+                  setShowSearch(false);
 
-  // CLOSE MOBILE MENU
-  setMenuOpen(false);
+                  // CLOSE MOBILE MENU
+                  setMenuOpen(false);
 
-  // OPEN REQUEST MODAL
-  setRequestOpen(true);
+                  // OPEN REQUEST MODAL
+                  setRequestOpen(true);
+                }}
+                className="
+                  w-full
+                  mt-4
+                  py-4
+                  rounded-2xl
+                  border
+                  border-[#C6922B]/20
+                  bg-[#C6922B]/10
+                  text-[#C6922B]
+                  font-bold
+                "
+              >
 
-}}
-  className="
-  w-full
-  mt-4
-  py-4
-  rounded-2xl
-  border
-  border-[#C6922B]/20
-  bg-[#C6922B]/10
-  text-[#C6922B]
-  font-bold
-"
->
+                Can't find product?
+                Request It
 
-  Can't find product?
-  Request It
-
-</button>
+              </button>
 
               {/* SEARCH RESULTS */}
               {
@@ -722,7 +761,7 @@ export default function Navbar() {
 
           </div>
         )
-        
+
       }
 
       {/* MOBILE MENU */}
@@ -736,7 +775,7 @@ export default function Navbar() {
 
         <div className="px-6 py-8 flex flex-col min-h-full">
 
-          {/* CLOSE BUTTON */}
+          {/* HEADER */}
           <div className="flex items-center justify-between mb-10">
 
             <h2 className="text-2xl font-black tracking-[0.2em] text-[#C6922B]">
@@ -967,13 +1006,13 @@ export default function Navbar() {
 
       </div>
 
-</header>
+    </header>
 
- <RequestProductModal
+    <RequestProductModal
       open={requestOpen}
       onClose={() => setRequestOpen(false)}
     />
 
-  </>
+    </>
   );
 }

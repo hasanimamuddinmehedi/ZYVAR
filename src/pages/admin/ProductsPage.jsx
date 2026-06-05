@@ -12,6 +12,10 @@ import {
 } from "firebase/firestore";
 
 import {
+  useNavigate,
+} from "react-router-dom";
+
+import {
   LazyLoadImage,
 } from "react-lazy-load-image-component";
 
@@ -31,7 +35,24 @@ import {
   db,
 } from "../../firebase/firebase";
 
+import {
+  successAlert,
+  errorAlert,
+  confirmAlert,
+} from "../../utils/alerts";
+
+// SLUG UTILITY
+const toSlug = (name = "") =>
+  name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+
 export default function ProductsPage() {
+
+  const navigate =
+    useNavigate();
 
   const [products,
     setProducts] =
@@ -114,15 +135,16 @@ export default function ProductsPage() {
   const handleDeleteProduct =
     async (id) => {
 
-      const confirmDelete =
-        window.confirm(
-          "Delete this product?"
-        );
-
-      if (!confirmDelete)
-        return;
-
       try {
+
+        const result =
+          await confirmAlert(
+            "Delete Product?",
+            "This will permanently delete the product. This action cannot be undone."
+          );
+
+        if (!result.isConfirmed)
+          return;
 
         await deleteDoc(
           doc(
@@ -139,13 +161,19 @@ export default function ProductsPage() {
           )
         );
 
-        alert(
-          "Product Deleted"
+        await successAlert(
+          "Product Deleted!",
+          "The product has been deleted successfully."
         );
 
       } catch (error) {
 
         console.log(error);
+
+        await errorAlert(
+          "Delete Failed",
+          "Failed to delete product. Please try again."
+        );
       }
     };
 
@@ -236,16 +264,18 @@ export default function ProductsPage() {
 
         setEditingId(null);
 
-        alert(
-          "Product Updated Successfully"
+        await successAlert(
+          "Product Updated!",
+          "Product has been updated successfully."
         );
 
       } catch (error) {
 
         console.log(error);
 
-        alert(
-          "Update Failed"
+        await errorAlert(
+          "Update Failed",
+          "Failed to update product. Please try again."
         );
       }
     };
@@ -409,11 +439,22 @@ export default function ProductsPage() {
                     alt={
                       product.name
                     }
-                    className="
+                    onClick={() =>
+                      !isEditing &&
+                      navigate(
+                        `/product/${product.slug || toSlug(product.name)}`
+                      )
+                    }
+                    className={`
                     w-full
                     h-80
                     object-cover
-                  "
+                    ${
+                      !isEditing
+                        ? "cursor-pointer hover:scale-105 transition duration-300"
+                        : ""
+                    }
+                    `}
                   />
 
                   <div
@@ -870,10 +911,18 @@ export default function ProductsPage() {
                       </p>
 
                       <h3
+                        onClick={() =>
+                          navigate(
+                            `/product/${product.slug || toSlug(product.name)}`
+                          )
+                        }
                         className="
                         text-2xl
                         font-black
                         mb-4
+                        cursor-pointer
+                        hover:text-[#C6922B]
+                        transition
                       "
                       >
                         {

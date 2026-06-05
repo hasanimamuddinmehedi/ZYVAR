@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
 import {
+  collection,
+  getDocs,
+  query,
+  where,
   doc,
   getDoc,
 } from "firebase/firestore";
@@ -33,6 +37,19 @@ import {
   useWishlist,
 } from "../context/WishlistContext";
 
+import {
+  successAlert,
+  errorAlert,
+} from "../utils/alerts";
+
+// SLUG UTILITY — must match exactly how slugs are generated everywhere else
+const toSlug = (name = "") =>
+  name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+
 export default function ProductDetails() {
 
   const { id } =
@@ -40,6 +57,9 @@ export default function ProductDetails() {
 
   const { addToCart } =
     useCart();
+
+  const { addToWishlist } =
+    useWishlist();
 
   const [product,
     setProduct] =
@@ -49,23 +69,21 @@ export default function ProductDetails() {
     setLoading] =
     useState(true);
 
-    <button
+  // IMAGE ZOOM STATE
+  const [zoomOpen,
+    setZoomOpen] =
+    useState(false);
 
-  onClick={() =>
-    addToWishlist(product)
-  }
-
-  className="px-10 py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
->
-
-  Wishlist
-
-</button>
+  const [zoomPos,
+    setZoomPos] =
+    useState({ x: 50, y: 50 });
 
   // FETCH PRODUCT
   useEffect(() => {
 
-    fetchProduct();
+    if (id) {
+      fetchProduct();
+    }
 
   }, [id]);
 
@@ -74,56 +92,124 @@ export default function ProductDetails() {
 
       try {
 
-        const docRef =
-          doc(
-            db,
-            "products",
-            id
+        setLoading(true);
+
+        // STEP 1 — TRY FETCHING BY slug FIELD
+        const slugQuery =
+          query(
+            collection(db, "products"),
+            where("slug", "==", id)
           );
 
-        const docSnap =
-          await getDoc(
-            docRef
-          );
+        const slugSnapshot =
+          await getDocs(slugQuery);
 
-        if (
-          docSnap.exists()
-        ) {
+        if (!slugSnapshot.empty) {
 
-          const productData = {
+          const docItem =
+            slugSnapshot.docs[0];
 
-            id:
-              docSnap.id,
-
+          setProduct({
+            id: docItem.id,
             quantity: 1,
+            ...docItem.data(),
+          });
 
-            ...docSnap.data(),
-          };
+          trackEvent("Product", "View Product", docItem.data().name);
 
-          setProduct(
-            productData
-          );
-
-          // TRACK VIEW
-          trackEvent(
-            "Product",
-            "View Product",
-            productData.name
-          );
-
-        } else {
-
-          setProduct(null);
+          return;
         }
+
+        // STEP 2 — FETCH ALL PRODUCTS AND MATCH BY GENERATED SLUG FROM NAME
+        // Handles existing products that don't have a slug field yet
+        const allSnapshot =
+          await getDocs(
+            collection(db, "products")
+          );
+
+        const matched =
+          allSnapshot.docs.find(
+            (docItem) =>
+              toSlug(
+                docItem.data().name || ""
+              ) === id
+          );
+
+        if (matched) {
+
+          setProduct({
+            id: matched.id,
+            quantity: 1,
+            ...matched.data(),
+          });
+
+          trackEvent("Product", "View Product", matched.data().name);
+
+          return;
+        }
+
+        // STEP 3 — FALLBACK: TRY AS FIRESTORE DOC ID
+        // Handles old bookmarked links that used the raw doc ID
+        try {
+
+          const docRef =
+            doc(db, "products", id);
+
+          const docSnap =
+            await getDoc(docRef);
+
+          if (docSnap.exists()) {
+
+            setProduct({
+              id: docSnap.id,
+              quantity: 1,
+              ...docSnap.data(),
+            });
+
+            trackEvent("Product", "View Product", docSnap.data().name);
+
+            return;
+          }
+
+        } catch (err) {
+
+          // Invalid doc ID format — safe to ignore, fall through to null
+          console.log("Doc ID lookup failed:", err.message);
+        }
+
+        // NOTHING FOUND
+        setProduct(null);
 
       } catch (error) {
 
         console.log(error);
 
+        setProduct(null);
+
       } finally {
 
         setLoading(false);
       }
+    };
+
+  // IMAGE ZOOM — track mouse position
+  const handleMouseMove =
+    (e) => {
+
+      const rect =
+        e.currentTarget.getBoundingClientRect();
+
+      const x =
+        ((e.clientX - rect.left) /
+          rect.width) *
+        100;
+
+      const y =
+        ((e.clientY - rect.top) /
+          rect.height) *
+        100;
+
+      setZoomPos({ x, y });
     };
 
   // LOADING
@@ -170,18 +256,72 @@ export default function ProductDetails() {
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
 
-        {/* IMAGE */}
+        {/* IMAGE WITH ZOOM */}
         <div>
 
-          <LazyLoadImage
+          <div
+            className="
+              relative
+              overflow-hidden
+              rounded-[40px]
+              border
+              border-white/10
+              shadow-2xl
+              cursor-zoom-in
+            "
+            onMouseMove={
+              handleMouseMove
+            }
+            onMouseEnter={() =>
+              setZoomOpen(true)
+            }
+            onMouseLeave={() =>
+              setZoomOpen(false)
+            }
+          >
 
-            src={product?.image}
+            <LazyLoadImage
 
-            alt={product?.name}
+              src={product?.image}
 
-            className="w-full rounded-[40px] object-cover border border-white/10 shadow-2xl"
+              alt={product?.name}
 
-          />
+              className="w-full object-cover"
+
+            />
+
+            {/* ZOOM LENS OVERLAY */}
+            {
+              zoomOpen && (
+
+                <div
+                  className="
+                    absolute
+                    inset-0
+                    pointer-events-none
+                  "
+                  style={{
+                    backgroundImage:
+                      `url(${product?.image})`,
+                    backgroundSize:
+                      "250%",
+                    backgroundPosition:
+                      `${zoomPos.x}% ${zoomPos.y}%`,
+                    backgroundRepeat:
+                      "no-repeat",
+                  }}
+                />
+              )
+            }
+
+          </div>
+
+          {/* ZOOM HINT */}
+          <p className="mt-4 text-center text-gray-500 text-sm">
+
+            Hover over image to zoom
+
+          </p>
 
         </div>
 
@@ -247,12 +387,13 @@ export default function ProductDetails() {
 
             <button
 
-              onClick={() => {
+              onClick={async () => {
 
                 addToCart(product);
 
-                alert(
-                  "Added To Cart"
+                await successAlert(
+                  "Added To Cart!",
+                  `${product.name} has been added to your cart.`
                 );
               }}
 
@@ -263,7 +404,30 @@ export default function ProductDetails() {
 
             </button>
 
-            <button className="px-10 py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] transition">
+            <button
+
+              onClick={async () => {
+
+                try {
+
+                  addToWishlist(product);
+
+                  await successAlert(
+                    "Added To Wishlist!",
+                    `${product.name} has been added to your wishlist.`
+                  );
+
+                } catch (error) {
+
+                  await errorAlert(
+                    "Failed",
+                    error.message
+                  );
+                }
+              }}
+
+              className="px-10 py-5 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+            >
 
               Wishlist
 

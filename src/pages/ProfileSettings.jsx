@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   auth,
@@ -29,10 +29,28 @@ import {
   FaSave,
 } from "react-icons/fa";
 
+// BANGLADESH DATA
+import {
+  bangladeshData,
+} from "../data/bangladeshData";
+
+import {
+  uploadImage,
+} from "../utils/cloudinary";
+
+import {
+  successAlert,
+  errorAlert,
+  warningAlert,
+} from "../utils/alerts";
+
 export default function ProfileSettings() {
 
   const navigate =
     useNavigate();
+
+  const photoInputRef =
+    useRef(null);
 
   const [user, setUser] =
     useState(null);
@@ -41,6 +59,10 @@ export default function ProfileSettings() {
     useState(true);
 
   const [saving, setSaving] =
+    useState(false);
+
+  const [photoUploading,
+    setPhotoUploading] =
     useState(false);
 
   const [showPassword, setShowPassword] =
@@ -67,16 +89,25 @@ export default function ProfileSettings() {
       address: "",
     });
 
-  const divisions = [
-    "Dhaka",
-    "Chattogram",
-    "Rajshahi",
-    "Khulna",
-    "Barishal",
-    "Sylhet",
-    "Rangpur",
-    "Mymensingh",
-  ];
+  // AUTO FILTER — DISTRICTS & UPAZILAS
+  const districts =
+    profile?.division
+      ? Object.keys(
+          bangladeshData[
+            profile.division
+          ] || {}
+        )
+      : [];
+
+  const upazilas =
+    profile?.division &&
+    profile?.district
+      ? bangladeshData[
+          profile.division
+        ]?.[
+          profile.district
+        ] || []
+      : [];
 
   // AUTH
   useEffect(() => {
@@ -150,9 +181,151 @@ export default function ProfileSettings() {
       });
     };
 
+  // DIVISION CHANGE — reset district & upazila
+  const handleDivisionChange =
+    (e) => {
+
+      setProfile({
+
+        ...profile,
+
+        division:
+          e.target.value,
+
+        district: "",
+
+        upazila: "",
+      });
+    };
+
+  // DISTRICT CHANGE — reset upazila
+  const handleDistrictChange =
+    (e) => {
+
+      setProfile({
+
+        ...profile,
+
+        district:
+          e.target.value,
+
+        upazila: "",
+      });
+    };
+
+  // PROFILE PICTURE UPLOAD
+  const handlePhotoChange =
+    async (e) => {
+
+      const selectedFile =
+        e.target.files?.[0];
+
+      if (!selectedFile)
+        return;
+
+      try {
+
+        setPhotoUploading(true);
+
+        // UPLOAD TO CLOUDINARY
+        const imageUrl =
+          await uploadImage(
+            selectedFile
+          );
+
+        // UPDATE FIRESTORE
+        await updateDoc(
+
+          doc(
+            db,
+            "users",
+            user.uid
+          ),
+
+          {
+            photoURL: imageUrl,
+          }
+        );
+
+        // UPDATE AUTH PROFILE
+        await updateProfile(
+
+          auth.currentUser,
+
+          {
+            photoURL: imageUrl,
+          }
+        );
+
+        // UPDATE LOCAL STORAGE
+        const stored =
+          JSON.parse(
+            localStorage.getItem(
+              "zyvar-user-data"
+            ) || "{}"
+          );
+
+        localStorage.setItem(
+
+          "zyvar-user-data",
+
+          JSON.stringify({
+            ...stored,
+            photoURL: imageUrl,
+          })
+        );
+
+        // UPDATE LOCAL STATE
+        setProfile((prev) => ({
+
+          ...prev,
+
+          photoURL: imageUrl,
+        }));
+
+        await successAlert(
+          "Photo Updated!",
+          "Profile picture updated successfully."
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+        await errorAlert(
+          "Upload Failed",
+          "Failed to upload profile picture. Please try again."
+        );
+
+      } finally {
+
+        setPhotoUploading(false);
+
+        // RESET INPUT SO SAME FILE CAN BE RE-SELECTED
+        if (photoInputRef.current) {
+
+          photoInputRef.current.value = "";
+        }
+      }
+    };
+
   // SAVE SETTINGS
   const handleSave =
     async () => {
+
+      // VALIDATE PASSWORD LENGTH IF PROVIDED
+      if (
+        newPassword &&
+        newPassword.length < 6
+      ) {
+
+        await warningAlert(
+          "Weak Password",
+          "New password must be at least 6 characters."
+        );
+
+        return;
+      }
 
       try {
 
@@ -220,14 +393,15 @@ export default function ProfileSettings() {
         );
 
         // PASSWORD UPDATE
-        if (
-          newPassword
-        ) {
+        if (newPassword) {
 
           await updatePassword(
             auth.currentUser,
             newPassword
           );
+
+          // CLEAR PASSWORD FIELD AFTER SUCCESS
+          setNewPassword("");
         }
 
         // LOCAL STORAGE UPDATE
@@ -251,17 +425,33 @@ export default function ProfileSettings() {
           })
         );
 
-        alert(
-          "Profile Updated Successfully"
+        await successAlert(
+          "Settings Saved!",
+          "Your profile has been updated successfully."
         );
 
       } catch (error) {
 
         console.log(error);
 
-        alert(
-          error.message
-        );
+        // FIREBASE REQUIRES RECENT LOGIN FOR PASSWORD CHANGE
+        if (
+          error.code ===
+          "auth/requires-recent-login"
+        ) {
+
+          await errorAlert(
+            "Re-login Required",
+            "Please log out and log back in before changing your password."
+          );
+
+        } else {
+
+          await errorAlert(
+            "Save Failed",
+            error.message
+          );
+        }
 
       } finally {
 
@@ -355,40 +545,55 @@ export default function ProfileSettings() {
               )
             }
 
-            <div className="mt-6 w-full max-w-xl">
+            {/* HIDDEN FILE INPUT */}
+            <input
 
-              <label className="block mb-3 text-gray-400">
+              ref={photoInputRef}
 
-                Profile Photo URL
+              type="file"
 
-              </label>
+              accept="image/*"
 
-              <div className="relative">
+              onChange={
+                handlePhotoChange
+              }
 
-                <input
+              className="hidden"
+            />
 
-                  type="text"
+            {/* UPLOAD BUTTON */}
+            <button
 
-                  name="photoURL"
+              type="button"
 
-                  value={
-                    profile.photoURL || ""
-                  }
+              disabled={photoUploading}
 
-                  onChange={
-                    handleChange
-                  }
+              onClick={() =>
+                photoInputRef.current?.click()
+              }
 
-                  placeholder="Paste image URL"
+              className="mt-5 px-6 py-3 rounded-2xl bg-[#C6922B]/10 border border-[#C6922B]/30 text-[#C6922B] font-bold flex items-center gap-3 hover:bg-[#C6922B]/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
 
-                  className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
-                />
+              {
+                photoUploading
 
-                <FaCamera className="absolute right-5 top-1/2 -translate-y-1/2 text-[#C6922B]" />
+                  ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-[#C6922B] border-t-transparent rounded-full animate-spin" />
+                        Uploading...
+                      </>
+                    )
 
-              </div>
+                  : (
+                      <>
+                        <FaCamera />
+                        Change Photo
+                      </>
+                    )
+              }
 
-            </div>
+            </button>
 
           </div>
 
@@ -573,7 +778,7 @@ export default function ProfileSettings() {
                 }
 
                 onChange={
-                  handleChange
+                  handleDivisionChange
                 }
 
                 className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
@@ -584,7 +789,9 @@ export default function ProfileSettings() {
                 </option>
 
                 {
-                  divisions.map(
+                  Object.keys(
+                    bangladeshData
+                  ).map(
                     (item) => (
 
                       <option
@@ -612,9 +819,7 @@ export default function ProfileSettings() {
 
               </label>
 
-              <input
-
-                type="text"
+              <select
 
                 name="district"
 
@@ -623,11 +828,37 @@ export default function ProfileSettings() {
                 }
 
                 onChange={
-                  handleChange
+                  handleDistrictChange
                 }
 
-                className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
-              />
+                disabled={
+                  !profile?.division
+                }
+
+                className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B] disabled:opacity-50"
+              >
+
+                <option value="">
+                  Select District
+                </option>
+
+                {
+                  districts.map(
+                    (item) => (
+
+                      <option
+                        key={item}
+                        value={item}
+                      >
+
+                        {item}
+
+                      </option>
+                    )
+                  )
+                }
+
+              </select>
 
             </div>
 
@@ -640,9 +871,7 @@ export default function ProfileSettings() {
 
               </label>
 
-              <input
-
-                type="text"
+              <select
 
                 name="upazila"
 
@@ -654,8 +883,34 @@ export default function ProfileSettings() {
                   handleChange
                 }
 
-                className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B]"
-              />
+                disabled={
+                  !profile?.district
+                }
+
+                className="w-full px-6 py-5 rounded-2xl bg-black/30 border border-white/10 outline-none focus:border-[#C6922B] disabled:opacity-50"
+              >
+
+                <option value="">
+                  Select Upazila
+                </option>
+
+                {
+                  upazilas.map(
+                    (item) => (
+
+                      <option
+                        key={item}
+                        value={item}
+                      >
+
+                        {item}
+
+                      </option>
+                    )
+                  )
+                }
+
+              </select>
 
             </div>
 

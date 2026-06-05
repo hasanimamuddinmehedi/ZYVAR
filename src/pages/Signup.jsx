@@ -7,6 +7,7 @@ import {
   updateProfile,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
 } from "firebase/auth";
 
 import {
@@ -31,6 +32,12 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
+
+import {
+  successAlert,
+  errorAlert,
+  warningAlert,
+} from "../utils/alerts";
 
 export default function Signup() {
 
@@ -85,6 +92,12 @@ export default function Signup() {
       email
     );
 
+  // DETECT MOBILE
+  const isMobile =
+    /iPhone|iPad|iPod|Android/i.test(
+      navigator.userAgent
+    );
+
   // SIGNUP
   const handleSignup =
     async (e) => {
@@ -93,23 +106,32 @@ export default function Signup() {
 
       if (!emailValid) {
 
-        return alert(
+        await warningAlert(
+          "Invalid Email",
           "Please enter a valid email."
         );
+
+        return;
       }
 
       if (!passwordValid) {
 
-        return alert(
+        await warningAlert(
+          "Weak Password",
           "Password must be at least 6 characters."
         );
+
+        return;
       }
 
       if (!passwordMatched) {
 
-        return alert(
+        await warningAlert(
+          "Password Mismatch",
           "Passwords do not match."
         );
+
+        return;
       }
 
       try {
@@ -235,7 +257,8 @@ export default function Signup() {
           );
         }
 
-        alert(
+        await successAlert(
+          "Account Created!",
           "Account created successfully. Please verify your email before login."
         );
 
@@ -252,13 +275,15 @@ export default function Signup() {
 
         ) {
 
-          alert(
+          await errorAlert(
+            "Email Already Registered",
             "This email is already registered."
           );
 
         } else {
 
-          alert(
+          await errorAlert(
+            "Signup Failed",
             error.message
           );
         }
@@ -270,6 +295,8 @@ export default function Signup() {
     };
 
   // GOOGLE SIGNUP
+  // Uses signInWithRedirect on mobile (popups are blocked by mobile browsers)
+  // Uses signInWithPopup on desktop
   const handleGoogleSignup =
     async () => {
 
@@ -277,6 +304,21 @@ export default function Signup() {
 
         setLoading(true);
 
+        if (isMobile) {
+
+          // MOBILE — redirect flow
+          await signInWithRedirect(
+            auth,
+            provider
+          );
+
+          // signInWithRedirect navigates away;
+          // result is handled via getRedirectResult
+          // in a useEffect on mount
+          return;
+        }
+
+        // DESKTOP — popup flow
         const result =
           await signInWithPopup(
             auth,
@@ -335,7 +377,8 @@ export default function Signup() {
           }
         );
 
-        alert(
+        await successAlert(
+          "Welcome!",
           "Google Signup Successful"
         );
 
@@ -350,7 +393,8 @@ export default function Signup() {
           "auth/popup-closed-by-user"
         ) {
 
-          alert(
+          await errorAlert(
+            "Google Signup Failed",
             error.message
           );
         }

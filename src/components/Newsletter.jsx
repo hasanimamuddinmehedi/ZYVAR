@@ -15,6 +15,12 @@ import {
   db,
 } from "../firebase/firebase";
 
+import {
+  successAlert,
+  errorAlert,
+  warningAlert,
+} from "../utils/alerts";
+
 export default function Newsletter() {
 
   const [
@@ -32,9 +38,12 @@ export default function Newsletter() {
 
       if (!newsletterEmail) {
 
-        return alert(
+        await warningAlert(
+          "Email Required",
           "Please enter your email."
         );
+
+        return;
       }
 
       try {
@@ -63,8 +72,9 @@ export default function Newsletter() {
 
         if (!existingUser.empty) {
 
-          alert(
-            "You are already subscribed."
+          await warningAlert(
+            "Already Subscribed",
+            "You are already subscribed to our newsletter."
           );
 
           return;
@@ -118,8 +128,9 @@ export default function Newsletter() {
           );
         }
 
-        alert(
-          "Subscribed Successfully!"
+        await successAlert(
+          "Subscribed!",
+          "You have successfully subscribed to our newsletter."
         );
 
         setNewsletterEmail("");
@@ -128,7 +139,8 @@ export default function Newsletter() {
 
         console.log(error);
 
-        alert(
+        await errorAlert(
+          "Subscription Failed",
           error.message
         );
 
