@@ -10,6 +10,7 @@ import SEO from "../components/SEO";
 import WhatsAppSupport from "../components/WhatsAppSupport";
 import ProductCollage from "../components/ProductCollage";
 import BecomePartnerCTA from "../components/BecomePartnerCTA";
+import DebugLogOverlay from "../components/DebugLogOverlay";
 
 export default function Home() {
   return (
@@ -30,6 +31,7 @@ export default function Home() {
       <Newsletter />
       <Footer />
       <WhatsAppSupport />
+      <DebugLogOverlay />
     </div>
   );
 }

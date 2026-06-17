@@ -50,6 +50,37 @@ export default function Signup() {
   const provider =
     new GoogleAuthProvider();
 
+  // TEMPORARY DISPLAY-ONLY DEBUG LOG — purely for diagnosis on a phone without devtools.
+  // This NEVER triggers any auth action itself — it only records what the existing
+  // getRedirectResult() call returns, so it cannot cause the earlier logout bug.
+  const [debugLog, setDebugLog] =
+    useState([]);
+
+  const addDebugLog =
+    (message) => {
+
+      setDebugLog((prev) => {
+
+        const updated = [
+          ...prev,
+          `${new Date().toLocaleTimeString()} ${message}`,
+        ];
+
+        // ALSO PERSIST TO sessionStorage SO THE LOG SURVIVES navigate("/") —
+        // readable on Home via the same DebugLogOverlay used by Login.jsx.
+        try {
+
+          sessionStorage.setItem(
+            "zyvar-debug-log",
+            JSON.stringify(updated)
+          );
+
+        } catch (e) {}
+
+        return updated;
+      });
+    };
+
   const [name,
     setName] =
     useState("");
@@ -266,21 +297,45 @@ export default function Signup() {
   const completeGoogleSignup =
     async (user) => {
 
+      addDebugLog(
+        "completeGoogleSignup: start, calling saveGoogleUserData..."
+      );
+
       const isNewUser =
         await saveGoogleUserData(user);
 
+      addDebugLog(
+        `completeGoogleSignup: saveGoogleUserData done, isNewUser=${isNewUser}`
+      );
+
       if (isNewUser) {
+
+        addDebugLog(
+          "completeGoogleSignup: sending welcome email..."
+        );
 
         await sendWelcomeEmail(
           user
         );
+
+        addDebugLog(
+          "completeGoogleSignup: welcome email step done"
+        );
       }
+
+      addDebugLog(
+        "completeGoogleSignup: showing successAlert..."
+      );
 
       await successAlert(
         "Welcome To ZYVAR!",
         isNewUser
           ? "Your account has been created successfully."
           : "Successfully Logged In"
+      );
+
+      addDebugLog(
+        "completeGoogleSignup: successAlert resolved, navigating to /..."
       );
 
       navigate("/");
@@ -292,6 +347,10 @@ export default function Signup() {
   // Without this, mobile users were technically signed into Firebase Auth but
   // the app never ran the Firestore write/email/navigate, so they appeared "logged out".
   useEffect(() => {
+
+    addDebugLog(
+      "mounted, calling getRedirectResult..."
+    );
 
     const handleRedirectResult =
       async () => {
@@ -305,15 +364,31 @@ export default function Signup() {
               auth
             );
 
+          addDebugLog(
+            `getRedirectResult resolved. result=${result ? "OBJECT" : "null"}`
+          );
+
           // result IS null IF THE PAGE WAS JUST LOADED NORMALLY (NOT A RETURN FROM REDIRECT)
           if (result && result.user) {
+
+            addDebugLog(
+              `result.user.email=${result.user.email}, calling completeGoogleSignup...`
+            );
 
             await completeGoogleSignup(
               result.user
             );
+
+            addDebugLog(
+              "completeGoogleSignup finished without throwing"
+            );
           }
 
         } catch (error) {
+
+          addDebugLog(
+            `CAUGHT ERROR: code=${error.code} message=${error.message}`
+          );
 
           console.log(error);
 
@@ -331,6 +406,10 @@ export default function Signup() {
         } finally {
 
           setLoading(false);
+
+          addDebugLog(
+            "handleRedirectResult finished (finally block)"
+          );
         }
       };
 
@@ -596,6 +675,51 @@ export default function Signup() {
   return (
 
     <div className="min-h-screen bg-[#0B0B0B] text-white flex overflow-hidden">
+
+      {/* TEMPORARY DISPLAY-ONLY DEBUG PANEL — shows what getRedirectResult/completeGoogleSignup
+          actually did. Does NOT trigger any auth logic itself. Tap to dismiss. */}
+      {
+        debugLog.length > 0 && (
+
+          <div
+
+            onClick={() =>
+              setDebugLog([])
+            }
+
+            style={{
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              maxHeight: "45vh",
+              overflowY: "auto",
+              background: "rgba(0,0,0,0.97)",
+              color: "#00ff66",
+              fontSize: "11px",
+              fontFamily: "monospace",
+              padding: "10px",
+              zIndex: 99999,
+              borderTop: "2px solid #C6922B",
+            }}
+          >
+
+            <div style={{ color: "#C6922B", marginBottom: "6px", fontWeight: "bold" }}>
+              DEBUG (tap anywhere here to dismiss):
+            </div>
+
+            {
+              debugLog.map((line, i) => (
+
+                <div key={i} style={{ marginBottom: "4px", wordBreak: "break-all" }}>
+                  {line}
+                </div>
+              ))
+            }
+
+          </div>
+        )
+      }
 
       {/* LEFT SIDE */}
       <div className="hidden lg:flex flex-1 relative items-center justify-center bg-gradient-to-br from-black to-[#121212] overflow-hidden">

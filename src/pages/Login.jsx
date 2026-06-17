@@ -52,6 +52,38 @@ export default function Login() {
   const provider =
     new GoogleAuthProvider();
 
+  // TEMPORARY DISPLAY-ONLY DEBUG LOG — purely for diagnosis on a phone without devtools.
+  // This NEVER triggers any auth action itself — it only records what the existing
+  // getRedirectResult() call returns, so it cannot cause the earlier logout bug.
+  const [debugLog, setDebugLog] =
+    useState([]);
+
+  const addDebugLog =
+    (message) => {
+
+      setDebugLog((prev) => {
+
+        const updated = [
+          ...prev,
+          `${new Date().toLocaleTimeString()} ${message}`,
+        ];
+
+        // ALSO PERSIST TO sessionStorage SO THE LOG SURVIVES navigate("/") —
+        // CHECK window.name OR A GLOBAL ON THE HOME PAGE IF NEEDED, BUT FOR NOW
+        // JUST KEEP IT READABLE VIA DEVTOOLS-FREE MEANS: sessionStorage.
+        try {
+
+          sessionStorage.setItem(
+            "zyvar-debug-log",
+            JSON.stringify(updated)
+          );
+
+        } catch (e) {}
+
+        return updated;
+      });
+    };
+
   const [email, setEmail] =
     useState("");
 
@@ -238,13 +270,29 @@ export default function Login() {
   const completeGoogleLogin =
     async (user) => {
 
+      addDebugLog(
+        "completeGoogleLogin: start, calling saveUserData..."
+      );
+
       const isNewUser =
         await saveUserData(user);
 
+      addDebugLog(
+        `completeGoogleLogin: saveUserData done, isNewUser=${isNewUser}`
+      );
+
       if (isNewUser) {
+
+        addDebugLog(
+          "completeGoogleLogin: sending welcome email..."
+        );
 
         await sendWelcomeEmail(
           user
+        );
+
+        addDebugLog(
+          "completeGoogleLogin: welcome email step done"
         );
       }
 
@@ -254,11 +302,19 @@ export default function Login() {
         user.email
       );
 
+      addDebugLog(
+        "completeGoogleLogin: showing successAlert..."
+      );
+
       await successAlert(
         "Welcome To ZYVAR!",
         isNewUser
           ? "Your account has been created successfully."
           : "Successfully Logged In"
+      );
+
+      addDebugLog(
+        "completeGoogleLogin: successAlert resolved, navigating to /..."
       );
 
       navigate("/");
@@ -278,6 +334,10 @@ export default function Login() {
   // is the only safe signal that we're actually returning from a Google redirect.
   useEffect(() => {
 
+    addDebugLog(
+      "mounted, calling getRedirectResult..."
+    );
+
     const handleRedirectResult =
       async () => {
 
@@ -290,15 +350,31 @@ export default function Login() {
               auth
             );
 
+          addDebugLog(
+            `getRedirectResult resolved. result=${result ? "OBJECT" : "null"}`
+          );
+
           // result IS null IF THE PAGE WAS JUST LOADED NORMALLY (NOT A RETURN FROM REDIRECT)
           if (result && result.user) {
+
+            addDebugLog(
+              `result.user.email=${result.user.email}, calling completeGoogleLogin...`
+            );
 
             await completeGoogleLogin(
               result.user
             );
+
+            addDebugLog(
+              "completeGoogleLogin finished without throwing"
+            );
           }
 
         } catch (error) {
+
+          addDebugLog(
+            `CAUGHT ERROR: code=${error.code} message=${error.message}`
+          );
 
           console.log(error);
 
@@ -316,6 +392,10 @@ export default function Login() {
         } finally {
 
           setLoading(false);
+
+          addDebugLog(
+            "handleRedirectResult finished (finally block)"
+          );
         }
       };
 
@@ -587,6 +667,51 @@ export default function Login() {
   return (
 
     <div className="min-h-screen bg-[#0B0B0B] text-white flex overflow-hidden">
+
+      {/* TEMPORARY DISPLAY-ONLY DEBUG PANEL — shows what getRedirectResult/completeGoogleLogin
+          actually did. Does NOT trigger any auth logic itself. Tap to dismiss. */}
+      {
+        debugLog.length > 0 && (
+
+          <div
+
+            onClick={() =>
+              setDebugLog([])
+            }
+
+            style={{
+              position: "fixed",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              maxHeight: "45vh",
+              overflowY: "auto",
+              background: "rgba(0,0,0,0.97)",
+              color: "#00ff66",
+              fontSize: "11px",
+              fontFamily: "monospace",
+              padding: "10px",
+              zIndex: 99999,
+              borderTop: "2px solid #C6922B",
+            }}
+          >
+
+            <div style={{ color: "#C6922B", marginBottom: "6px", fontWeight: "bold" }}>
+              DEBUG (tap anywhere here to dismiss):
+            </div>
+
+            {
+              debugLog.map((line, i) => (
+
+                <div key={i} style={{ marginBottom: "4px", wordBreak: "break-all" }}>
+                  {line}
+                </div>
+              ))
+            }
+
+          </div>
+        )
+      }
 
       {/* LEFT SIDE */}
       <div className="hidden lg:flex flex-1 relative items-center justify-center bg-gradient-to-br from-black to-[#121212] overflow-hidden">

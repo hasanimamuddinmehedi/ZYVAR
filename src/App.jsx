@@ -18,7 +18,6 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import Payment from "./pages/Payment";
 import Signup from "./pages/Signup";
-import UserLogin from "./pages/UserLogin";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
@@ -151,14 +150,6 @@ function AppContent() {
           path="/signup"
           element={
             <Signup />
-          }
-        />
-
-        {/* USER LOGIN */}
-        <Route
-          path="/user-login"
-          element={
-            <UserLogin />
           }
         />
 
