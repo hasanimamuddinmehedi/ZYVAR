@@ -46,6 +46,29 @@ import ProductsPage from "./pages/admin/ProductsPage";
 import UploadPage from "./pages/admin/UploadPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 import ProductRequestsPage from "./pages/admin/ProductRequestsPage";
+import PartnerApplicationsPage from "./pages/admin/PartnerApplicationsPage";
+import PartnerCouponsPage from "./pages/admin/PartnerCouponsPage";
+
+import BecomePartnerPage from "./pages/BecomePartnerPage";
+import PartnerStorePage from "./pages/PartnerStorePage";
+
+import PartnerRoute from "./components/PartnerRoute";
+
+import PartnerLayout from "./pages/partner/PartnerLayout";
+
+import PartnerUploadProduct from "./pages/partner/PartnerUploadProduct";
+
+import PartnerDashboardPage from "./pages/partner/DashboardPage";
+
+import PartnerProductsPage from "./pages/partner/ProductsPage";
+
+import PartnerOrdersPage from "./pages/partner/OrdersPage";
+
+import PartnerReviewsPage from "./pages/partner/ReviewsPage";
+
+import PartnerEarningsPage from "./pages/partner/EarningsPage";
+
+import PartnerSettingsPage from "./pages/partner/SettingsPage";
 
 function AppContent() {
 
@@ -305,7 +328,18 @@ function AppContent() {
               <ProductRequestsPage />
             }
           />
-
+          <Route
+  path="partner-applications"
+  element={
+    <PartnerApplicationsPage />
+  }
+/>
+<Route
+  path="partner-coupons"
+  element={
+    <PartnerCouponsPage />
+  }
+/>
         </Route>
 
         {/* LEGACY ADMIN ORDERS PAGE */}
@@ -317,6 +351,79 @@ function AppContent() {
             </AdminRoute>
           }
         />
+
+        {/* PUBLIC PARTNER STORE */}
+<Route
+  path="/:partnerSlug"
+  element={
+    <PartnerStorePage />
+  }
+/>
+
+        <Route
+  path="/become-partner"
+  element={<BecomePartnerPage />}
+/>
+
+<Route
+  path="/partner-dashboard"
+  element={
+    <PartnerRoute>
+      <PartnerLayout />
+    </PartnerRoute>
+  }
+>
+
+  <Route
+    index
+    element={
+      <PartnerDashboardPage />
+    }
+  />
+
+  <Route
+  path="uploads"
+  element={
+      <PartnerUploadProduct />
+  }
+/>
+
+  <Route
+    path="products"
+    element={
+      <PartnerProductsPage />
+    }
+  />
+
+  <Route
+    path="orders"
+    element={
+      <PartnerOrdersPage />
+    }
+  />
+
+  <Route
+    path="reviews"
+    element={
+      <PartnerReviewsPage />
+    }
+  />
+
+  <Route
+    path="earnings"
+    element={
+      <PartnerEarningsPage />
+    }
+  />
+
+  <Route
+    path="settings"
+    element={
+      <PartnerSettingsPage />
+    }
+  />
+
+</Route>
 
       </Routes>
     </>

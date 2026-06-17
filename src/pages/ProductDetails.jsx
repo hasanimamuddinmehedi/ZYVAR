@@ -11,6 +11,7 @@ import {
 
 import {
   useParams,
+  Link,
 } from "react-router-dom";
 
 import {
@@ -77,6 +78,11 @@ export default function ProductDetails() {
   const [zoomPos,
     setZoomPos] =
     useState({ x: 50, y: 50 });
+
+  // PRODUCT IMAGES SLIDER STATE
+  const [activeImage,
+    setActiveImage] =
+    useState(0);
 
   // FETCH PRODUCT
   useEffect(() => {
@@ -192,6 +198,47 @@ export default function ProductDetails() {
       }
     };
 
+  // RESET ACTIVE IMAGE WHENEVER A NEW PRODUCT LOADS
+  useEffect(() => {
+
+    setActiveImage(0);
+
+  }, [product?.id]);
+
+  // AUTO SLIDING IMAGES — advances every 3 seconds
+  useEffect(() => {
+
+    if (
+      !product?.images?.length
+    ) return;
+
+    const interval =
+      setInterval(() => {
+
+        setActiveImage(
+          (prev) =>
+
+            (
+              prev + 1
+            ) %
+
+            product.images.length
+        );
+
+      }, 3000);
+
+    return () =>
+      clearInterval(
+        interval
+      );
+
+  }, [product]);
+
+  // CURRENT IMAGE TO DISPLAY — supports new images[] array with fallback to old single image field
+  const currentImage =
+    product?.images?.[activeImage] ||
+    product?.image;
+
   // IMAGE ZOOM — track mouse position
   const handleMouseMove =
     (e) => {
@@ -250,7 +297,10 @@ export default function ProductDetails() {
           product?.description
         }
 
-        image={product?.image}
+        image={
+          product?.images?.[0] ||
+          product?.image
+        }
 
       />
 
@@ -282,11 +332,16 @@ export default function ProductDetails() {
 
             <LazyLoadImage
 
-              src={product?.image}
+              src={currentImage}
 
               alt={product?.name}
 
-              className="w-full object-cover"
+              className="
+                w-full
+                h-[500px]
+                object-cover
+                rounded-3xl
+              "
 
             />
 
@@ -302,7 +357,7 @@ export default function ProductDetails() {
                   "
                   style={{
                     backgroundImage:
-                      `url(${product?.image})`,
+                      `url(${currentImage})`,
                     backgroundSize:
                       "250%",
                     backgroundPosition:
@@ -323,6 +378,48 @@ export default function ProductDetails() {
 
           </p>
 
+          {/* THUMBNAIL SLIDER */}
+          {
+            product.images?.length > 1 && (
+
+              <div className="flex gap-3 mt-4">
+
+                {product.images?.map(
+                  (img, index) => (
+
+                    <img
+                      key={index}
+                      src={img}
+                      alt=""
+                      onClick={() =>
+                        setActiveImage(
+                          index
+                        )
+                      }
+                      className={`
+                        w-20 h-20
+                        object-cover
+                        rounded-xl
+                        cursor-pointer
+                        border
+
+                        ${
+                          activeImage === index
+
+                          ? "border-[#C6922B]"
+
+                          : "border-white/10"
+                        }
+                      `}
+                    />
+
+                  )
+                )}
+
+              </div>
+            )
+          }
+
         </div>
 
         {/* CONTENT */}
@@ -339,6 +436,23 @@ export default function ProductDetails() {
             {product?.name}
 
           </h1>
+
+          {/* PARTNER / UPLOADER LINK */}
+          {product?.partnerSlug && (
+
+            <Link
+              to={`/${product.partnerSlug}`}
+              className="
+                text-[#C6922B]
+                font-semibold
+                hover:underline
+                block
+                mb-6
+              "
+            >
+              Products From {product.uploadedBy}
+            </Link>
+          )}
 
           <p className="text-gray-300 text-lg leading-relaxed mb-10">
 

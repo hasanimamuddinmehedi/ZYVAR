@@ -1,5 +1,6 @@
 import React, {
   useState,
+  useEffect,
 } from "react";
 
 import {
@@ -7,6 +8,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
+  getRedirectResult,
 } from "firebase/auth";
 
 import {
@@ -85,7 +87,52 @@ export default function Login() {
       navigator.userAgent
     );
 
-  // SAVE USER TO LOCAL STORAGE
+  // SEND WELCOME EMAIL (TEMPLATE ID 8) — GOOGLE SIGNUPS ONLY, NEW USERS ONLY
+  // NOTE: endpoint name "/send-welcome-email" is assumed to mirror the existing
+  // "/send-custom-verification" and "/send-custom-reset" routes on the
+  // zyvar-email-server. Rename this path (and/or the templateId field) to match
+  // your actual server route if it differs — everything else stays the same.
+  const sendWelcomeEmail =
+    async (user) => {
+
+      try {
+
+        await fetch(
+          "https://zyvar-email-server.onrender.com/send-welcome-email",
+
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+
+              email:
+                user.email,
+
+              name:
+                user.displayName || "Customer",
+
+              templateId: 8,
+            }),
+          }
+        );
+
+      } catch (error) {
+
+        // DON'T BLOCK LOGIN IF THE WELCOME EMAIL FAILS TO SEND
+        console.log(
+          "Welcome email failed:",
+          error
+        );
+      }
+    };
+
+  // SAVE USER TO LOCAL STORAGE + FIRESTORE
+  // RETURNS true IF THIS WAS A BRAND NEW USER (NO EXISTING FIRESTORE DOC), false OTHERWISE
   const saveUserData =
     async (user) => {
 
@@ -131,8 +178,11 @@ export default function Login() {
           userRef
         );
 
+      const isNewUser =
+        !userSnap.exists();
+
       // CREATE USER IF NOT EXISTS
-      if (!userSnap.exists()) {
+      if (isNewUser) {
 
         await setDoc(
 
@@ -175,7 +225,97 @@ export default function Login() {
           }
         );
       }
+
+      return isNewUser;
     };
+
+  // HANDLE GOOGLE SIGN-IN RESULT (SHARED BY POPUP + REDIRECT FLOWS)
+  // - Saves/creates the Firestore user doc
+  // - Sends the "Welcome To ZYVAR" template-8 email ONLY to brand new Google users
+  //   (Google already verifies email ownership, so no verification email is needed)
+  // - Shows a single "Welcome To ZYVAR" popup for both new and returning users
+  // - Redirects home
+  const completeGoogleLogin =
+    async (user) => {
+
+      const isNewUser =
+        await saveUserData(user);
+
+      if (isNewUser) {
+
+        await sendWelcomeEmail(
+          user
+        );
+      }
+
+      trackEvent(
+        "User",
+        "Google Login",
+        user.email
+      );
+
+      await successAlert(
+        "Welcome To ZYVAR!",
+        isNewUser
+          ? "Your account has been created successfully."
+          : "Successfully Logged In"
+      );
+
+      navigate("/");
+    };
+
+  // ON MOUNT — CATCH USERS RETURNING FROM THE MOBILE REDIRECT FLOW
+  // signInWithRedirect() navigates away from the page entirely, so the only way
+  // to know the user came back from Google is to check getRedirectResult() here.
+  // Without this, mobile users were technically signed into Firebase Auth but
+  // the app never ran saveUserData/navigate, so they appeared "logged out".
+  useEffect(() => {
+
+    const handleRedirectResult =
+      async () => {
+
+        try {
+
+          setLoading(true);
+
+          const result =
+            await getRedirectResult(
+              auth
+            );
+
+          // result IS null IF THE PAGE WAS JUST LOADED NORMALLY (NOT A RETURN FROM REDIRECT)
+          if (result && result.user) {
+
+            await completeGoogleLogin(
+              result.user
+            );
+          }
+
+        } catch (error) {
+
+          console.log(error);
+
+          if (
+            error.code !==
+            "auth/popup-closed-by-user"
+          ) {
+
+            await errorAlert(
+              "Google Login Failed",
+              error.message
+            );
+          }
+
+        } finally {
+
+          setLoading(false);
+        }
+      };
+
+    handleRedirectResult();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // LOGIN
   const handleLogin =
@@ -350,7 +490,7 @@ export default function Login() {
 
           // signInWithRedirect navigates away;
           // result is handled via getRedirectResult
-          // in a useEffect on mount (see below)
+          // in the useEffect on mount (see above)
           return;
         }
 
@@ -361,16 +501,9 @@ export default function Login() {
             provider
           );
 
-        await saveUserData(
+        await completeGoogleLogin(
           result.user
         );
-
-        await successAlert(
-          "Welcome!",
-          "Google Login Successful"
-        );
-
-        navigate("/");
 
       } catch (error) {
 
@@ -389,6 +522,8 @@ export default function Login() {
 
       } finally {
 
+        // ON MOBILE, signInWithRedirect HAS ALREADY NAVIGATED AWAY BY THE TIME
+        // WE GET HERE (OR THE PAGE IS ABOUT TO UNLOAD), SO THIS IS SAFE FOR BOTH FLOWS.
         setLoading(false);
       }
     };

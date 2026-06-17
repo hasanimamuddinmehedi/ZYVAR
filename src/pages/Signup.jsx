@@ -1,5 +1,6 @@
 import React, {
   useState,
+  useEffect,
 } from "react";
 
 import {
@@ -8,10 +9,12 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
+  getRedirectResult,
 } from "firebase/auth";
 
 import {
   doc,
+  getDoc,
   setDoc,
 } from "firebase/firestore";
 
@@ -97,6 +100,204 @@ export default function Signup() {
     /iPhone|iPad|iPod|Android/i.test(
       navigator.userAgent
     );
+
+  // SEND WELCOME EMAIL (TEMPLATE ID 8) — GOOGLE SIGNUPS ONLY, NEW USERS ONLY
+  // NOTE: endpoint name "/send-welcome-email" is assumed to mirror the existing
+  // "/send-verification-email" route on the zyvar-email-server. Rename this path
+  // (and/or the templateId field) to match your actual server route if it differs —
+  // everything else stays the same.
+  const sendWelcomeEmail =
+    async (user) => {
+
+      try {
+
+        await fetch(
+          "https://zyvar-email-server.onrender.com/send-welcome-email",
+
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+
+              email:
+                user.email,
+
+              name:
+                user.displayName || "Customer",
+
+              templateId: 8,
+            }),
+          }
+        );
+
+      } catch (error) {
+
+        // DON'T BLOCK SIGNUP/LOGIN IF THE WELCOME EMAIL FAILS TO SEND
+        console.log(
+          "Welcome email failed:",
+          error
+        );
+      }
+    };
+
+  // SAVE GOOGLE USER TO FIRESTORE — ONLY CREATES THE DOC IF IT DOESN'T ALREADY EXIST.
+  // This is the key fix: the old code used setDoc(..., { merge: true }) unconditionally,
+  // which meant every returning Google user got their fields (phone, dob, address, etc.)
+  // silently overwritten with blank values on every signup/login attempt.
+  // RETURNS true IF THIS WAS A BRAND NEW USER, false IF THEY ALREADY EXISTED.
+  const saveGoogleUserData =
+    async (user) => {
+
+      const userRef =
+        doc(
+          db,
+          "users",
+          user.uid
+        );
+
+      const userSnap =
+        await getDoc(
+          userRef
+        );
+
+      const isNewUser =
+        !userSnap.exists();
+
+      // ONLY CREATE THE DOC IF IT DOESN'T ALREADY EXIST —
+      // NEVER OVERWRITE AN EXISTING USER'S SAVED PROFILE DATA
+      if (isNewUser) {
+
+        await setDoc(
+
+          userRef,
+
+          {
+
+            uid:
+              user.uid,
+
+            name:
+              user.displayName || "",
+
+            email:
+              user.email || "",
+
+            photoURL:
+              user.photoURL || "",
+
+            phone: "",
+
+            dob: "",
+
+            gender: "",
+
+            occupation: "",
+
+            division: "",
+
+            district: "",
+
+            upazila: "",
+
+            area: "",
+
+            address: "",
+
+            createdAt:
+              new Date(),
+          }
+        );
+      }
+
+      return isNewUser;
+    };
+
+  // HANDLE GOOGLE SIGN-IN RESULT (SHARED BY POPUP + REDIRECT FLOWS)
+  // - Creates the Firestore user doc ONLY if it's a brand new user (never overwrites)
+  // - Sends the "Welcome To ZYVAR" template-8 email ONLY to brand new Google users
+  //   (Google already verifies email ownership, so no separate verification email is needed)
+  // - Shows a single "Welcome To ZYVAR" popup for both new and returning users
+  // - Redirects home
+  const completeGoogleSignup =
+    async (user) => {
+
+      const isNewUser =
+        await saveGoogleUserData(user);
+
+      if (isNewUser) {
+
+        await sendWelcomeEmail(
+          user
+        );
+      }
+
+      await successAlert(
+        "Welcome To ZYVAR!",
+        isNewUser
+          ? "Your account has been created successfully."
+          : "Successfully Logged In"
+      );
+
+      navigate("/");
+    };
+
+  // ON MOUNT — CATCH USERS RETURNING FROM THE MOBILE REDIRECT FLOW
+  // signInWithRedirect() navigates away from the page entirely, so the only way
+  // to know the user came back from Google is to check getRedirectResult() here.
+  // Without this, mobile users were technically signed into Firebase Auth but
+  // the app never ran the Firestore write/email/navigate, so they appeared "logged out".
+  useEffect(() => {
+
+    const handleRedirectResult =
+      async () => {
+
+        try {
+
+          setLoading(true);
+
+          const result =
+            await getRedirectResult(
+              auth
+            );
+
+          // result IS null IF THE PAGE WAS JUST LOADED NORMALLY (NOT A RETURN FROM REDIRECT)
+          if (result && result.user) {
+
+            await completeGoogleSignup(
+              result.user
+            );
+          }
+
+        } catch (error) {
+
+          console.log(error);
+
+          if (
+            error.code !==
+            "auth/popup-closed-by-user"
+          ) {
+
+            await errorAlert(
+              "Google Signup Failed",
+              error.message
+            );
+          }
+
+        } finally {
+
+          setLoading(false);
+        }
+      };
+
+    handleRedirectResult();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // SIGNUP
   const handleSignup =
@@ -314,7 +515,7 @@ export default function Signup() {
 
           // signInWithRedirect navigates away;
           // result is handled via getRedirectResult
-          // in a useEffect on mount
+          // in the useEffect on mount (see above)
           return;
         }
 
@@ -325,64 +526,9 @@ export default function Signup() {
             provider
           );
 
-        const user =
-          result.user;
-
-        await setDoc(
-
-          doc(
-            db,
-            "users",
-            user.uid
-          ),
-
-          {
-
-            uid:
-              user.uid,
-
-            name:
-              user.displayName || "",
-
-            email:
-              user.email || "",
-
-            photoURL:
-              user.photoURL || "",
-
-            phone: "",
-
-            dob: "",
-
-            gender: "",
-
-            occupation: "",
-
-            division: "",
-
-            district: "",
-
-            upazila: "",
-
-            area: "",
-
-            address: "",
-
-            createdAt:
-              new Date(),
-          },
-
-          {
-            merge: true,
-          }
+        await completeGoogleSignup(
+          result.user
         );
-
-        await successAlert(
-          "Welcome!",
-          "Google Signup Successful"
-        );
-
-        navigate("/");
 
       } catch (error) {
 
@@ -401,6 +547,8 @@ export default function Signup() {
 
       } finally {
 
+        // ON MOBILE, signInWithRedirect HAS ALREADY NAVIGATED AWAY BY THE TIME
+        // WE GET HERE (OR THE PAGE IS ABOUT TO UNLOAD), SO THIS IS SAFE FOR BOTH FLOWS.
         setLoading(false);
       }
     };

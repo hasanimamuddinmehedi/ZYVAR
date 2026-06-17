@@ -13,6 +13,9 @@ import {
   FaShoppingBag,
   FaCog,
   FaPlus,
+  FaClipboardList,
+  FaHandshake,
+  FaTicketAlt,
 } from "react-icons/fa";
 
 export default function AdminMobileSidebar() {
@@ -40,36 +43,32 @@ export default function AdminMobileSidebar() {
       {/* TOPBAR */}
       <div
         className="
-        lg:hidden
-        fixed
-        top-0
-        left-0
-        right-0
-        z-50
-        h-20
-        border-b
-        border-white/10
-        bg-[#0B0B0B]/95
-        backdrop-blur-2xl
-        flex
-        items-center
-        justify-between
-        px-5
-      "
+          lg:hidden
+          fixed
+          top-0
+          left-0
+          right-0
+          z-50
+          h-20
+          border-b
+          border-white/10
+          bg-[#0B0B0B]/95
+          backdrop-blur-2xl
+          flex
+          items-center
+          justify-between
+          px-5
+        "
       >
 
         {/* MENU BUTTON */}
         <button
-
           onClick={() =>
             setOpen(true)
           }
-
           className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-xl hover:border-[#C6922B] transition duration-300"
         >
-
           ☰
-
         </button>
 
         {/* LOGO */}
@@ -87,23 +86,18 @@ export default function AdminMobileSidebar() {
 
         {/* BACK BUTTON */}
         <button
-
           onClick={() =>
             navigate("/profile")
           }
-
           className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-sm text-[#C6922B] hover:border-[#C6922B] transition duration-300"
         >
-
           Back
-
         </button>
 
       </div>
 
       {/* DRAWER */}
       <div
-
         className={`lg:hidden fixed inset-0 z-[60] transition-all duration-300 ${
           open
             ? "visible opacity-100"
@@ -113,17 +107,14 @@ export default function AdminMobileSidebar() {
 
         {/* OVERLAY */}
         <div
-
           onClick={() =>
             setOpen(false)
           }
-
           className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         />
 
         {/* SIDEBAR */}
         <div
-
           className={`absolute left-0 top-0 h-full w-72 bg-[#111111]/95 backdrop-blur-2xl border-r border-white/10 p-6 transition-transform duration-300 flex flex-col justify-between ${
             open
               ? "translate-x-0"
@@ -150,16 +141,12 @@ export default function AdminMobileSidebar() {
               </div>
 
               <button
-
                 onClick={() =>
                   setOpen(false)
                 }
-
                 className="w-12 h-12 rounded-2xl border border-white/10 bg-white/5 text-2xl hover:border-[#C6922B] transition duration-300"
               >
-
                 ✕
-
               </button>
 
             </div>
@@ -167,6 +154,7 @@ export default function AdminMobileSidebar() {
             {/* NAVIGATION */}
             <div className="space-y-4">
 
+              {/* 1. Dashboard */}
               <NavLink
                 to="/admin/dashboard"
                 onClick={() =>
@@ -174,13 +162,11 @@ export default function AdminMobileSidebar() {
                 }
                 className={navClass}
               >
-
                 <FaChartPie />
-
                 Dashboard
-
               </NavLink>
 
+              {/* 2. Upload Product */}
               <NavLink
                 to="/admin/upload"
                 onClick={() =>
@@ -188,13 +174,11 @@ export default function AdminMobileSidebar() {
                 }
                 className={navClass}
               >
-
                 <FaPlus />
-
                 Upload Product
-
               </NavLink>
 
+              {/* 3. Products */}
               <NavLink
                 to="/admin/products"
                 onClick={() =>
@@ -202,13 +186,11 @@ export default function AdminMobileSidebar() {
                 }
                 className={navClass}
               >
-
                 <FaBoxOpen />
-
                 Products
-
               </NavLink>
 
+              {/* 4. Orders */}
               <NavLink
                 to="/admin/orders"
                 onClick={() =>
@@ -216,13 +198,47 @@ export default function AdminMobileSidebar() {
                 }
                 className={navClass}
               >
-
                 <FaShoppingBag />
-
                 Orders
-
               </NavLink>
 
+              {/* 5. Product Requests */}
+              <NavLink
+                to="/admin/product-requests"
+                onClick={() =>
+                  setOpen(false)
+                }
+                className={navClass}
+              >
+                <FaClipboardList />
+                Product Requests
+              </NavLink>
+
+              {/* 6. Partner Applications */}
+              <NavLink
+                to="/admin/partner-applications"
+                onClick={() =>
+                  setOpen(false)
+                }
+                className={navClass}
+              >
+                <FaHandshake />
+                Partner Applications
+              </NavLink>
+
+              {/* 7. Partner Coupons */}
+              <NavLink
+                to="/admin/partner-coupons"
+                onClick={() =>
+                  setOpen(false)
+                }
+                className={navClass}
+              >
+                <FaTicketAlt />
+                Partner Coupons
+              </NavLink>
+
+              {/* 8. Settings */}
               <NavLink
                 to="/admin/settings"
                 onClick={() =>
@@ -230,11 +246,8 @@ export default function AdminMobileSidebar() {
                 }
                 className={navClass}
               >
-
                 <FaCog />
-
                 Settings
-
               </NavLink>
 
             </div>

@@ -9,6 +9,10 @@ import {
   doc,
   getDoc,
   updateDoc,
+  collection,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
 
 import {
@@ -28,13 +32,15 @@ import {
   FaCog,
   FaCrown,
   FaEdit,
+  FaStore,
+  FaGlobe,
+  FaCheckCircle,
 } from "react-icons/fa";
 
 import {
   ADMIN_EMAILS,
 } from "../utils/adminCheck";
 
-// BANGLADESH DATA
 import {
   bangladeshData,
 } from "../data/bangladeshData";
@@ -56,6 +62,9 @@ export default function Profile() {
   const photoInputRef =
     useRef(null);
 
+  const coverInputRef =
+    useRef(null);
+
   const [user, setUser] =
     useState(null);
 
@@ -72,7 +81,26 @@ export default function Profile() {
       upazila: "",
       area: "",
       address: "",
+
       photoURL: "",
+
+      coverPhoto: "",
+
+      isPartner: false,
+
+      partnerStatus: "",
+
+      partnerSlug: "",
+
+      storeName: "",
+
+      paymentNumber: "",
+
+      facebook: "",
+
+      instagram: "",
+
+      description: "",
     });
 
   const [loading, setLoading] =
@@ -88,11 +116,69 @@ export default function Profile() {
     setPhotoUploading] =
     useState(false);
 
+  const [coverUploading,
+    setCoverUploading] =
+    useState(false);
+
+  const [partnerData,
+    setPartnerData] =
+    useState(null);
+
+  const [partnerStats,
+    setPartnerStats] =
+    useState({
+      products: 0,
+      reviews: 0,
+      followers: 0,
+      visits: 0,
+      revenue: 0,
+    });
+
+  const [
+    partnerForm,
+    setPartnerForm
+  ] = useState({
+
+    storeName: "",
+
+    storeDescription: "",
+
+    facebook: "",
+
+    instagram: "",
+
+    paymentNumber: "",
+
+    contactEmail: "",
+
+    contactPhone: "",
+
+    storeAddress: "",
+
+    logo: "",
+
+    banner: "",
+  });
+
   // ADMIN CHECK
   const isAdmin =
-  ADMIN_EMAILS.includes(
-    user?.email
-  );
+    ADMIN_EMAILS.includes(
+      user?.email
+    );
+
+  // FIX: Derive partner status from partnerData (source of truth)
+  // instead of profile.isPartner / profile.partnerStatus
+  // so that approval changes reflect immediately without a page reload
+  const isPartner =
+    !!partnerData;
+
+  const isApprovedPartner =
+    partnerData?.status === "approved";
+
+  const partnerStoreUrl =
+    profile?.partnerSlug
+      ? `${window.location.origin}/${profile.partnerSlug}`
+      : "";
 
   // AUTO FILTER
   const districts =
@@ -129,41 +215,157 @@ export default function Profile() {
 
           if (!currentUser) {
 
-            navigate(
-              "/login"
-            );
+            navigate("/login");
 
             return;
           }
 
-          setUser(
-            currentUser
-          );
+          setUser(currentUser);
 
           try {
 
-            const docRef =
+            /* USER PROFILE */
+
+            const userRef =
               doc(
                 db,
                 "users",
                 currentUser.uid
               );
 
-            const docSnap =
+            const userSnap =
               await getDoc(
-                docRef
+                userRef
               );
 
             if (
-              docSnap.exists()
+              userSnap.exists()
             ) {
 
-              setProfile({
+              const userData =
+                userSnap.data();
 
-                ...profile,
+              setProfile(
+                (prev) => ({
 
-                ...docSnap.data(),
-              });
+                  ...prev,
+
+                  ...userData,
+                })
+              );
+            }
+
+            /* PARTNER APPLICATION */
+
+            const partnerRef =
+              doc(
+                db,
+                "partnerApplications",
+                currentUser.uid
+              );
+
+            const partnerSnap =
+              await getDoc(
+                partnerRef
+              );
+
+            if (
+              partnerSnap.exists()
+            ) {
+
+              const partner =
+                partnerSnap.data();
+
+              // FIX: Store the full partner document so isPartner
+              // and isApprovedPartner are derived from partnerData
+              // directly, making them always accurate
+              setPartnerData(
+                partner
+              );
+
+              setProfile(
+                (prev) => ({
+
+                  ...prev,
+
+                  isPartner:
+                    partner.status ===
+                    "approved",
+
+                  partnerStatus:
+                    partner.status ||
+                    "",
+
+                  partnerSlug:
+                    partner.slug ||
+                    "",
+
+                  storeName:
+                    partner.shopName ||
+                    "",
+
+                  paymentNumber:
+                    partner.paymentNumber ||
+                    "",
+
+                  facebook:
+                    partner.facebook ||
+                    "",
+
+                  instagram:
+                    partner.instagram ||
+                    "",
+
+                  description:
+                    partner.description ||
+                    "",
+                })
+              );
+
+              if (
+                partner.status ===
+                "approved"
+              ) {
+
+                loadPartnerStats(
+                  currentUser.uid
+                );
+
+                setPartnerForm({
+
+                  storeName:
+                    partner.shopName || "",
+
+                  storeDescription:
+                    partner.storeDescription || "",
+
+                  facebook:
+                    partner.facebook || "",
+
+                  instagram:
+                    partner.instagram || "",
+
+                  paymentNumber:
+                    partner.paymentNumber || "",
+
+                  contactEmail:
+                    partner.contactEmail ||
+                    currentUser.email ||
+                    "",
+
+                  contactPhone:
+                    partner.contactPhone || "",
+
+                  storeAddress:
+                    partner.storeAddress || "",
+
+                  logo:
+                    partner.logo || "",
+
+                  banner:
+                    partner.banner || "",
+                });
+              }
             }
 
           } catch (error) {
@@ -185,6 +387,84 @@ export default function Profile() {
       unsubscribe();
 
   }, []);
+
+  // LOAD PARTNER STATS
+  const loadPartnerStats =
+    async (uid) => {
+
+      try {
+
+        let productCount = 0;
+        let reviewCount = 0;
+
+        const productsQuery =
+          query(
+            collection(
+              db,
+              "products"
+            ),
+            where(
+              "partnerId",
+              "==",
+              uid
+            )
+          );
+
+        const productsSnap =
+          await getDocs(
+            productsQuery
+          );
+
+        productCount =
+          productsSnap.size;
+
+        const reviewsQuery =
+          query(
+            collection(
+              db,
+              "reviews"
+            ),
+            where(
+              "partnerId",
+              "==",
+              uid
+            )
+          );
+
+        const reviewsSnap =
+          await getDocs(
+            reviewsQuery
+          );
+
+        reviewCount =
+          reviewsSnap.size;
+
+        setPartnerStats({
+
+          products:
+            productCount,
+
+          reviews:
+            reviewCount,
+
+          followers:
+            profile?.followers ||
+            0,
+
+          visits:
+            profile?.storeVisits ||
+            0,
+
+          revenue:
+            profile?.totalRevenue ||
+            0,
+        });
+
+      } catch (error) {
+
+        console.log(error);
+      }
+    };
 
   // UPDATE INPUT
   const handleChange =
@@ -231,6 +511,19 @@ export default function Profile() {
       });
     };
 
+  // PARTNER INPUT CHANGE
+  const handlePartnerChange =
+    (e) => {
+
+      setPartnerForm({
+
+        ...partnerForm,
+
+        [e.target.name]:
+          e.target.value,
+      });
+    };
+
   // PROFILE PICTURE UPLOAD
   const handlePhotoChange =
     async (e) => {
@@ -245,13 +538,11 @@ export default function Profile() {
 
         setPhotoUploading(true);
 
-        // UPLOAD TO CLOUDINARY
         const imageUrl =
           await uploadImage(
             selectedFile
           );
 
-        // UPDATE FIRESTORE
         await updateDoc(
 
           doc(
@@ -265,7 +556,6 @@ export default function Profile() {
           }
         );
 
-        // UPDATE LOCAL STATE
         setProfile((prev) => ({
 
           ...prev,
@@ -291,11 +581,136 @@ export default function Profile() {
 
         setPhotoUploading(false);
 
-        // RESET INPUT SO SAME FILE CAN BE RE-SELECTED
         if (photoInputRef.current) {
 
           photoInputRef.current.value = "";
         }
+      }
+    };
+
+  // COVER PHOTO UPLOAD
+  const handleCoverChange =
+    async (e) => {
+
+      const file =
+        e.target.files?.[0];
+
+      if (!file) return;
+
+      try {
+
+        setCoverUploading(true);
+
+        const imageUrl =
+          await uploadImage(file);
+
+        if (!imageUrl) {
+
+          throw new Error(
+            "Upload Failed"
+          );
+        }
+
+        await updateDoc(
+
+          doc(
+            db,
+            "users",
+            user.uid
+          ),
+
+          {
+            coverPhoto:
+              imageUrl,
+          }
+        );
+
+        setProfile((prev) => ({
+
+          ...prev,
+
+          coverPhoto:
+            imageUrl,
+        }));
+
+        await successAlert(
+          "Cover Updated",
+          "Your cover photo has been updated successfully."
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+        await errorAlert(
+          "Upload Failed",
+          "Failed to upload cover photo."
+        );
+
+      } finally {
+
+        setCoverUploading(
+          false
+        );
+      }
+    };
+
+  // PARTNER LOGO UPLOAD
+  const handlePartnerLogoUpload =
+    async (e) => {
+
+      const file =
+        e.target.files?.[0];
+
+      if (!file) return;
+
+      try {
+
+        const imageUrl =
+          await uploadImage(
+            file
+          );
+
+        setPartnerForm(
+          (prev) => ({
+            ...prev,
+            logo: imageUrl,
+          })
+        );
+
+      } catch (error) {
+
+        console.log(error);
+      }
+    };
+
+  // PARTNER BANNER UPLOAD
+  const handlePartnerBannerUpload =
+    async (e) => {
+
+      const file =
+        e.target.files?.[0];
+
+      if (!file) return;
+
+      try {
+
+        const imageUrl =
+          await uploadImage(
+            file
+          );
+
+        setPartnerForm(
+          (prev) => ({
+            ...prev,
+            banner:
+              imageUrl,
+          })
+        );
+
+      } catch (error) {
+
+        console.log(error);
       }
     };
 
@@ -349,6 +764,18 @@ export default function Profile() {
 
             photoURL:
               profile.photoURL || "",
+
+            coverPhoto:
+              profile.coverPhoto || "",
+
+            isPartner:
+              profile.isPartner || false,
+
+            partnerStatus:
+              profile.partnerStatus || "",
+
+            partnerSlug:
+              profile.partnerSlug || "",
           }
         );
 
@@ -380,6 +807,142 @@ export default function Profile() {
       }
     };
 
+  // SAVE PARTNER PROFILE
+  // FIX: Now updates BOTH users and partnerApplications collections
+  // so partner profile changes are reflected everywhere, and
+  // partnerData state is synced so the UI updates without a reload
+  const savePartnerProfile =
+    async () => {
+
+      try {
+
+        setSaving(true);
+
+        const partnerUpdates = {
+          shopName:
+            partnerForm.storeName,
+          storeDescription:
+            partnerForm.storeDescription,
+          facebook:
+            partnerForm.facebook,
+          instagram:
+            partnerForm.instagram,
+          paymentNumber:
+            partnerForm.paymentNumber,
+          contactEmail:
+            partnerForm.contactEmail,
+          contactPhone:
+            partnerForm.contactPhone,
+          storeAddress:
+            partnerForm.storeAddress,
+          logo:
+            partnerForm.logo,
+          banner:
+            partnerForm.banner,
+        };
+
+        // Update users collection
+        await updateDoc(
+
+          doc(
+            db,
+            "users",
+            user.uid
+          ),
+
+          {
+            storeName:
+              partnerForm.storeName,
+
+            storeDescription:
+              partnerForm.storeDescription,
+
+            facebook:
+              partnerForm.facebook,
+
+            instagram:
+              partnerForm.instagram,
+
+            paymentNumber:
+              partnerForm.paymentNumber,
+
+            contactEmail:
+              partnerForm.contactEmail,
+
+            contactPhone:
+              partnerForm.contactPhone,
+
+            storeAddress:
+              partnerForm.storeAddress,
+
+            logo:
+              partnerForm.logo,
+
+            banner:
+              partnerForm.banner,
+          }
+        );
+
+        // FIX: Also update partnerApplications collection
+        // so that the source of truth stays in sync
+        await updateDoc(
+
+          doc(
+            db,
+            "partnerApplications",
+            user.uid
+          ),
+
+          partnerUpdates
+        );
+
+        // FIX: Sync local partnerData state so derived values
+        // (isPartner, isApprovedPartner) remain accurate
+        // and the UI reflects changes without requiring a reload
+        setPartnerData(
+          (prev) => ({
+            ...prev,
+            ...partnerUpdates,
+          })
+        );
+
+        // Also sync profile state for display fields
+        setProfile(
+          (prev) => ({
+            ...prev,
+            storeName:
+              partnerForm.storeName,
+            facebook:
+              partnerForm.facebook,
+            instagram:
+              partnerForm.instagram,
+            paymentNumber:
+              partnerForm.paymentNumber,
+            description:
+              partnerForm.storeDescription,
+          })
+        );
+
+        successAlert(
+          "Updated",
+          "Partner profile updated successfully."
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+        errorAlert(
+          "Failed",
+          "Could not update partner profile."
+        );
+
+      } finally {
+
+        setSaving(false);
+      }
+    };
+
   // LOADING
   if (loading) {
 
@@ -400,82 +963,162 @@ export default function Profile() {
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
+
         <div className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-2xl overflow-hidden mb-10">
 
           {/* COVER */}
-          <div className="h-52 bg-gradient-to-r from-[#C6922B]/30 to-black relative">
 
-            <div className="absolute inset-0 bg-black/20" />
+          <div className="h-56 relative">
+
+            {profile?.coverPhoto ? (
+
+              <img
+                src={profile.coverPhoto}
+                alt="cover"
+                className="w-full h-full object-cover"
+              />
+
+            ) : (
+
+              <div className="w-full h-full bg-gradient-to-r from-[#C6922B]/30 to-black" />
+
+            )}
+
+            <div className="absolute inset-0 bg-black/30" />
+
+            {/* COVER INPUT */}
+
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleCoverChange}
+              className="hidden"
+            />
+
+            {/* COVER BUTTON */}
+
+            <button
+              type="button"
+              disabled={coverUploading}
+              onClick={() =>
+                coverInputRef.current?.click()
+              }
+              className="
+                absolute
+                top-5
+                right-5
+                bg-black/70
+                border
+                border-white/20
+                px-4
+                py-3
+                rounded-xl
+                flex
+                items-center
+                gap-2
+                hover:border-[#C6922B]
+                transition
+              "
+            >
+
+              {
+                coverUploading
+                  ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  )
+                  : <FaCamera />
+              }
+
+              Cover Photo
+
+            </button>
 
           </div>
 
           {/* PROFILE */}
+
           <div className="px-8 pb-8 relative">
 
             {/* IMAGE */}
+
             <div className="-mt-20 relative w-fit">
 
               {
                 profile?.photoURL ? (
 
                   <img
-
-                    src={
-                      profile.photoURL
-                    }
-
+                    src={profile.photoURL}
                     alt="profile"
-
-                    className="w-40 h-40 rounded-full object-cover border-4 border-[#0B0B0B]"
+                    className="
+                      w-40
+                      h-40
+                      rounded-full
+                      object-cover
+                      border-4
+                      border-[#0B0B0B]
+                    "
                   />
 
                 ) : (
 
-                  <div className="w-40 h-40 rounded-full bg-[#C6922B]/20 border-4 border-[#0B0B0B] flex items-center justify-center text-6xl text-[#C6922B]">
-
+                  <div className="
+                    w-40
+                    h-40
+                    rounded-full
+                    bg-[#C6922B]/20
+                    border-4
+                    border-[#0B0B0B]
+                    flex
+                    items-center
+                    justify-center
+                    text-6xl
+                    text-[#C6922B]
+                  ">
                     <FaUser />
-
                   </div>
                 )
               }
 
-              {/* HIDDEN FILE INPUT */}
+              {/* PROFILE IMAGE INPUT */}
+
               <input
-
                 ref={photoInputRef}
-
                 type="file"
-
                 accept="image/*"
-
-                onChange={
-                  handlePhotoChange
-                }
-
+                onChange={handlePhotoChange}
                 className="hidden"
               />
 
-              {/* CAMERA BUTTON */}
               <button
-
                 type="button"
-
                 disabled={photoUploading}
-
                 onClick={() =>
                   photoInputRef.current?.click()
                 }
-
-                className="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-[#C6922B] text-black flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="
+                  absolute
+                  bottom-2
+                  right-2
+                  w-12
+                  h-12
+                  rounded-full
+                  bg-[#C6922B]
+                  text-black
+                  flex
+                  items-center
+                  justify-center
+                  disabled:opacity-50
+                  disabled:cursor-not-allowed
+                  transition
+                "
               >
 
                 {
                   photoUploading
-
                     ? (
-                        <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                      )
-
+                      <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    )
                     : <FaCamera />
                 }
 
@@ -484,21 +1127,48 @@ export default function Profile() {
             </div>
 
             {/* INFO */}
+
             <div className="mt-6 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
 
               <div>
 
-                <h1 className="text-4xl font-black mb-3">
+                <div className="flex flex-wrap items-center gap-3 mb-3">
+
+                  <h1 className="text-4xl font-black">
+
+                    {
+                      profile?.name ||
+
+                      user?.displayName ||
+
+                      "ZYVAR Customer"
+                    }
+
+                  </h1>
 
                   {
-                    profile?.name ||
+                    isApprovedPartner && (
 
-                    user?.displayName ||
+                      <span className="
+                        px-4
+                        py-2
+                        rounded-full
+                        bg-green-500/20
+                        text-green-400
+                        text-sm
+                        font-bold
+                        flex
+                        items-center
+                        gap-2
+                      ">
+                        <FaCheckCircle />
+                        Verified Partner
+                      </span>
 
-                    "ZYVAR Customer"
+                    )
                   }
 
-                </h1>
+                </div>
 
                 <p className="text-gray-400 mb-2">
 
@@ -506,7 +1176,68 @@ export default function Profile() {
 
                 </p>
 
-                <div className="flex items-center gap-3 text-gray-400">
+                {
+                  profile?.storeName && (
+
+                    <div className="
+                      flex
+                      items-center
+                      gap-3
+                      text-[#C6922B]
+                      mb-2
+                    ">
+
+                      <FaStore />
+
+                      <span>
+
+                        {profile.storeName}
+
+                      </span>
+
+                    </div>
+
+                  )
+                }
+
+                {
+                  partnerStoreUrl && (
+
+                    <div className="
+                      flex
+                      items-center
+                      gap-3
+                      text-gray-300
+                      mb-3
+                    ">
+
+                      <FaGlobe />
+
+                      <a
+                        href={partnerStoreUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="
+                          hover:text-[#C6922B]
+                          transition
+                        "
+                      >
+
+                        {partnerStoreUrl}
+
+                      </a>
+
+                    </div>
+
+                  )
+                }
+
+                <div className="
+                  flex
+                  items-center
+                  gap-3
+                  text-gray-400
+                ">
 
                   <FaMapMarkerAlt />
 
@@ -527,7 +1258,82 @@ export default function Profile() {
               </div>
 
               {/* BUTTONS */}
+
               <div className="flex flex-wrap gap-4">
+
+                {/* BECOME PARTNER */}
+
+                {
+                  !isPartner && (
+
+                    <button
+                      onClick={() =>
+                        navigate("/become-partner")
+                      }
+                      className="
+                        px-6
+                        py-4
+                        rounded-2xl
+                        bg-[#C6922B]
+                        text-black
+                        font-bold
+                      "
+                    >
+                      Become Partner
+                    </button>
+
+                  )
+                }
+
+                {/* PARTNER DASHBOARD */}
+
+                {
+                  isApprovedPartner && (
+
+                    <button
+                      onClick={() =>
+                        navigate("/partner-dashboard")
+                      }
+                      className="
+                        px-6
+                        py-4
+                        rounded-2xl
+                        bg-green-500
+                        text-black
+                        font-bold
+                      "
+                    >
+                      Partner Dashboard
+                    </button>
+
+                  )
+                }
+
+                {/* EDIT PARTNER */}
+
+                {
+                  isApprovedPartner && (
+
+                    <button
+                      onClick={() =>
+                        navigate(
+                          "/partner-settings"
+                        )
+                      }
+                      className="
+                        px-6
+                        py-4
+                        rounded-2xl
+                        border
+                        border-[#C6922B]
+                        text-[#C6922B]
+                      "
+                    >
+                      Edit Partner Profile
+                    </button>
+
+                  )
+                }
 
                 <button
 
@@ -1102,6 +1908,601 @@ export default function Profile() {
 
             </div>
 
+            {/* PARTNER STATUS */}
+
+            {
+              isPartner && (
+
+                <div className="
+                  rounded-[40px]
+                  border
+                  border-white/10
+                  bg-white/5
+                  backdrop-blur-xl
+                  p-8
+                ">
+
+                  <h2 className="text-2xl font-black mb-6">
+
+                    Partner Status
+
+                  </h2>
+
+                  {
+                    partnerData?.status ===
+                    "approved" && (
+
+                      <div className="
+                        bg-green-500/10
+                        border
+                        border-green-500/20
+                        rounded-3xl
+                        p-5
+                      ">
+
+                        <p className="
+                          text-green-400
+                          font-bold
+                          text-lg
+                        ">
+                          Approved Partner
+                        </p>
+
+                        <p className="text-gray-300 mt-2">
+
+                          Your store is now live on ZYVAR.
+
+                        </p>
+
+                      </div>
+
+                    )
+                  }
+
+                  {
+                    partnerData?.status ===
+                    "pending" && (
+
+                      <div className="
+                        bg-yellow-500/10
+                        border
+                        border-yellow-500/20
+                        rounded-3xl
+                        p-5
+                      ">
+
+                        <p className="
+                          text-yellow-400
+                          font-bold
+                          text-lg
+                        ">
+                          Under Review
+                        </p>
+
+                        <p className="text-gray-300 mt-2">
+
+                          Your application is being reviewed by the ZYVAR Team.
+
+                        </p>
+
+                      </div>
+
+                    )
+                  }
+
+                  {
+                    partnerData?.status ===
+                    "rejected" && (
+
+                      <div className="
+                        bg-red-500/10
+                        border
+                        border-red-500/20
+                        rounded-3xl
+                        p-5
+                      ">
+
+                        <p className="
+                          text-red-400
+                          font-bold
+                          text-lg
+                        ">
+                          Application Rejected
+                        </p>
+
+                        <p className="text-gray-300 mt-2">
+
+                          Contact support for details.
+
+                        </p>
+
+                      </div>
+
+                    )
+                  }
+
+                </div>
+
+              )
+            }
+
+            {/* STORE STATISTICS */}
+
+            {
+              isApprovedPartner && (
+
+                <div className="
+                  rounded-[40px]
+                  border
+                  border-white/10
+                  bg-white/5
+                  backdrop-blur-xl
+                  p-8
+                ">
+
+                  <h2 className="text-2xl font-black mb-8">
+
+                    Store Statistics
+
+                  </h2>
+
+                  <div className="space-y-5">
+
+                    <div className="flex justify-between">
+
+                      <span>Total Products</span>
+
+                      <span className="font-bold">
+
+                        {partnerStats.products}
+
+                      </span>
+
+                    </div>
+
+                    <div className="flex justify-between">
+
+                      <span>Total Sales</span>
+
+                      <span className="font-bold">
+
+                        {partnerStats.visits}
+
+                      </span>
+
+                    </div>
+
+                    <div className="flex justify-between">
+
+                      <span>Store Rating</span>
+
+                      <span className="font-bold">
+
+                        {partnerStats.reviews}
+
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              )
+            }
+
+            {/* SOCIAL LINKS */}
+
+            {
+              isApprovedPartner && (
+
+                <div className="
+                  rounded-[40px]
+                  border
+                  border-white/10
+                  bg-white/5
+                  backdrop-blur-xl
+                  p-8
+                ">
+
+                  <h2 className="text-2xl font-black mb-8">
+
+                    Social Links
+
+                  </h2>
+
+                  <div className="space-y-4">
+
+                    {
+                      profile?.facebook && (
+
+                        <a
+                          href={profile.facebook}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="
+                            block
+                            hover:text-[#C6922B]
+                            transition
+                          "
+                        >
+                          Facebook Profile
+                        </a>
+
+                      )
+                    }
+
+                    {
+                      profile?.instagram && (
+
+                        <a
+                          href={profile.instagram}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="
+                            block
+                            hover:text-[#C6922B]
+                            transition
+                          "
+                        >
+                          Instagram Profile
+                        </a>
+
+                      )
+                    }
+
+                  </div>
+
+                </div>
+
+              )
+            }
+
+            {/* EARNINGS PREVIEW */}
+
+            {
+              isApprovedPartner && (
+
+                <div className="
+                  rounded-[40px]
+                  border
+                  border-[#C6922B]/20
+                  bg-[#C6922B]/10
+                  p-8
+                ">
+
+                  <h2 className="
+                    text-2xl
+                    font-black
+                    text-[#C6922B]
+                    mb-8
+                  ">
+
+                    Earnings Preview
+
+                  </h2>
+
+                  <div className="space-y-5">
+
+                    <div className="flex justify-between">
+
+                      <span>Total Revenue</span>
+
+                      <span className="font-bold">
+
+                        ৳
+                        {partnerStats.revenue}
+
+                      </span>
+
+                    </div>
+
+                    <div className="flex justify-between">
+
+                      <span>Pending Withdrawal</span>
+
+                      <span className="font-bold">
+
+                        ৳
+                        {partnerData?.pendingAmount || 0}
+
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+              )
+            }
+
+            {/* COMMUNITY / FOLLOWERS */}
+
+            {
+              isApprovedPartner && (
+
+                <div className="
+                  rounded-[40px]
+                  border
+                  border-white/10
+                  bg-white/5
+                  backdrop-blur-xl
+                  p-8
+                ">
+
+                  <h2 className="
+                    text-2xl
+                    font-black
+                    mb-8
+                  ">
+                    Community
+                  </h2>
+
+                  <div className="
+                    flex
+                    justify-between
+                  ">
+
+                    <span>
+                      Followers
+                    </span>
+
+                    <span className="
+                      font-bold
+                      text-[#C6922B]
+                    ">
+                      {
+                        partnerStats.followers
+                      }
+                    </span>
+
+                  </div>
+
+                </div>
+
+              )
+            }
+
+            {/* PARTNER STORE SETTINGS */}
+
+            {
+              isApprovedPartner && (
+
+                <div className="
+                  rounded-[40px]
+                  border
+                  border-white/10
+                  bg-white/5
+                  backdrop-blur-xl
+                  p-8
+                ">
+
+                  <h2 className="
+                    text-3xl
+                    font-black
+                    mb-8
+                  ">
+                    Partner Store Settings
+                  </h2>
+
+                  <div className="
+                    grid
+                    md:grid-cols-2
+                    gap-6
+                  ">
+
+                    <input
+                      type="text"
+                      name="storeName"
+                      value={
+                        partnerForm.storeName
+                      }
+                      onChange={
+                        handlePartnerChange
+                      }
+                      placeholder="Store Name"
+                      className="
+                        px-5 py-4
+                        rounded-2xl
+                        bg-black/30
+                        border border-white/10
+                        outline-none
+                        focus:border-[#C6922B]
+                      "
+                    />
+
+                    <input
+                      type="text"
+                      name="paymentNumber"
+                      value={
+                        partnerForm.paymentNumber
+                      }
+                      onChange={
+                        handlePartnerChange
+                      }
+                      placeholder="Payment Number"
+                      className="
+                        px-5 py-4
+                        rounded-2xl
+                        bg-black/30
+                        border border-white/10
+                        outline-none
+                        focus:border-[#C6922B]
+                      "
+                    />
+
+                    <input
+                      type="text"
+                      name="facebook"
+                      value={
+                        partnerForm.facebook
+                      }
+                      onChange={
+                        handlePartnerChange
+                      }
+                      placeholder="Facebook URL"
+                      className="
+                        px-5 py-4
+                        rounded-2xl
+                        bg-black/30
+                        border border-white/10
+                        outline-none
+                        focus:border-[#C6922B]
+                      "
+                    />
+
+                    <input
+                      type="text"
+                      name="instagram"
+                      value={
+                        partnerForm.instagram
+                      }
+                      onChange={
+                        handlePartnerChange
+                      }
+                      placeholder="Instagram URL"
+                      className="
+                        px-5 py-4
+                        rounded-2xl
+                        bg-black/30
+                        border border-white/10
+                        outline-none
+                        focus:border-[#C6922B]
+                      "
+                    />
+
+                  </div>
+
+                  <textarea
+                    rows="4"
+                    name="storeDescription"
+                    value={
+                      partnerForm.storeDescription
+                    }
+                    onChange={
+                      handlePartnerChange
+                    }
+                    placeholder="Store Description"
+                    className="
+                      w-full
+                      mt-6
+                      px-5 py-4
+                      rounded-2xl
+                      bg-black/30
+                      border border-white/10
+                      outline-none
+                      focus:border-[#C6922B]
+                    "
+                  />
+
+                  <textarea
+                    rows="3"
+                    name="storeAddress"
+                    value={
+                      partnerForm.storeAddress
+                    }
+                    onChange={
+                      handlePartnerChange
+                    }
+                    placeholder="Store Address"
+                    className="
+                      w-full
+                      mt-6
+                      px-5 py-4
+                      rounded-2xl
+                      bg-black/30
+                      border border-white/10
+                      outline-none
+                      focus:border-[#C6922B]
+                    "
+                  />
+
+                  <div className="
+                    grid
+                    md:grid-cols-2
+                    gap-6
+                    mt-6
+                  ">
+
+                    <div>
+
+                      <label className="block mb-2 text-gray-400">
+                        Store Logo
+                      </label>
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={
+                          handlePartnerLogoUpload
+                        }
+                        className="
+                          mt-2
+                          w-full
+                        "
+                      />
+
+                    </div>
+
+                    <div>
+
+                      <label className="block mb-2 text-gray-400">
+                        Store Banner
+                      </label>
+
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={
+                          handlePartnerBannerUpload
+                        }
+                        className="
+                          mt-2
+                          w-full
+                        "
+                      />
+
+                    </div>
+
+                  </div>
+
+                  <button
+
+                    onClick={
+                      savePartnerProfile
+                    }
+
+                    disabled={saving}
+
+                    className="
+                      mt-8
+                      px-8
+                      py-4
+                      rounded-2xl
+                      bg-[#C6922B]
+                      text-black
+                      font-black
+                      hover:scale-105
+                      transition
+                      disabled:opacity-50
+                      disabled:cursor-not-allowed
+                    "
+                  >
+
+                    {
+                      saving
+                        ? "Saving..."
+                        : "Save Store Settings"
+                    }
+
+                  </button>
+
+                </div>
+
+              )
+            }
+
             {/* QUICK INFO */}
             <div className="rounded-[40px] border border-white/10 bg-white/5 backdrop-blur-xl p-8">
 
@@ -1172,6 +2573,60 @@ export default function Profile() {
                   </span>
 
                 </div>
+
+                {
+                  isPartner && (
+
+                    <div className="flex justify-between">
+
+                      <span>Partner Status</span>
+
+                      <span>
+
+                        {partnerData?.status}
+
+                      </span>
+
+                    </div>
+
+                  )
+                }
+
+                {
+                  profile?.storeName && (
+
+                    <div className="flex justify-between">
+
+                      <span>Store</span>
+
+                      <span>
+
+                        {profile.storeName}
+
+                      </span>
+
+                    </div>
+
+                  )
+                }
+
+                {
+                  profile?.partnerSlug && (
+
+                    <div className="flex justify-between">
+
+                      <span>Store URL</span>
+
+                      <span className="text-[#C6922B]">
+
+                        /{profile.partnerSlug}
+
+                      </span>
+
+                    </div>
+
+                  )
+                }
 
               </div>
 

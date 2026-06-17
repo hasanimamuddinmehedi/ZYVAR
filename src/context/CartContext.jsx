@@ -54,7 +54,7 @@ export function CartProvider({
               product.id
           );
 
-        // IF EXISTS
+        // IF EXISTS — INCREMENT QUANTITY
         if (existing) {
 
           return prev.map(
@@ -90,9 +90,8 @@ export function CartProvider({
         ];
       });
 
-      alert(
-        "Product Added To Cart"
-      );
+      // ALERT REMOVED FROM CONTEXT —
+      // each component handles its own success popup
     };
 
   // REMOVE ITEM

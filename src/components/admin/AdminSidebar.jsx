@@ -5,6 +5,9 @@ import {
   FaCog,
   FaPlus,
   FaSignOutAlt,
+  FaClipboardList,
+  FaHandshake,
+  FaTicketAlt,
 } from "react-icons/fa";
 
 import {
@@ -51,24 +54,23 @@ export default function AdminSidebar() {
   return (
 
     <aside
-
       className="
-      hidden lg:flex
-      fixed
-      left-0
-      top-0
-      z-50
-      w-[280px]
-      h-screen
-      flex-col
-      justify-between
-      bg-[#111111]/95
-      backdrop-blur-2xl
-      border-r
-      border-white/10
-      p-6
-      overflow-y-auto
-    "
+        hidden lg:flex
+        fixed
+        left-0
+        top-0
+        z-50
+        w-[280px]
+        h-screen
+        flex-col
+        justify-between
+        bg-[#111111]/95
+        backdrop-blur-2xl
+        border-r
+        border-white/10
+        p-6
+        overflow-y-auto
+      "
     >
 
       {/* TOP */}
@@ -106,67 +108,77 @@ export default function AdminSidebar() {
         {/* NAVIGATION */}
         <nav className="space-y-4">
 
+          {/* 1. Dashboard */}
           <NavLink
             to="/admin/dashboard"
             className={navClass}
           >
-
             <FaChartPie className="text-lg" />
-
             Dashboard
-
           </NavLink>
 
+          {/* 2. Upload Product */}
           <NavLink
             to="/admin/upload"
             className={navClass}
           >
-
             <FaPlus className="text-lg" />
-
             Upload Product
-
           </NavLink>
 
+          {/* 3. Products */}
           <NavLink
             to="/admin/products"
             className={navClass}
           >
-
             <FaBoxOpen className="text-lg" />
-
             Products
-
           </NavLink>
 
+          {/* 4. Orders */}
           <NavLink
             to="/admin/orders"
             className={navClass}
           >
-
             <FaShoppingBag className="text-lg" />
-
             Orders
-
           </NavLink>
 
+          {/* 5. Product Requests */}
+          <NavLink
+            to="/admin/product-requests"
+            className={navClass}
+          >
+            <FaClipboardList className="text-lg" />
+            Product Requests
+          </NavLink>
+
+          {/* 6. Partner Applications */}
+          <NavLink
+            to="/admin/partner-applications"
+            className={navClass}
+          >
+            <FaHandshake className="text-lg" />
+            Partner Applications
+          </NavLink>
+
+          {/* 7. Partner Coupons */}
+          <NavLink
+            to="/admin/partner-coupons"
+            className={navClass}
+          >
+            <FaTicketAlt className="text-lg" />
+            Partner Coupons
+          </NavLink>
+
+          {/* 8. Settings */}
           <NavLink
             to="/admin/settings"
             className={navClass}
           >
-
             <FaCog className="text-lg" />
-
             Settings
-
           </NavLink>
-
-          <NavLink
-  to="/admin/product-requests"
-  className={navClass}
->
-  Product Requests
-</NavLink>
 
         </nav>
 
@@ -189,16 +201,11 @@ export default function AdminSidebar() {
           </p>
 
           <button
-
             onClick={handleLogout}
-
             className="w-full py-4 rounded-2xl bg-red-500 text-white font-black flex items-center justify-center gap-3 hover:opacity-90 transition duration-300"
           >
-
             <FaSignOutAlt />
-
             Logout Admin
-
           </button>
 
         </div>

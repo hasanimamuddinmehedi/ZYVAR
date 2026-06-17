@@ -9,6 +9,7 @@ import Footer from "../components/Footer";
 import SEO from "../components/SEO";
 import WhatsAppSupport from "../components/WhatsAppSupport";
 import ProductCollage from "../components/ProductCollage";
+import BecomePartnerCTA from "../components/BecomePartnerCTA";
 
 export default function Home() {
   return (
@@ -20,6 +21,7 @@ export default function Home() {
         />
       <Navbar />
       <Hero />
+      <BecomePartnerCTA />
       <ProductCollage />
       <Categories />
       <FeaturedProducts />

@@ -433,7 +433,10 @@ export default function Products() {
                         <div className="relative overflow-hidden">
 
                           <LazyLoadImage
-                            src={product.image}
+                            src={
+                              product.images?.[0] ||
+                              product.image
+                            }
                             alt={product.name}
                             className="h-64 sm:h-72 lg:h-80 w-full object-cover group-hover:scale-110 transition duration-700"
                           />
@@ -458,6 +461,24 @@ export default function Products() {
                           </h3>
 
                         </Link>
+
+                        {/* PARTNER / UPLOADER LINK */}
+                        {product.partnerSlug && (
+
+                          <Link
+                            to={`/${product.partnerSlug}`}
+                            className="
+                              inline-block
+                              text-sm
+                              text-[#C6922B]
+                              hover:underline
+                              mb-3
+                            "
+                          >
+                            Products From{" "}
+                            {product.uploadedBy}
+                          </Link>
+                        )}
 
                         <p className="text-gray-400 mb-6 line-clamp-2 min-h-[48px]">
                           {
