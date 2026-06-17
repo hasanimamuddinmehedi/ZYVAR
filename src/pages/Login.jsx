@@ -269,6 +269,13 @@ export default function Login() {
   // to know the user came back from Google is to check getRedirectResult() here.
   // Without this, mobile users were technically signed into Firebase Auth but
   // the app never ran saveUserData/navigate, so they appeared "logged out".
+  //
+  // IMPORTANT: this does NOT fall back to auth.currentUser when getRedirectResult
+  // is null. An earlier debug version did that, and it caused a serious bug: after
+  // logout (which only cleared localStorage, not the Firebase session — see the
+  // handleLogout fix in Navbar.jsx), simply loading /login would find a stale
+  // auth.currentUser and silently log the user right back in. getRedirectResult
+  // is the only safe signal that we're actually returning from a Google redirect.
   useEffect(() => {
 
     const handleRedirectResult =

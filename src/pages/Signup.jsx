@@ -149,9 +149,49 @@ export default function Signup() {
   // This is the key fix: the old code used setDoc(..., { merge: true }) unconditionally,
   // which meant every returning Google user got their fields (phone, dob, address, etc.)
   // silently overwritten with blank values on every signup/login attempt.
+  //
+  // ALSO FIXES: Navbar.jsx determines isLoggedIn purely from
+  // localStorage.getItem("zyvar-user") === "true" — it knows nothing about Firebase
+  // Auth or Firestore. The old Google signup flow never set this flag, so even though
+  // the user was genuinely signed in (Firestore doc created, popup shown, redirected
+  // home), the Navbar still rendered "Login / Signup" buttons instead of "Logout"
+  // because that one localStorage flag was missing. Login.jsx's saveUserData already
+  // sets it correctly — this mirrors that exact same write here so both flows agree.
+  //
   // RETURNS true IF THIS WAS A BRAND NEW USER, false IF THEY ALREADY EXISTED.
   const saveGoogleUserData =
     async (user) => {
+
+      // SET THE SAME LOCALSTORAGE FLAGS THE EMAIL/PASSWORD LOGIN FLOW SETS —
+      // THIS IS WHAT Navbar.jsx ACTUALLY CHECKS TO DECIDE LOGGED-IN STATE
+      localStorage.setItem(
+        "zyvar-user",
+        "true"
+      );
+
+      localStorage.setItem(
+        "zyvar-user-id",
+        user.uid
+      );
+
+      localStorage.setItem(
+        "zyvar-user-data",
+
+        JSON.stringify({
+
+          uid:
+            user.uid,
+
+          email:
+            user.email,
+
+          name:
+            user.displayName || "ZYVAR Customer",
+
+          photoURL:
+            user.photoURL || "",
+        })
+      );
 
       const userRef =
         doc(

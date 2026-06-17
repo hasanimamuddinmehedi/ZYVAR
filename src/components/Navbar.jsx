@@ -35,7 +35,11 @@ import {
   getDocs,
 } from "firebase/firestore";
 
-import { db } from "../firebase/firebase";
+import {
+  signOut,
+} from "firebase/auth";
+
+import { auth, db } from "../firebase/firebase";
 
 import RequestProductModal from "./RequestProductModal";
 
@@ -203,14 +207,46 @@ export default function Navbar() {
     return null;
   }
 
-  const handleLogout = () => {
+  // LOGOUT
+  // FIX: the previous version only cleared the "zyvar-user" localStorage flag and
+  // navigated to /login — it never actually signed the user out of Firebase Auth.
+  // This meant auth.currentUser remained populated after "logout", which (combined
+  // with any code checking auth.currentUser as a fallback) could silently log the
+  // user right back in the moment they landed on /login. signOut(auth) is now called
+  // first so Firebase's own session is properly terminated, then local data is cleared.
+  const handleLogout =
+    async () => {
 
-    localStorage.removeItem(
-      "zyvar-user"
-    );
+      try {
 
-    navigate("/login");
-  };
+        await signOut(auth);
+
+      } catch (error) {
+
+        console.log(
+          "Firebase signOut error:",
+          error
+        );
+      }
+
+      localStorage.removeItem(
+        "zyvar-user"
+      );
+
+      localStorage.removeItem(
+        "zyvar-user-id"
+      );
+
+      localStorage.removeItem(
+        "zyvar-user-data"
+      );
+
+      localStorage.removeItem(
+        "zyvar-remember"
+      );
+
+      navigate("/login");
+    };
 
   return (
     <>
