@@ -16,6 +16,7 @@ import {
   FaClipboardList,
   FaHandshake,
   FaTicketAlt,
+  FaUsers,
 } from "react-icons/fa";
 
 export default function AdminMobileSidebar() {
@@ -72,15 +73,25 @@ export default function AdminMobileSidebar() {
         </button>
 
         {/* LOGO */}
-        <div className="text-center">
+        <div className="flex items-center gap-3">
 
-          <h1 className="text-2xl font-black tracking-[0.25em] text-[#C6922B] leading-none">
-            ZYVAR
-          </h1>
+          <img
+            src="https://res.cloudinary.com/dhppdatrl/image/upload/v1778734083/w3ehnytbwrugrxptj9py.png"
+            alt="ZYVAR Logo"
+            className="w-9 h-9 rounded-xl object-contain"
+          />
 
-          <p className="text-[9px] tracking-[0.3em] uppercase text-gray-500 mt-1">
-            Admin Panel
-          </p>
+          <div className="text-center">
+
+            <h1 className="text-2xl font-black tracking-[0.25em] text-[#C6922B] leading-none">
+              ZYVAR
+            </h1>
+
+            <p className="text-[9px] tracking-[0.3em] uppercase text-gray-500 mt-1">
+              Admin Panel
+            </p>
+
+          </div>
 
         </div>
 
@@ -115,12 +126,23 @@ export default function AdminMobileSidebar() {
 
         {/* SIDEBAR */}
         <div
-          className={`absolute left-0 top-0 h-full w-72 bg-[#111111]/95 backdrop-blur-2xl border-r border-white/10 p-6 transition-transform duration-300 flex flex-col justify-between ${
+          className={`absolute left-0 top-0 h-full w-72 bg-[#111111]/95 backdrop-blur-2xl border-r border-white/10 p-6 transition-transform duration-300 flex flex-col justify-between overflow-y-auto scrollbar-none ${
             open
               ? "translate-x-0"
               : "-translate-x-full"
           }`}
+          style={{
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
         >
+
+          {/* Hides scrollbar in WebKit (Chrome, Safari) */}
+          <style>{`
+            .mobile-sidebar-inner::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
 
           {/* TOP */}
           <div>
@@ -128,15 +150,25 @@ export default function AdminMobileSidebar() {
             {/* HEADER */}
             <div className="flex justify-between items-center mb-12">
 
-              <div>
+              <div className="flex items-center gap-3">
 
-                <h2 className="text-3xl font-black tracking-[0.25em] text-[#C6922B]">
-                  ZYVAR
-                </h2>
+                <img
+                  src="https://res.cloudinary.com/dhppdatrl/image/upload/v1778734083/w3ehnytbwrugrxptj9py.png"
+                  alt="ZYVAR Logo"
+                  className="w-12 h-12 rounded-2xl object-contain"
+                />
 
-                <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2">
-                  Mobile Admin
-                </p>
+                <div>
+
+                  <h2 className="text-3xl font-black tracking-[0.25em] text-[#C6922B]">
+                    ZYVAR
+                  </h2>
+
+                  <p className="text-gray-500 text-[10px] uppercase tracking-[0.3em] mt-2">
+                    Mobile Admin
+                  </p>
+
+                </div>
 
               </div>
 
@@ -238,7 +270,19 @@ export default function AdminMobileSidebar() {
                 Partner Coupons
               </NavLink>
 
-              {/* 8. Settings */}
+              {/* 8. Users */}
+              <NavLink
+                to="/admin/users"
+                onClick={() =>
+                  setOpen(false)
+                }
+                className={navClass}
+              >
+                <FaUsers />
+                Users
+              </NavLink>
+
+              {/* 9. Settings */}
               <NavLink
                 to="/admin/settings"
                 onClick={() =>
@@ -255,7 +299,7 @@ export default function AdminMobileSidebar() {
           </div>
 
           {/* FOOTER CARD */}
-          <div className="rounded-[30px] border border-white/10 bg-gradient-to-br from-[#1A1A1A] to-[#101010] p-5 relative overflow-hidden">
+          <div className="rounded-[30px] border border-white/10 bg-gradient-to-br from-[#1A1A1A] to-[#101010] p-5 relative overflow-hidden mt-10">
 
             <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-[#C6922B]/10 blur-[60px]" />
 

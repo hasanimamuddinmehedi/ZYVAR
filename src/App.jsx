@@ -47,6 +47,7 @@ import SettingsPage from "./pages/admin/SettingsPage";
 import ProductRequestsPage from "./pages/admin/ProductRequestsPage";
 import PartnerApplicationsPage from "./pages/admin/PartnerApplicationsPage";
 import PartnerCouponsPage from "./pages/admin/PartnerCouponsPage";
+import UsersPage from "./pages/admin/UsersPage";
 
 import BecomePartnerPage from "./pages/BecomePartnerPage";
 import PartnerStorePage from "./pages/PartnerStorePage";
@@ -329,6 +330,13 @@ function AppContent() {
   path="partner-coupons"
   element={
     <PartnerCouponsPage />
+  }
+/>
+
+<Route
+  path="users"
+  element={
+    <UsersPage />
   }
 />
         </Route>

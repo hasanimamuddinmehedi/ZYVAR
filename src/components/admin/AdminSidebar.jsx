@@ -8,6 +8,7 @@ import {
   FaClipboardList,
   FaHandshake,
   FaTicketAlt,
+  FaUsers,
 } from "react-icons/fa";
 
 import {
@@ -70,8 +71,20 @@ export default function AdminSidebar() {
         border-white/10
         p-6
         overflow-y-auto
+        scrollbar-none
       "
+      style={{
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}
     >
+
+      {/* Hides scrollbar in WebKit (Chrome, Safari) */}
+      <style>{`
+        aside::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
 
       {/* TOP */}
       <div>
@@ -81,13 +94,12 @@ export default function AdminSidebar() {
 
           <div className="flex items-center gap-4 mb-5">
 
-            <div className="w-14 h-14 rounded-3xl bg-[#C6922B]/15 border border-[#C6922B]/20 flex items-center justify-center">
-
-              <span className="text-[#C6922B] text-2xl font-black">
-                Z
-              </span>
-
-            </div>
+            {/* Original logo image */}
+            <img
+              src="https://res.cloudinary.com/dhppdatrl/image/upload/v1778734083/w3ehnytbwrugrxptj9py.png"
+              alt="ZYVAR Logo"
+              className="w-14 h-14 rounded-3xl object-contain"
+            />
 
             <div>
 
@@ -171,7 +183,16 @@ export default function AdminSidebar() {
             Partner Coupons
           </NavLink>
 
-          {/* 8. Settings */}
+          {/* 8. Users */}
+          <NavLink
+            to="/admin/users"
+            className={navClass}
+          >
+            <FaUsers className="text-lg" />
+            Users
+          </NavLink>
+
+          {/* 9. Settings */}
           <NavLink
             to="/admin/settings"
             className={navClass}

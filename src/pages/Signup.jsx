@@ -1,6 +1,5 @@
 import React, {
   useState,
-  useEffect,
 } from "react";
 
 import {
@@ -8,8 +7,6 @@ import {
   updateProfile,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
 } from "firebase/auth";
 
 import {
@@ -49,37 +46,6 @@ export default function Signup() {
 
   const provider =
     new GoogleAuthProvider();
-
-  // TEMPORARY DISPLAY-ONLY DEBUG LOG — purely for diagnosis on a phone without devtools.
-  // This NEVER triggers any auth action itself — it only records what the existing
-  // getRedirectResult() call returns, so it cannot cause the earlier logout bug.
-  const [debugLog, setDebugLog] =
-    useState([]);
-
-  const addDebugLog =
-    (message) => {
-
-      setDebugLog((prev) => {
-
-        const updated = [
-          ...prev,
-          `${new Date().toLocaleTimeString()} ${message}`,
-        ];
-
-        // ALSO PERSIST TO sessionStorage SO THE LOG SURVIVES navigate("/") —
-        // readable on Home via the same DebugLogOverlay used by Login.jsx.
-        try {
-
-          sessionStorage.setItem(
-            "zyvar-debug-log",
-            JSON.stringify(updated)
-          );
-
-        } catch (e) {}
-
-        return updated;
-      });
-    };
 
   const [name,
     setName] =
@@ -124,12 +90,6 @@ export default function Signup() {
   const emailValid =
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
       email
-    );
-
-  // DETECT MOBILE
-  const isMobile =
-    /iPhone|iPad|iPod|Android/i.test(
-      navigator.userAgent
     );
 
   // SEND WELCOME EMAIL (TEMPLATE ID 8) — GOOGLE SIGNUPS ONLY, NEW USERS ONLY
@@ -181,13 +141,10 @@ export default function Signup() {
   // which meant every returning Google user got their fields (phone, dob, address, etc.)
   // silently overwritten with blank values on every signup/login attempt.
   //
-  // ALSO FIXES: Navbar.jsx determines isLoggedIn purely from
-  // localStorage.getItem("zyvar-user") === "true" — it knows nothing about Firebase
-  // Auth or Firestore. The old Google signup flow never set this flag, so even though
-  // the user was genuinely signed in (Firestore doc created, popup shown, redirected
-  // home), the Navbar still rendered "Login / Signup" buttons instead of "Logout"
-  // because that one localStorage flag was missing. Login.jsx's saveUserData already
-  // sets it correctly — this mirrors that exact same write here so both flows agree.
+  // ALSO SETS THE SAME localStorage FLAGS Login.jsx SETS — Navbar.jsx determines
+  // isLoggedIn purely from localStorage.getItem("zyvar-user") === "true", so this
+  // must be set here too or the Navbar will keep showing Login/Signup buttons even
+  // though the user is genuinely signed in.
   //
   // RETURNS true IF THIS WAS A BRAND NEW USER, false IF THEY ALREADY EXISTED.
   const saveGoogleUserData =
@@ -288,7 +245,8 @@ export default function Signup() {
       return isNewUser;
     };
 
-  // HANDLE GOOGLE SIGN-IN RESULT (SHARED BY POPUP + REDIRECT FLOWS)
+  // HANDLE GOOGLE SIGN-IN RESULT
+  // - Sets the localStorage flags the Navbar checks for logged-in state
   // - Creates the Firestore user doc ONLY if it's a brand new user (never overwrites)
   // - Sends the "Welcome To ZYVAR" template-8 email ONLY to brand new Google users
   //   (Google already verifies email ownership, so no separate verification email is needed)
@@ -297,35 +255,15 @@ export default function Signup() {
   const completeGoogleSignup =
     async (user) => {
 
-      addDebugLog(
-        "completeGoogleSignup: start, calling saveGoogleUserData..."
-      );
-
       const isNewUser =
         await saveGoogleUserData(user);
 
-      addDebugLog(
-        `completeGoogleSignup: saveGoogleUserData done, isNewUser=${isNewUser}`
-      );
-
       if (isNewUser) {
-
-        addDebugLog(
-          "completeGoogleSignup: sending welcome email..."
-        );
 
         await sendWelcomeEmail(
           user
         );
-
-        addDebugLog(
-          "completeGoogleSignup: welcome email step done"
-        );
       }
-
-      addDebugLog(
-        "completeGoogleSignup: showing successAlert..."
-      );
 
       await successAlert(
         "Welcome To ZYVAR!",
@@ -334,89 +272,8 @@ export default function Signup() {
           : "Successfully Logged In"
       );
 
-      addDebugLog(
-        "completeGoogleSignup: successAlert resolved, navigating to /..."
-      );
-
       navigate("/");
     };
-
-  // ON MOUNT — CATCH USERS RETURNING FROM THE MOBILE REDIRECT FLOW
-  // signInWithRedirect() navigates away from the page entirely, so the only way
-  // to know the user came back from Google is to check getRedirectResult() here.
-  // Without this, mobile users were technically signed into Firebase Auth but
-  // the app never ran the Firestore write/email/navigate, so they appeared "logged out".
-  useEffect(() => {
-
-    addDebugLog(
-      "mounted, calling getRedirectResult..."
-    );
-
-    const handleRedirectResult =
-      async () => {
-
-        try {
-
-          setLoading(true);
-
-          const result =
-            await getRedirectResult(
-              auth
-            );
-
-          addDebugLog(
-            `getRedirectResult resolved. result=${result ? "OBJECT" : "null"}`
-          );
-
-          // result IS null IF THE PAGE WAS JUST LOADED NORMALLY (NOT A RETURN FROM REDIRECT)
-          if (result && result.user) {
-
-            addDebugLog(
-              `result.user.email=${result.user.email}, calling completeGoogleSignup...`
-            );
-
-            await completeGoogleSignup(
-              result.user
-            );
-
-            addDebugLog(
-              "completeGoogleSignup finished without throwing"
-            );
-          }
-
-        } catch (error) {
-
-          addDebugLog(
-            `CAUGHT ERROR: code=${error.code} message=${error.message}`
-          );
-
-          console.log(error);
-
-          if (
-            error.code !==
-            "auth/popup-closed-by-user"
-          ) {
-
-            await errorAlert(
-              "Google Signup Failed",
-              error.message
-            );
-          }
-
-        } finally {
-
-          setLoading(false);
-
-          addDebugLog(
-            "handleRedirectResult finished (finally block)"
-          );
-        }
-      };
-
-    handleRedirectResult();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // SIGNUP
   const handleSignup =
@@ -615,8 +472,14 @@ export default function Signup() {
     };
 
   // GOOGLE SIGNUP
-  // Uses signInWithRedirect on mobile (popups are blocked by mobile browsers)
-  // Uses signInWithPopup on desktop
+  // Uses signInWithPopup on BOTH desktop and mobile.
+  // signInWithRedirect was used on mobile previously, but real-device testing showed
+  // getRedirectResult() reliably returned null after the round-trip on Android
+  // Chrome (the pending-redirect state was not surviving the navigation away and
+  // back, likely an IndexedDB persistence/timing issue). signInWithPopup keeps the
+  // page open the whole time — no separate result-catching step needed — and modern
+  // mobile browsers (Chrome, Safari) handle OAuth popups fine, so this is simpler
+  // and more reliable for both platforms.
   const handleGoogleSignup =
     async () => {
 
@@ -624,21 +487,6 @@ export default function Signup() {
 
         setLoading(true);
 
-        if (isMobile) {
-
-          // MOBILE — redirect flow
-          await signInWithRedirect(
-            auth,
-            provider
-          );
-
-          // signInWithRedirect navigates away;
-          // result is handled via getRedirectResult
-          // in the useEffect on mount (see above)
-          return;
-        }
-
-        // DESKTOP — popup flow
         const result =
           await signInWithPopup(
             auth,
@@ -666,8 +514,6 @@ export default function Signup() {
 
       } finally {
 
-        // ON MOBILE, signInWithRedirect HAS ALREADY NAVIGATED AWAY BY THE TIME
-        // WE GET HERE (OR THE PAGE IS ABOUT TO UNLOAD), SO THIS IS SAFE FOR BOTH FLOWS.
         setLoading(false);
       }
     };
@@ -675,51 +521,6 @@ export default function Signup() {
   return (
 
     <div className="min-h-screen bg-[#0B0B0B] text-white flex overflow-hidden">
-
-      {/* TEMPORARY DISPLAY-ONLY DEBUG PANEL — shows what getRedirectResult/completeGoogleSignup
-          actually did. Does NOT trigger any auth logic itself. Tap to dismiss. */}
-      {
-        debugLog.length > 0 && (
-
-          <div
-
-            onClick={() =>
-              setDebugLog([])
-            }
-
-            style={{
-              position: "fixed",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              maxHeight: "45vh",
-              overflowY: "auto",
-              background: "rgba(0,0,0,0.97)",
-              color: "#00ff66",
-              fontSize: "11px",
-              fontFamily: "monospace",
-              padding: "10px",
-              zIndex: 99999,
-              borderTop: "2px solid #C6922B",
-            }}
-          >
-
-            <div style={{ color: "#C6922B", marginBottom: "6px", fontWeight: "bold" }}>
-              DEBUG (tap anywhere here to dismiss):
-            </div>
-
-            {
-              debugLog.map((line, i) => (
-
-                <div key={i} style={{ marginBottom: "4px", wordBreak: "break-all" }}>
-                  {line}
-                </div>
-              ))
-            }
-
-          </div>
-        )
-      }
 
       {/* LEFT SIDE */}
       <div className="hidden lg:flex flex-1 relative items-center justify-center bg-gradient-to-br from-black to-[#121212] overflow-hidden">

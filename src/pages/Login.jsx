@@ -1,14 +1,11 @@
 import React, {
   useState,
-  useEffect,
 } from "react";
 
 import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithRedirect,
-  getRedirectResult,
 } from "firebase/auth";
 
 import {
@@ -52,38 +49,6 @@ export default function Login() {
   const provider =
     new GoogleAuthProvider();
 
-  // TEMPORARY DISPLAY-ONLY DEBUG LOG — purely for diagnosis on a phone without devtools.
-  // This NEVER triggers any auth action itself — it only records what the existing
-  // getRedirectResult() call returns, so it cannot cause the earlier logout bug.
-  const [debugLog, setDebugLog] =
-    useState([]);
-
-  const addDebugLog =
-    (message) => {
-
-      setDebugLog((prev) => {
-
-        const updated = [
-          ...prev,
-          `${new Date().toLocaleTimeString()} ${message}`,
-        ];
-
-        // ALSO PERSIST TO sessionStorage SO THE LOG SURVIVES navigate("/") —
-        // CHECK window.name OR A GLOBAL ON THE HOME PAGE IF NEEDED, BUT FOR NOW
-        // JUST KEEP IT READABLE VIA DEVTOOLS-FREE MEANS: sessionStorage.
-        try {
-
-          sessionStorage.setItem(
-            "zyvar-debug-log",
-            JSON.stringify(updated)
-          );
-
-        } catch (e) {}
-
-        return updated;
-      });
-    };
-
   const [email, setEmail] =
     useState("");
 
@@ -112,12 +77,6 @@ export default function Login() {
   // PASSWORD VALIDATION
   const isPasswordValid =
     password.length >= 6;
-
-  // DETECT MOBILE
-  const isMobile =
-    /iPhone|iPad|iPod|Android/i.test(
-      navigator.userAgent
-    );
 
   // SEND WELCOME EMAIL (TEMPLATE ID 8) — GOOGLE SIGNUPS ONLY, NEW USERS ONLY
   // NOTE: endpoint name "/send-welcome-email" is assumed to mirror the existing
@@ -261,7 +220,7 @@ export default function Login() {
       return isNewUser;
     };
 
-  // HANDLE GOOGLE SIGN-IN RESULT (SHARED BY POPUP + REDIRECT FLOWS)
+  // HANDLE GOOGLE SIGN-IN RESULT
   // - Saves/creates the Firestore user doc
   // - Sends the "Welcome To ZYVAR" template-8 email ONLY to brand new Google users
   //   (Google already verifies email ownership, so no verification email is needed)
@@ -270,29 +229,13 @@ export default function Login() {
   const completeGoogleLogin =
     async (user) => {
 
-      addDebugLog(
-        "completeGoogleLogin: start, calling saveUserData..."
-      );
-
       const isNewUser =
         await saveUserData(user);
 
-      addDebugLog(
-        `completeGoogleLogin: saveUserData done, isNewUser=${isNewUser}`
-      );
-
       if (isNewUser) {
-
-        addDebugLog(
-          "completeGoogleLogin: sending welcome email..."
-        );
 
         await sendWelcomeEmail(
           user
-        );
-
-        addDebugLog(
-          "completeGoogleLogin: welcome email step done"
         );
       }
 
@@ -302,10 +245,6 @@ export default function Login() {
         user.email
       );
 
-      addDebugLog(
-        "completeGoogleLogin: showing successAlert..."
-      );
-
       await successAlert(
         "Welcome To ZYVAR!",
         isNewUser
@@ -313,96 +252,8 @@ export default function Login() {
           : "Successfully Logged In"
       );
 
-      addDebugLog(
-        "completeGoogleLogin: successAlert resolved, navigating to /..."
-      );
-
       navigate("/");
     };
-
-  // ON MOUNT — CATCH USERS RETURNING FROM THE MOBILE REDIRECT FLOW
-  // signInWithRedirect() navigates away from the page entirely, so the only way
-  // to know the user came back from Google is to check getRedirectResult() here.
-  // Without this, mobile users were technically signed into Firebase Auth but
-  // the app never ran saveUserData/navigate, so they appeared "logged out".
-  //
-  // IMPORTANT: this does NOT fall back to auth.currentUser when getRedirectResult
-  // is null. An earlier debug version did that, and it caused a serious bug: after
-  // logout (which only cleared localStorage, not the Firebase session — see the
-  // handleLogout fix in Navbar.jsx), simply loading /login would find a stale
-  // auth.currentUser and silently log the user right back in. getRedirectResult
-  // is the only safe signal that we're actually returning from a Google redirect.
-  useEffect(() => {
-
-    addDebugLog(
-      "mounted, calling getRedirectResult..."
-    );
-
-    const handleRedirectResult =
-      async () => {
-
-        try {
-
-          setLoading(true);
-
-          const result =
-            await getRedirectResult(
-              auth
-            );
-
-          addDebugLog(
-            `getRedirectResult resolved. result=${result ? "OBJECT" : "null"}`
-          );
-
-          // result IS null IF THE PAGE WAS JUST LOADED NORMALLY (NOT A RETURN FROM REDIRECT)
-          if (result && result.user) {
-
-            addDebugLog(
-              `result.user.email=${result.user.email}, calling completeGoogleLogin...`
-            );
-
-            await completeGoogleLogin(
-              result.user
-            );
-
-            addDebugLog(
-              "completeGoogleLogin finished without throwing"
-            );
-          }
-
-        } catch (error) {
-
-          addDebugLog(
-            `CAUGHT ERROR: code=${error.code} message=${error.message}`
-          );
-
-          console.log(error);
-
-          if (
-            error.code !==
-            "auth/popup-closed-by-user"
-          ) {
-
-            await errorAlert(
-              "Google Login Failed",
-              error.message
-            );
-          }
-
-        } finally {
-
-          setLoading(false);
-
-          addDebugLog(
-            "handleRedirectResult finished (finally block)"
-          );
-        }
-      };
-
-    handleRedirectResult();
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // LOGIN
   const handleLogin =
@@ -558,8 +409,14 @@ export default function Login() {
     };
 
   // GOOGLE LOGIN
-  // Uses signInWithRedirect on mobile (popups are blocked by mobile browsers)
-  // Uses signInWithPopup on desktop
+  // Uses signInWithPopup on BOTH desktop and mobile.
+  // signInWithRedirect was used on mobile previously, but real-device testing showed
+  // getRedirectResult() reliably returned null after the round-trip on Android
+  // Chrome (the pending-redirect state was not surviving the navigation away and
+  // back, likely an IndexedDB persistence/timing issue). signInWithPopup keeps the
+  // page open the whole time — no separate result-catching step needed — and modern
+  // mobile browsers (Chrome, Safari) handle OAuth popups fine, so this is simpler
+  // and more reliable for both platforms.
   const handleGoogleLogin =
     async () => {
 
@@ -567,21 +424,6 @@ export default function Login() {
 
         setLoading(true);
 
-        if (isMobile) {
-
-          // MOBILE — redirect flow
-          await signInWithRedirect(
-            auth,
-            provider
-          );
-
-          // signInWithRedirect navigates away;
-          // result is handled via getRedirectResult
-          // in the useEffect on mount (see above)
-          return;
-        }
-
-        // DESKTOP — popup flow
         const result =
           await signInWithPopup(
             auth,
@@ -609,8 +451,6 @@ export default function Login() {
 
       } finally {
 
-        // ON MOBILE, signInWithRedirect HAS ALREADY NAVIGATED AWAY BY THE TIME
-        // WE GET HERE (OR THE PAGE IS ABOUT TO UNLOAD), SO THIS IS SAFE FOR BOTH FLOWS.
         setLoading(false);
       }
     };
@@ -667,51 +507,6 @@ export default function Login() {
   return (
 
     <div className="min-h-screen bg-[#0B0B0B] text-white flex overflow-hidden">
-
-      {/* TEMPORARY DISPLAY-ONLY DEBUG PANEL — shows what getRedirectResult/completeGoogleLogin
-          actually did. Does NOT trigger any auth logic itself. Tap to dismiss. */}
-      {
-        debugLog.length > 0 && (
-
-          <div
-
-            onClick={() =>
-              setDebugLog([])
-            }
-
-            style={{
-              position: "fixed",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              maxHeight: "45vh",
-              overflowY: "auto",
-              background: "rgba(0,0,0,0.97)",
-              color: "#00ff66",
-              fontSize: "11px",
-              fontFamily: "monospace",
-              padding: "10px",
-              zIndex: 99999,
-              borderTop: "2px solid #C6922B",
-            }}
-          >
-
-            <div style={{ color: "#C6922B", marginBottom: "6px", fontWeight: "bold" }}>
-              DEBUG (tap anywhere here to dismiss):
-            </div>
-
-            {
-              debugLog.map((line, i) => (
-
-                <div key={i} style={{ marginBottom: "4px", wordBreak: "break-all" }}>
-                  {line}
-                </div>
-              ))
-            }
-
-          </div>
-        )
-      }
 
       {/* LEFT SIDE */}
       <div className="hidden lg:flex flex-1 relative items-center justify-center bg-gradient-to-br from-black to-[#121212] overflow-hidden">
