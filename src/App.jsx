@@ -21,6 +21,7 @@ import {
 import Home from "./pages/Home";
 
 import Navbar from "./components/Navbar";
+import ZyvarAIChat from "./components/ZyvarAIChat";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
@@ -227,6 +228,12 @@ function AppContent() {
           <Navbar />
         )
       }
+
+      {/* ZYVAR AI — global floating chat widget (Step 3). Mounted once here
+          rather than per-route; the component itself decides whether to
+          render based on the current path (hidden on admin, partner
+          dashboard, login, signup, and payment). */}
+      <ZyvarAIChat />
 
       {/* ROUTES — wrapped in Suspense so lazy-loaded pages show PageLoader
           while their chunk is being fetched, instead of a blank screen */}

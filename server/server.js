@@ -1,7 +1,14 @@
+// FIX (Step 2 audit finding): dotenv was listed as a dependency but never
+// actually loaded, so server/.env was inert for local development. This
+// must run before anything reads process.env below.
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
 const admin = require("firebase-admin");
+
+const zyvarAIRouter = require("./routes/zyvarAI");
 
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -13,9 +20,39 @@ admin.initializeApp({
 
 const app = express();
 
-app.use(cors());
+// CORS — restricted to the configured Zyvar frontend origin. Previously
+// this was an unrestricted app.use(cors()), which is not appropriate now
+// that a new AI endpoint is being added. Existing email endpoints are
+// unaffected since the frontend already calls this server from
+// FRONTEND_URL.
+app.use(cors({ origin: process.env.FRONTEND_URL }));
 
-app.use(express.json());
+// Request size limit — basic abuse protection for the new AI endpoint
+// (Step 2, Part 14). Existing email endpoints send small JSON bodies well
+// under this limit, so this does not change their behavior.
+app.use(express.json({ limit: "100kb" }));
+
+/* =========================================
+   ZYVAR AI — STEP 2 BACKEND FOUNDATION
+   POST /api/zyvar-ai/chat
+========================================= */
+
+app.use("/api/zyvar-ai", zyvarAIRouter);
+
+/* =========================================
+   HEALTH CHECK
+   GET /api/health
+   Safe, unauthenticated — exposes no secrets, no env values, no stack
+   traces. Used only to confirm the deployed process is alive and that
+   this build actually includes the current route set.
+========================================= */
+
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    ok: true,
+    service: "zyvar-email-server",
+  });
+});
 
 /* =========================================
    ROOT

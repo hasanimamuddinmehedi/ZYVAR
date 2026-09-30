@@ -167,31 +167,31 @@ export default function AdminNavbar() {
         left-[280px]
         right-0
         z-40
-        h-24
+        h-16
         border-b border-white/10
         bg-[#0B0B0B]/90
         backdrop-blur-2xl
       "
     >
-      <div className="h-full px-4 md:px-8 flex items-center justify-between gap-6 w-full">
+      <div className="h-full px-4 md:px-8 flex items-center justify-between gap-4 w-full">
 
         {/* ── LEFT ──────────────────────────────────────────────────────── */}
         <div>
-          <p className="text-[#C6922B] uppercase tracking-[0.3em] text-xs mb-2">
+          <p className="text-[#C6922B] uppercase tracking-[0.3em] text-[10px] mb-1">
             Admin Dashboard
           </p>
-          <h1 className="text-2xl md:text-3xl font-black">
+          <h1 className="text-lg md:text-xl font-black">
             Welcome Back
           </h1>
         </div>
 
         {/* ── RIGHT ─────────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
 
           {/* ── SEARCH (desktop) ─────────────────────────────────────────── */}
           <div ref={searchRef} className="relative hidden md:block">
-            <div className="flex items-center gap-3 px-5 h-14 rounded-2xl border border-white/10 bg-white/5 focus-within:border-[#C6922B] transition">
-              <FaSearch className="text-gray-500 flex-shrink-0" />
+            <div className="flex items-center gap-3 px-4 h-11 rounded-xl border border-white/10 bg-white/5 focus-within:border-[#C6922B] transition">
+              <FaSearch className="text-gray-500 flex-shrink-0 text-sm" />
               <input
                 type="text"
                 value={searchQuery}
@@ -207,14 +207,14 @@ export default function AdminNavbar() {
                   className="text-gray-500 hover:text-white transition"
                   aria-label="Clear search"
                 >
-                  <FaTimes />
+                  <FaTimes className="text-sm" />
                 </button>
               )}
             </div>
 
             {/* Search dropdown */}
             {searchOpen && (
-              <div className="absolute top-16 left-0 w-72 rounded-2xl border border-white/10 bg-[#111111] shadow-xl overflow-hidden z-50">
+              <div className="absolute top-14 left-0 w-72 rounded-2xl border border-white/10 bg-[#111111] shadow-xl overflow-hidden z-50">
                 {searchResults.length > 0 ? (
                   <>
                     <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-widest text-gray-500">
@@ -244,7 +244,7 @@ export default function AdminNavbar() {
           <button
             className="
               md:hidden
-              w-14 h-14 rounded-2xl
+              w-11 h-11 rounded-xl
               border border-white/10 bg-white/5
               flex items-center justify-center
               hover:border-[#C6922B] transition
@@ -262,7 +262,7 @@ export default function AdminNavbar() {
               aria-label={`Notifications, ${unreadCount} unread`}
               className="
                 relative
-                w-14 h-14 rounded-2xl
+                w-11 h-11 rounded-xl
                 border border-white/10 bg-white/5
                 flex items-center justify-center
                 hover:border-[#C6922B] transition
@@ -272,10 +272,10 @@ export default function AdminNavbar() {
               {unreadCount > 0 && (
                 <span className="
                   absolute -top-1 -right-1
-                  min-w-[20px] h-5
+                  min-w-[18px] h-[18px]
                   rounded-full
                   bg-[#C6922B]
-                  text-black text-[10px] font-black
+                  text-black text-[9px] font-black
                   flex items-center justify-center
                   px-1
                 ">
@@ -287,7 +287,7 @@ export default function AdminNavbar() {
             {/* Notification dropdown */}
             {notifOpen && (
               <div className="
-                absolute top-16 right-0
+                absolute top-14 right-0
                 w-80
                 rounded-2xl
                 border border-white/10
@@ -364,9 +364,10 @@ export default function AdminNavbar() {
           <button
             onClick={() => navigate("/profile")}
             className="
-              px-6 h-14 rounded-2xl
+              px-5 h-11 rounded-xl
               bg-[#C6922B] text-black font-black
               hover:scale-105 transition
+              text-sm
             "
           >
             Profile
@@ -384,7 +385,7 @@ export default function AdminNavbar() {
           bg-[#0B0B0B]/95
         ">
           <div className="relative mt-3">
-            <div className="flex items-center gap-3 px-4 h-12 rounded-xl border border-white/10 bg-white/5 focus-within:border-[#C6922B] transition">
+            <div className="flex items-center gap-3 px-4 h-11 rounded-xl border border-white/10 bg-white/5 focus-within:border-[#C6922B] transition">
               <FaSearch className="text-gray-500 flex-shrink-0" />
               <input
                 autoFocus
