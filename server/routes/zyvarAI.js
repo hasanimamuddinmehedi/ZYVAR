@@ -84,6 +84,21 @@ router.post("/chat", async (req, res) => {
     // Log full detail server-side only. Never leak this to the client.
     console.error("[zyvar-ai] chat error:", error);
 
+    if (error.status === 429 || error.statusCode === 429) {
+      const retryAfterHeader = error.headers?.get?.("retry-after");
+      const parsedRetryAfter = Number.parseInt(retryAfterHeader, 10);
+      const retryAfterSeconds =
+        Number.isFinite(parsedRetryAfter) && parsedRetryAfter > 0
+          ? Math.min(parsedRetryAfter, 86400)
+          : null;
+
+      return res.status(429).json({
+        code: "provider_rate_limit",
+        error: "Gemini's free-tier limit has been reached",
+        retryAfterSeconds,
+      });
+    }
+
     if (error.status === 503 || error.statusCode === 503) {
       const retryAfterHeader = error.headers?.get?.("retry-after");
       const parsedRetryAfter = Number.parseInt(retryAfterHeader, 10);

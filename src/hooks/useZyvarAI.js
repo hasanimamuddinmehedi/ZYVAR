@@ -54,6 +54,10 @@ function friendlyErrorMessage(kind, retryAfterSeconds) {
   switch (kind) {
     case "rate_limited":
       return "Too many requests right now. Please wait a moment and try again.";
+    case "quota":
+      return retryAfterSeconds
+        ? `Gemini's free-tier limit has been reached. The website and installed version share this quota. Wait about ${retryAfterSeconds} seconds, then tap Retry. If it still fails, try again after the quota resets or upgrade the Gemini API tier.`
+        : "Gemini's free-tier limit has been reached. The website and installed version share this quota. Try again after it resets or upgrade the Gemini API tier.";
     case "busy":
       return `Zyvar AI is busy right now. Please wait about ${retryAfterSeconds} seconds, then tap Retry.`;
     case "invalid_request":
@@ -101,7 +105,21 @@ async function sendMessageToZyvarAI({ message, conversation }) {
   }
 
   if (!response.ok) {
-    if (response.status === 429) throw new ZyvarAIError("rate_limited");
+    if (response.status === 429) {
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        // Preserve the generic local throttle message for malformed responses.
+      }
+
+      if (data.code === "provider_rate_limit") {
+        throw new ZyvarAIError("quota", data.retryAfterSeconds);
+      }
+
+      throw new ZyvarAIError("rate_limited");
+    }
     if (response.status === 400) throw new ZyvarAIError("invalid_request");
     if (response.status === 503) {
       let retryAfterSeconds = 30;
