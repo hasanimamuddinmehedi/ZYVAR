@@ -56,8 +56,8 @@ function friendlyErrorMessage(kind, retryAfterSeconds) {
       return "Too many requests right now. Please wait a moment and try again.";
     case "quota":
       return retryAfterSeconds
-        ? `Gemini's free-tier limit has been reached. The website and installed version share this quota. Wait about ${retryAfterSeconds} seconds, then tap Retry. If it still fails, try again after the quota resets or upgrade the Gemini API tier.`
-        : "Gemini's free-tier limit has been reached. The website and installed version share this quota. Try again after it resets or upgrade the Gemini API tier.";
+        ? `Gemini's free tier allows 20 requests per day, shared by the website and installed version. Google says retry in ${retryAfterSeconds} seconds, but that cooldown may not reset the daily quota. If the limit remains, try again after it resets or upgrade the Gemini API tier.`
+        : "Gemini's free tier allows 20 requests per day, shared by the website and installed version. Try again after the quota resets or upgrade the Gemini API tier.";
     case "busy":
       return `Zyvar AI is busy right now. Please wait about ${retryAfterSeconds} seconds, then tap Retry.`;
     case "invalid_request":
