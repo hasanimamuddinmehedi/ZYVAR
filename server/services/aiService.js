@@ -205,7 +205,7 @@ async function getChatReply(message, conversation = []) {
   let interaction = await gemini.interactions.create({
     model: MODEL,
     input,
-    generation_config: { maxOutputTokens: MAX_OUTPUT_TOKENS },
+    generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
     system_instruction: SYSTEM_PROMPT,
     tools: GEMINI_FUNCTION_DECLARATIONS,
   });
@@ -241,7 +241,7 @@ async function getChatReply(message, conversation = []) {
       model: MODEL,
       previous_interaction_id: interaction.id,
       input: functionResults,
-      generation_config: { maxOutputTokens: MAX_OUTPUT_TOKENS },
+      generation_config: { max_output_tokens: MAX_OUTPUT_TOKENS },
       system_instruction: SYSTEM_PROMPT,
       tools: GEMINI_FUNCTION_DECLARATIONS,
     });
