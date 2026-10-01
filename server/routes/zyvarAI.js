@@ -84,6 +84,20 @@ router.post("/chat", async (req, res) => {
     // Log full detail server-side only. Never leak this to the client.
     console.error("[zyvar-ai] chat error:", error);
 
+    if (error.status === 503 || error.statusCode === 503) {
+      const retryAfterHeader = error.headers?.get?.("retry-after");
+      const parsedRetryAfter = Number.parseInt(retryAfterHeader, 10);
+      const retryAfterSeconds =
+        Number.isFinite(parsedRetryAfter) && parsedRetryAfter > 0
+          ? Math.min(parsedRetryAfter, 3600)
+          : 30;
+
+      return res.status(503).json({
+        error: "AI service is temporarily busy",
+        retryAfterSeconds,
+      });
+    }
+
     return res.status(500).json({ error: "AI service temporarily unavailable" });
   }
 });

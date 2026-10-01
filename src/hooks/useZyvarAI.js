@@ -43,16 +43,19 @@ const MAX_STORED_MESSAGES = 30;
    API client — isolated from rendering logic
 ------------------------------------------------------------------------- */
 class ZyvarAIError extends Error {
-  constructor(kind) {
+  constructor(kind, retryAfterSeconds) {
     super(kind);
     this.kind = kind; // "network" | "timeout" | "rate_limited" | "invalid_request" | "server" | "malformed"
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
-function friendlyErrorMessage(kind) {
+function friendlyErrorMessage(kind, retryAfterSeconds) {
   switch (kind) {
     case "rate_limited":
       return "Too many requests right now. Please wait a moment and try again.";
+    case "busy":
+      return `Zyvar AI is busy right now. Please wait about ${retryAfterSeconds} seconds, then tap Retry.`;
     case "invalid_request":
       return "Sorry, I couldn't process that message. Please try rephrasing it.";
     case "network":
@@ -100,6 +103,20 @@ async function sendMessageToZyvarAI({ message, conversation }) {
   if (!response.ok) {
     if (response.status === 429) throw new ZyvarAIError("rate_limited");
     if (response.status === 400) throw new ZyvarAIError("invalid_request");
+    if (response.status === 503) {
+      let retryAfterSeconds = 30;
+
+      try {
+        const data = await response.json();
+        if (Number.isInteger(data.retryAfterSeconds) && data.retryAfterSeconds > 0) {
+          retryAfterSeconds = data.retryAfterSeconds;
+        }
+      } catch {
+        // Keep the default delay if the server response is malformed.
+      }
+
+      throw new ZyvarAIError("busy", retryAfterSeconds);
+    }
     throw new ZyvarAIError("server");
   }
 
@@ -222,7 +239,7 @@ export default function useZyvarAI() {
     } catch (err) {
       const kind = err instanceof ZyvarAIError ? err.kind : "server";
       lastFailedRef.current = { text, conversationSoFar };
-      setError(friendlyErrorMessage(kind));
+      setError(friendlyErrorMessage(kind, err.retryAfterSeconds));
     } finally {
       setLoading(false);
     }
