@@ -25,7 +25,15 @@ const app = express();
 // that a new AI endpoint is being added. Existing email endpoints are
 // unaffected since the frontend already calls this server from
 // FRONTEND_URL.
-app.use(cors({ origin: process.env.FRONTEND_URL }));
+app.use(
+  cors({
+    origin: [
+      process.env.FRONTEND_URL,
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+    ].filter(Boolean),
+  })
+);
 
 // Request size limit — basic abuse protection for the new AI endpoint
 // (Step 2, Part 14). Existing email endpoints send small JSON bodies well
