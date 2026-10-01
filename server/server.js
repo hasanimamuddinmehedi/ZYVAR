@@ -8,7 +8,7 @@ const cors = require("cors");
 const axios = require("axios");
 const admin = require("firebase-admin");
 
-const zyvarAIRouter = require("../src/routes/zyvarAI");
+const zyvarAIRouter = require("./routes/zyvarAI");
 
 admin.initializeApp({
   credential: admin.credential.cert({

@@ -32,7 +32,7 @@ const ZYVAR_AI_API_URL =
 
 const REQUEST_TIMEOUT_MS = 30000;
 
-// Mirrors the server-side caps (see server/utils/aiValidation.js) so we
+// Mirrors the server-side caps (see ../../server/utils/aiValidation.js) so we
 // never send more than the backend will accept.
 const MAX_CONVERSATION_MESSAGES_SENT = 20;
 
