@@ -1,13 +1,13 @@
 /* =========================================================================
    AI SERVICE — Zyvar AI, Step 2
 
-   Wraps the Anthropic Messages API and implements a controlled tool-calling
+    Wraps the Gemini API and implements a controlled function-calling
    loop. The AI never gets direct Firebase access — it can only request one
    of the explicitly registered tools below, and this file is the only place
    that decides whether a requested tool actually runs.
    ========================================================================= */
 
-const Anthropic = require("@anthropic-ai/sdk");
+const { GoogleGenAI } = require("@google/genai");
 
 const {
   searchProducts,
@@ -18,24 +18,24 @@ const {
 /* -------------------------------------------------------------------------
    Provider client
    -------------------------------------------------------------------------
-   AI_API_KEY / AI_MODEL are read from server-side environment variables
-   only (see server/.env.example). Never exposed to the frontend.
+    GEMINI_API_KEY / GEMINI_MODEL are read from server-side environment variables
+    only. Never exposed to the frontend.
 ------------------------------------------------------------------------- */
 let client = null;
 
 function getClient() {
-  if (!process.env.AI_API_KEY) {
-    throw new Error("AI_API_KEY is not configured on the server");
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not configured on the server");
   }
 
   if (!client) {
-    client = new Anthropic({ apiKey: process.env.AI_API_KEY });
+    client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
 
   return client;
 }
 
-const MODEL = process.env.AI_MODEL || "claude-sonnet-4-6";
+const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const MAX_TOOL_ITERATIONS = 4; // hard cap — never loop on tool calls forever
 const MAX_OUTPUT_TOKENS = 1024;
 
@@ -138,6 +138,37 @@ const TOOL_SCHEMAS = [
   },
 ];
 
+function toGeminiSchema(schema) {
+  const converted = { ...schema };
+
+  if (typeof converted.type === "string") {
+    converted.type = converted.type.toUpperCase();
+  }
+
+  if (converted.properties) {
+    converted.properties = Object.fromEntries(
+      Object.entries(converted.properties).map(([name, property]) => [
+        name,
+        toGeminiSchema(property),
+      ])
+    );
+  }
+
+  if (converted.items) {
+    converted.items = toGeminiSchema(converted.items);
+  }
+
+  return converted;
+}
+
+const GEMINI_FUNCTION_DECLARATIONS = TOOL_SCHEMAS.map(
+  ({ name, description, input_schema }) => ({
+    name,
+    description,
+    parameters: toGeminiSchema(input_schema),
+  })
+);
+
 // Dispatch table — the ONLY tools that can ever execute. Anything the
 // model requests that isn't a key here is rejected outright.
 const TOOL_HANDLERS = {
@@ -183,58 +214,64 @@ async function executeTool(toolName, toolInput) {
  * @returns {Promise<string>} the assistant's final text reply
  */
 async function getChatReply(message, conversation = []) {
-  const anthropic = getClient();
+  const gemini = getClient();
 
-  const messages = [
+  const contents = [
     ...conversation.map((turn) => ({
-      role: turn.role,
-      content: turn.content,
+      role: turn.role === "assistant" ? "model" : "user",
+      parts: [{ text: turn.content }],
     })),
-    { role: "user", content: message },
+    { role: "user", parts: [{ text: message }] },
   ];
 
   let finalText = "";
 
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-    const response = await anthropic.messages.create({
+    const response = await gemini.models.generateContent({
       model: MODEL,
-      max_tokens: MAX_OUTPUT_TOKENS,
-      system: SYSTEM_PROMPT,
-      tools: TOOL_SCHEMAS,
-      messages,
+      contents,
+      config: {
+        systemInstruction: SYSTEM_PROMPT,
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+        tools: [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }],
+      },
     });
 
-    const toolUseBlocks = response.content.filter(
-      (block) => block.type === "tool_use"
-    );
+    const modelContent = response.candidates?.[0]?.content;
+    const responseParts = modelContent?.parts || [];
+    const functionCalls = responseParts
+      .map((part) => part.functionCall)
+      .filter(Boolean);
 
-    const textBlocks = response.content.filter((block) => block.type === "text");
+    finalText = responseParts
+      .map((part) => part.text)
+      .filter((text) => typeof text === "string")
+      .join("\n")
+      .trim();
 
-    finalText = textBlocks.map((block) => block.text).join("\n").trim();
-
-    if (response.stop_reason !== "tool_use" || toolUseBlocks.length === 0) {
-      // Model gave a final answer — done.
-      return finalText;
+    if (functionCalls.length === 0) {
+      return (
+        finalText ||
+        "Sorry, I'm having trouble finding that right now. Could you try rephrasing?"
+      );
     }
 
-    // Record the assistant's tool-use turn, then run each requested tool
-    // and feed the results back as a user turn, per the Anthropic tool-use
-    // protocol.
-    messages.push({ role: "assistant", content: response.content });
+    contents.push(modelContent);
 
-    const toolResults = [];
+    const functionResponses = [];
 
-    for (const block of toolUseBlocks) {
-      const result = await executeTool(block.name, block.input);
+    for (const call of functionCalls) {
+      const result = await executeTool(call.name, call.args);
 
-      toolResults.push({
-        type: "tool_result",
-        tool_use_id: block.id,
-        content: JSON.stringify(result),
+      functionResponses.push({
+        functionResponse: {
+          name: call.name,
+          response: result,
+        },
       });
     }
 
-    messages.push({ role: "user", content: toolResults });
+    contents.push({ role: "user", parts: functionResponses });
   }
 
   // Safety net if we somehow exhaust MAX_TOOL_ITERATIONS without a final
