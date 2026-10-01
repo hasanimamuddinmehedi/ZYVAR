@@ -1,7 +1,7 @@
 /* =========================================================================
    AI SERVICE — Zyvar AI, Step 2
 
-    Wraps the Gemini API and implements a controlled function-calling
+    Wraps the Gemini Interactions API and implements controlled function calling
    loop. The AI never gets direct Firebase access — it can only request one
    of the explicitly registered tools below, and this file is the only place
    that decides whether a requested tool actually runs.
@@ -35,7 +35,7 @@ function getClient() {
   return client;
 }
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const MAX_TOOL_ITERATIONS = 4; // hard cap — never loop on tool calls forever
 const MAX_OUTPUT_TOKENS = 1024;
 
@@ -138,34 +138,12 @@ const TOOL_SCHEMAS = [
   },
 ];
 
-function toGeminiSchema(schema) {
-  const converted = { ...schema };
-
-  if (typeof converted.type === "string") {
-    converted.type = converted.type.toUpperCase();
-  }
-
-  if (converted.properties) {
-    converted.properties = Object.fromEntries(
-      Object.entries(converted.properties).map(([name, property]) => [
-        name,
-        toGeminiSchema(property),
-      ])
-    );
-  }
-
-  if (converted.items) {
-    converted.items = toGeminiSchema(converted.items);
-  }
-
-  return converted;
-}
-
 const GEMINI_FUNCTION_DECLARATIONS = TOOL_SCHEMAS.map(
   ({ name, description, input_schema }) => ({
+    type: "function",
     name,
     description,
-    parameters: toGeminiSchema(input_schema),
+    parameters: input_schema,
   })
 );
 
@@ -216,38 +194,28 @@ async function executeTool(toolName, toolInput) {
 async function getChatReply(message, conversation = []) {
   const gemini = getClient();
 
-  const contents = [
-    ...conversation.map((turn) => ({
-      role: turn.role === "assistant" ? "model" : "user",
-      parts: [{ text: turn.content }],
-    })),
-    { role: "user", parts: [{ text: message }] },
-  ];
+  const conversationContext = conversation
+    .map((turn) => `${turn.role === "assistant" ? "Assistant" : "Customer"}: ${turn.content}`)
+    .join("\n\n");
+  const input = conversationContext
+    ? `${conversationContext}\n\nCustomer: ${message}`
+    : message;
 
   let finalText = "";
+  let interaction = await gemini.interactions.create({
+    model: MODEL,
+    input,
+    generation_config: { maxOutputTokens: MAX_OUTPUT_TOKENS },
+    system_instruction: SYSTEM_PROMPT,
+    tools: GEMINI_FUNCTION_DECLARATIONS,
+  });
 
   for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
-    const response = await gemini.models.generateContent({
-      model: MODEL,
-      contents,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-        tools: [{ functionDeclarations: GEMINI_FUNCTION_DECLARATIONS }],
-      },
-    });
+    const functionCalls = (interaction.steps || []).filter(
+      (step) => step.type === "function_call"
+    );
 
-    const modelContent = response.candidates?.[0]?.content;
-    const responseParts = modelContent?.parts || [];
-    const functionCalls = responseParts
-      .map((part) => part.functionCall)
-      .filter(Boolean);
-
-    finalText = responseParts
-      .map((part) => part.text)
-      .filter((text) => typeof text === "string")
-      .join("\n")
-      .trim();
+    finalText = interaction.output_text?.trim() || "";
 
     if (functionCalls.length === 0) {
       return (
@@ -256,22 +224,27 @@ async function getChatReply(message, conversation = []) {
       );
     }
 
-    contents.push(modelContent);
-
-    const functionResponses = [];
+    const functionResults = [];
 
     for (const call of functionCalls) {
-      const result = await executeTool(call.name, call.args);
+      const result = await executeTool(call.name, call.arguments);
 
-      functionResponses.push({
-        functionResponse: {
-          name: call.name,
-          response: result,
-        },
+      functionResults.push({
+        type: "function_result",
+        call_id: call.id,
+        name: call.name,
+        result: JSON.stringify(result),
       });
     }
 
-    contents.push({ role: "user", parts: functionResponses });
+    interaction = await gemini.interactions.create({
+      model: MODEL,
+      previous_interaction_id: interaction.id,
+      input: functionResults,
+      generation_config: { maxOutputTokens: MAX_OUTPUT_TOKENS },
+      system_instruction: SYSTEM_PROMPT,
+      tools: GEMINI_FUNCTION_DECLARATIONS,
+    });
   }
 
   // Safety net if we somehow exhaust MAX_TOOL_ITERATIONS without a final
