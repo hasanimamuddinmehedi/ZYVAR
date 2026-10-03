@@ -28,9 +28,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
    follows that exact existing convention.
 ------------------------------------------------------------------------- */
 const ZYVAR_AI_API_URL =
+  import.meta.env.VITE_ZYVAR_AI_API_URL ||
   "https://zyvar-email-server.onrender.com/api/zyvar-ai/chat";
 
-const REQUEST_TIMEOUT_MS = 30000;
+const REQUEST_TIMEOUT_MS = 60000;
 
 // Mirrors the server-side caps (see ../../server/utils/aiValidation.js) so we
 // never send more than the backend will accept.
@@ -54,6 +55,10 @@ function friendlyErrorMessage(kind, retryAfterSeconds) {
   switch (kind) {
     case "rate_limited":
       return "Too many requests right now. Please wait a moment and try again.";
+    case "quota":
+      return "The AI service has reached its usage limit. Please try again later.";
+    case "not_configured":
+      return "The skincare assistant is not configured yet. Please contact support.";
     case "busy":
       return `Zyvar AI is busy right now. Please wait about ${retryAfterSeconds} seconds, then tap Retry.`;
     case "invalid_request":
@@ -118,18 +123,19 @@ async function sendMessageToZyvarAI({ message, conversation }) {
     }
     if (response.status === 400) throw new ZyvarAIError("invalid_request");
     if (response.status === 503) {
-      let retryAfterSeconds = 30;
+      let data = {};
 
       try {
-        const data = await response.json();
-        if (Number.isInteger(data.retryAfterSeconds) && data.retryAfterSeconds > 0) {
-          retryAfterSeconds = data.retryAfterSeconds;
-        }
+        data = await response.json();
       } catch {
-        // Keep the default delay if the server response is malformed.
+        // Keep the generic service-unavailable message if the response is malformed.
       }
 
-      throw new ZyvarAIError("busy", retryAfterSeconds);
+      if (data.code === "provider_not_configured") {
+        throw new ZyvarAIError("not_configured");
+      }
+
+      throw new ZyvarAIError("busy", 30);
     }
     throw new ZyvarAIError("server");
   }
@@ -146,7 +152,13 @@ async function sendMessageToZyvarAI({ message, conversation }) {
     throw new ZyvarAIError("malformed");
   }
 
-  return data.reply;
+  return {
+    reply: data.reply,
+    products: Array.isArray(data.products) ? data.products : [],
+    sources: Array.isArray(data.sources) ? data.sources : [],
+    productRequestName:
+      typeof data.productRequestName === "string" ? data.productRequestName : "",
+  };
 }
 
 /* -------------------------------------------------------------------------
@@ -240,7 +252,7 @@ export default function useZyvarAI() {
     setLoading(true);
 
     try {
-      const reply = await sendMessageToZyvarAI({
+      const result = await sendMessageToZyvarAI({
         message: text,
         conversation: conversationSoFar,
       });
@@ -248,7 +260,14 @@ export default function useZyvarAI() {
       lastFailedRef.current = null;
       setMessages((prev) => [
         ...prev,
-        { id: makeId(), role: "assistant", content: reply },
+        {
+          id: makeId(),
+          role: "assistant",
+          content: result.reply,
+          products: result.products,
+          sources: result.sources,
+          productRequestName: result.productRequestName,
+        },
       ]);
     } catch (err) {
       const kind = err instanceof ZyvarAIError ? err.kind : "server";

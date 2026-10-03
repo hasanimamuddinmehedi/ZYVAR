@@ -4,8 +4,8 @@
    Exposes: POST /api/zyvar-ai/chat  (mounted with that prefix in server.js)
 
    The client controls only { message, conversation }. The server controls
-   everything else — system prompt, model, available tools, and whether a
-   tool actually executes.
+  everything else — model instructions, web research, and verified catalog
+  lookups.
    ========================================================================= */
 
 const express = require("express");
@@ -77,14 +77,28 @@ router.post("/chat", async (req, res) => {
   }
 
   try {
-    const reply = await getChatReply(validation.message, validation.conversation);
+    const result = await getChatReply(validation.message, validation.conversation);
 
-    return res.status(200).json({ reply });
+    return res.status(200).json(result);
   } catch (error) {
     // Log full detail server-side only. Never leak this to the client.
     console.error("[zyvar-ai] chat error:", error);
 
-    return res.status(500).json({ error: "AI service temporarily unavailable" });
+    if (error.status === 429) {
+      return res.status(429).json({
+        code: "provider_rate_limit",
+        error: "AI service usage limit reached",
+      });
+    }
+
+    if (error.status === 503) {
+      return res.status(503).json({
+        code: error.code || "provider_unavailable",
+        error: "AI service is not configured or is temporarily unavailable",
+      });
+    }
+
+    return res.status(502).json({ error: "AI service temporarily unavailable" });
   }
 });
 

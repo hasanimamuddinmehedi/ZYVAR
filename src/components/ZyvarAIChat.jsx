@@ -1,27 +1,37 @@
-import { useEffect, useRef } from "react";
-import { useLocation } from "react-router-dom";
-import { Sparkles, X, RotateCcw, Send, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  ArrowUpRight,
+  Check,
+  ExternalLink,
+  Heart,
+  Loader2,
+  PackagePlus,
+  RotateCcw,
+  Send,
+  ShoppingCart,
+  Sparkles,
+  X,
+} from "lucide-react";
 
 import useZyvarAI from "../hooks/useZyvarAI";
+import { useCart } from "../context/CartContext";
+import { useWishlist } from "../context/WishlistContext";
+import RequestProductModal from "./RequestProductModal";
 
 /* =========================================================================
-   ZYVAR AI CHAT — Step 3
+  ZYVAR AI CHAT
 
-   Global floating chat widget. Renders itself (or not) based on the
-   current route, so App.jsx only needs to mount <ZyvarAIChat /> once at
-   the top level — no per-route wiring required.
-
-   Step 3 scope only: plain-text conversation with the existing
-   POST /api/zyvar-ai/chat backend. No product cards, no cart/wishlist
-   actions, no order lookups yet — those are later steps.
-   ========================================================================= */
+  Global multilingual skincare consultation and shopping widget. The
+  backend supplies researched replies, citations, and verified catalog
+  products; this component renders them with the store's shopping actions.
+  ========================================================================= */
 
 const QUICK_SUGGESTIONS = [
-  "Find a cleanser",
-  "Skincare help",
-  "Products under ৳1000",
-  "Show me sunscreen",
-  "Help me choose a gift",
+  "I have sensitive skin. Help me build a routine.",
+  "How should I use niacinamide?",
+  "Find sunscreen under ৳1000",
+  "আমার ত্বক তৈলাক্ত, কী ব্যবহার করব?",
 ];
 
 // Routes where the public chat widget should not appear.
@@ -81,14 +91,74 @@ function MessageBubble({ message }) {
   );
 }
 
+function RecommendedProduct({ product, wished, added, onAddToCart, onToggleWishlist }) {
+  const image = Array.isArray(product.images) ? product.images[0] : product.image;
+  const imageUrl = typeof image === "string" ? image : image?.url;
+  const inStock = Number(product.stock) > 0;
+
+  return (
+    <article className="overflow-hidden rounded-xl border border-white/10 bg-[#111]">
+      <div className="flex gap-3 p-3">
+        {imageUrl ? (
+          <img src={imageUrl} alt="" loading="lazy" className="h-16 w-16 shrink-0 rounded-lg bg-white/5 object-cover" />
+        ) : (
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-white/5 text-gray-500">
+            <PackagePlus className="h-5 w-5" aria-hidden="true" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="line-clamp-2 text-sm font-medium text-white">{product.name}</p>
+          <p className="mt-1 text-sm font-semibold text-yellow-300">
+            {Number.isFinite(product.price) ? `৳${product.price.toLocaleString("en-BD")}` : "Price unavailable"}
+          </p>
+          <p className={`mt-0.5 text-xs ${inStock ? "text-green-400" : "text-red-300"}`}>
+            {inStock ? "In stock" : "Out of stock"}
+          </p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 border-t border-white/10 p-2">
+        <button
+          type="button"
+          onClick={() => onAddToCart(product)}
+          disabled={!inStock}
+          className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-yellow-500 px-2 text-xs font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {added ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <ShoppingCart className="h-3.5 w-3.5" aria-hidden="true" />}
+          {added ? "Added" : "Add to cart"}
+        </button>
+        <button
+          type="button"
+          onClick={() => onToggleWishlist(product)}
+          aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
+          title={wished ? "Remove from wishlist" : "Add to wishlist"}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 transition hover:bg-white/10 ${wished ? "text-pink-400" : "text-gray-300"}`}
+        >
+          <Heart className="h-4 w-4" fill={wished ? "currentColor" : "none"} aria-hidden="true" />
+        </button>
+        <Link
+          to={`/product/${product.slug || product.id}`}
+          aria-label={`View and buy ${product.name}`}
+          title="View product details"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 text-gray-300 transition hover:bg-white/10 hover:text-white"
+        >
+          <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
+      </div>
+    </article>
+  );
+}
+
 export default function ZyvarAIChat() {
   const location = useLocation();
+  const { addToCart } = useCart();
+  const wishlist = useWishlist();
+  const [requestProductName, setRequestProductName] = useState("");
+  const [addedProductIds, setAddedProductIds] = useState({});
 
   const {
     isOpen,
     open,
     close,
-    toggle,
     messages,
     input,
     setInput,
@@ -143,6 +213,19 @@ export default function ZyvarAIChat() {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage(input);
+    }
+  };
+
+  const handleAddToCart = (product) => {
+    addToCart(product);
+    setAddedProductIds((previous) => ({ ...previous, [product.id]: true }));
+  };
+
+  const handleToggleWishlist = (product) => {
+    if (wishlist.isInWishlist(product.id)) {
+      wishlist.removeFromWishlist(product.id);
+    } else {
+      wishlist.addToWishlist(product);
     }
   };
 
@@ -226,12 +309,13 @@ export default function ZyvarAIChat() {
                     Hi, I&apos;m Zyvar AI 👋
                     <br />
                     <br />
-                    I can help you find products, choose skincare and beauty
-                    picks, compare options, and answer your questions.
+                    Tell me about your skin concern, skin type, and what you
+                    want help with. I can research skincare guidance and find
+                    matching products from Zyvar&apos;s catalog.
                     <br />
                     <br />
-                    You can ask me in Bangla, Banglish, or English — whatever
-                    feels natural.
+                    Ask in Bangla, Banglish, or English. I provide education,
+                    not a medical diagnosis or treatment.
                   </div>
                 </div>
 
@@ -252,7 +336,67 @@ export default function ZyvarAIChat() {
             )}
 
             {messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <div key={message.id} className="space-y-2">
+                <MessageBubble message={message} />
+                {message.role === "assistant" && message.products?.length > 0 && (
+                  <div className="ml-9 grid gap-2">
+                    {message.products.map((product) => (
+                      <RecommendedProduct
+                        key={product.id}
+                        product={product}
+                        wished={wishlist.isInWishlist(product.id)}
+                        added={Boolean(addedProductIds[product.id])}
+                        onAddToCart={handleAddToCart}
+                        onToggleWishlist={handleToggleWishlist}
+                      />
+                    ))}
+                  </div>
+                )}
+                {message.role === "assistant" && message.productRequestName && (
+                  <div className="ml-9 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-3">
+                    <p className="text-xs leading-relaxed text-gray-300">
+                      I couldn&apos;t find an in-stock match in Zyvar&apos;s catalog. You can request it or contact our team.
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setRequestProductName(message.productRequestName)}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-yellow-500 px-3 text-xs font-semibold text-black transition hover:bg-yellow-400"
+                      >
+                        <PackagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+                        Request product
+                      </button>
+                      <Link
+                        to="/contact"
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs text-gray-200 transition hover:bg-white/5"
+                      >
+                        Contact support
+                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
+                {message.role === "assistant" && message.sources?.length > 0 && (
+                  <div className="ml-9 border-l border-white/10 pl-3">
+                    <p className="mb-1 text-[11px] font-semibold uppercase text-gray-500">Sources</p>
+                    <ul className="space-y-1">
+                      {message.sources.map((source) => (
+                        <li key={source.url}>
+                          <a
+                            href={source.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-start gap-1 text-xs text-yellow-300 underline decoration-yellow-500/30 underline-offset-2 hover:text-yellow-200"
+                          >
+                            <ExternalLink className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
+                            <span>{source.title}</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
             ))}
 
             {loading && <TypingIndicator />}
@@ -315,6 +459,13 @@ export default function ZyvarAIChat() {
             </button>
           </form>
         </div>
+      )}
+      {requestProductName && (
+        <RequestProductModal
+          open
+          onClose={() => setRequestProductName("")}
+          searchText={requestProductName}
+        />
       )}
     </>
   );

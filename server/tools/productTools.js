@@ -105,6 +105,9 @@ async function searchProducts(rawArgs = {}) {
     .get();
 
   const matches = [];
+  const queryTerms = query
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((term) => term.length > 2);
 
   snapshot.forEach((docSnap) => {
     const data = docSnap.data() || {};
@@ -113,14 +116,14 @@ async function searchProducts(rawArgs = {}) {
     const productCategory = String(data.category || "").toLowerCase();
     const description = String(data.description || "").toLowerCase();
     const partnerSlug = String(data.partnerSlug || "").toLowerCase();
+    const searchableText = `${name} ${productCategory} ${description} ${partnerSlug}`;
+    const matchedTerms = queryTerms.filter((term) => searchableText.includes(term)).length;
 
     // TEXT MATCH — only applied if a query was actually given.
     const matchesQuery =
       !query ||
-      name.includes(query) ||
-      productCategory.includes(query) ||
-      description.includes(query) ||
-      partnerSlug.includes(query);
+      searchableText.includes(query) ||
+      matchedTerms >= Math.max(1, Math.ceil(queryTerms.length * 0.6));
 
     if (!matchesQuery) return;
 
@@ -139,9 +142,12 @@ async function searchProducts(rawArgs = {}) {
   matches.sort((a, b) => {
     const aName = String(a.data.name || "").toLowerCase();
     const bName = String(b.data.name || "").toLowerCase();
-    const aScore = query && aName.startsWith(query) ? 0 : 1;
-    const bScore = query && bName.startsWith(query) ? 0 : 1;
-    return aScore - bScore;
+    const getScore = (data, productName) => {
+      const searchableText = `${productName} ${data.category || ""} ${data.description || ""} ${data.partnerSlug || ""}`.toLowerCase();
+      const matchedTerms = queryTerms.filter((term) => searchableText.includes(term)).length;
+      return (productName.startsWith(query) ? 100 : 0) + matchedTerms;
+    };
+    return getScore(b.data, bName) - getScore(a.data, aName);
   });
 
   const results = matches
