@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Zyvar server package manifest",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+"
+    },
+    "description": {
+      "type": "string"
+    },
+    "main": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["commonjs", "module"]
+    },
+    "scripts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "author": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    },
+    "dependencies": {
+      "$ref": "#/$defs/dependencyMap"
+    },
+    "devDependencies": {
+      "$ref": "#/$defs/dependencyMap"
+    },
+    "optionalDependencies": {
+      "$ref": "#/$defs/dependencyMap"
+    },
+    "peerDependencies": {
+      "$ref": "#/$defs/dependencyMap"
+    },
+    "engines": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "dependencyMap": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  },
+  "required": ["name", "version", "main", "type", "dependencies"],
+  "additionalProperties": true
+}

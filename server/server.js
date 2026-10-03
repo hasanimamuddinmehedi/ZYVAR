@@ -3,6 +3,21 @@
 // must run before anything reads process.env below.
 require("dotenv").config();
 
+const REQUIRED_FIREBASE_ENV = [
+  "FIREBASE_PROJECT_ID",
+  "FIREBASE_CLIENT_EMAIL",
+  "FIREBASE_PRIVATE_KEY",
+];
+const missingFirebaseEnv = REQUIRED_FIREBASE_ENV.filter(
+  (name) => !process.env[name]
+);
+
+if (missingFirebaseEnv.length > 0) {
+  throw new Error(
+    `Missing required Firebase Admin environment variables: ${missingFirebaseEnv.join(", ")}`
+  );
+}
+
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
