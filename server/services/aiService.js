@@ -37,18 +37,6 @@ const RESPONSE_SCHEMA = {
 	additionalProperties: false,
 };
 
-const RESEARCH_DOMAINS = [
-	"aad.org",
-	"bad.org.uk",
-	"dermnetnz.org",
-	"fda.gov",
-	"medlineplus.gov",
-	"ncbi.nlm.nih.gov",
-	"nhs.uk",
-	"pubmed.ncbi.nlm.nih.gov",
-	"who.int",
-];
-
 function getOutputMessage(response) {
 	for (const item of response.output || []) {
 		if (item.type !== "message") continue;
@@ -129,7 +117,6 @@ async function getChatReply(message, conversation = []) {
 					{
 						type: "web_search",
 						search_context_size: "medium",
-						filters: { allowed_domains: RESEARCH_DOMAINS },
 					},
 				],
 				tool_choice: "auto",
@@ -161,6 +148,9 @@ async function getChatReply(message, conversation = []) {
 		const error = new Error("The consultation provider returned an error");
 		error.status = response.status;
 		error.providerCode = data.error?.code;
+		error.providerType = data.error?.type;
+		error.providerParam = data.error?.param;
+		error.providerMessage = data.error?.message;
 		throw error;
 	}
 
