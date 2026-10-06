@@ -74,7 +74,7 @@ function sanitizeProduct(id, data) {
 }
 
 /* -------------------------------------------------------------------------
-   1. searchProducts({ query, category, minPrice, maxPrice, limit })
+   1. searchProducts({ query, category, nameContains, minPrice, maxPrice, limit })
    -------------------------------------------------------------------------
    The existing "products" collection has no full-text search index, so
    this is a practical first version: pull a bounded page of products and
@@ -85,6 +85,11 @@ function sanitizeProduct(id, data) {
 async function searchProducts(rawArgs = {}) {
   const query = toSafeString(rawArgs.query, MAX_QUERY_LENGTH).toLowerCase();
   const category = toSafeString(rawArgs.category, MAX_CATEGORY_LENGTH).toLowerCase();
+  const nameContains = Array.isArray(rawArgs.nameContains)
+    ? rawArgs.nameContains
+        .map((term) => toSafeString(term, MAX_QUERY_LENGTH).toLowerCase())
+        .filter(Boolean)
+    : [];
 
   let minPrice = rawArgs.minPrice !== undefined ? toSafeNumber(rawArgs.minPrice) : null;
   let maxPrice = rawArgs.maxPrice !== undefined ? toSafeNumber(rawArgs.maxPrice) : null;
@@ -113,6 +118,7 @@ async function searchProducts(rawArgs = {}) {
     const data = docSnap.data() || {};
 
     const name = String(data.name || "").toLowerCase();
+    if (nameContains.length > 0 && !nameContains.some((term) => name.includes(term))) return;
     const productCategory = String(data.category || "").toLowerCase();
     const description = String(data.description || "").toLowerCase();
     const partnerSlug = String(data.partnerSlug || "").toLowerCase();

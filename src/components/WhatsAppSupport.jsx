@@ -41,108 +41,23 @@ export default function WhatsAppSupport() {
   return (
 
     <div
-      className={`  
-        fixed
-        bottom-6
-        z-[9999]
-        text-center
-        transition-all
-        duration-500
-        ${
-          show
-            ? "right-5"
-            : "-right-32"
-        }
-      `}
+      className={`fixed bottom-6 z-[9999] transition-all duration-500 ${
+        show ? "right-5" : "-right-20"
+      }`}
     >
-
       <a
         href="https://wa.me/8801820400999"
         target="_blank"
         rel="noreferrer"
-        className="relative inline-block"
+        aria-label="Chat with Zyvar support on WhatsApp"
+        title="Chat with Zyvar support on WhatsApp"
+        className="block h-[65px] w-[65px] overflow-hidden rounded-full border-4 border-[#25D366] bg-white shadow-2xl"
       >
-
-        {/* Profile */}
-        <div
-          className="
-            w-[65px]
-            h-[65px]
-            rounded-full
-            overflow-hidden
-            border-4
-            border-[#25D366]
-            shadow-2xl
-            bg-white
-            animate-bounce
-          "
-        >
-
-          <img
-            src="https://img.mailinblue.com/8458568/images/content_library/original/699ff6b8682ba8e2834a1593.jpeg"
-            alt="Support"
-            className="
-              w-full
-              h-full
-              object-cover
-            "
-          />
-        </div>
-
-        {/* Badge */}
-        <div
-          className="
-            absolute
-            -top-1
-            -right-1
-            bg-red-500
-            text-white
-            w-6
-            h-6
-            text-xs
-            font-bold
-            rounded-full
-            flex
-            items-center
-            justify-center
-          "
-        >
-          1
-        </div>
-
-        {/* Tooltip */}
-        <div
-          className="
-            absolute
-            right-20
-            bottom-5
-            bg-[#222]
-            text-white
-            px-3
-            py-2
-            rounded-lg
-            text-xs
-            whitespace-nowrap
-            opacity-0
-            hover:opacity-100
-            transition
-          "
-        >
-          Chat with us
-        </div>
-
-        {/* Text */}
-        <p
-          className="
-            mt-2
-            text-sm
-            font-semibold
-            text-[#25D366]
-          "
-        >
-          Chat with us
-        </p>
-
+        <img
+          src="https://img.mailinblue.com/8458568/images/content_library/original/699ff6b8682ba8e2834a1593.jpeg"
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </a>
     </div>
   );

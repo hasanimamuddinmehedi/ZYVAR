@@ -31,7 +31,7 @@ const ZYVAR_AI_API_URL =
   import.meta.env.VITE_ZYVAR_AI_API_URL ||
   "https://zyvar-email-server.onrender.com/api/zyvar-ai/chat";
 
-const REQUEST_TIMEOUT_MS = 60000;
+const REQUEST_TIMEOUT_MS = 270000;
 
 // Mirrors the server-side caps (see ../../server/utils/aiValidation.js) so we
 // never send more than the backend will accept.
@@ -59,6 +59,10 @@ function friendlyErrorMessage(kind, retryAfterSeconds) {
       return "The AI service has reached its usage limit. Please try again later.";
     case "not_configured":
       return "The skincare assistant is not configured yet. Please contact support.";
+    case "ollama_unavailable":
+      return "The local AI model is unavailable. Start Ollama and make sure the configured model is installed.";
+    case "ollama_auth_required":
+      return "Sign in to Ollama with `ollama signin` to use this cloud model.";
     case "busy":
       return `Zyvar AI is busy right now. Please wait about ${retryAfterSeconds} seconds, then tap Retry.`;
     case "invalid_request":
@@ -134,6 +138,20 @@ async function sendMessageToZyvarAI({ message, conversation }) {
       if (data.code === "provider_not_configured") {
         throw new ZyvarAIError("not_configured");
       }
+      if (
+        data.code === "ollama_unavailable" ||
+        data.code === "ollama_model_not_found" ||
+        data.code === "ollama_auth_required"
+      ) {
+        throw new ZyvarAIError(
+          data.code === "ollama_auth_required"
+            ? "ollama_auth_required"
+            : "ollama_unavailable",
+        );
+      }
+      if (data.code === "ollama_timeout") {
+        throw new ZyvarAIError("timeout");
+      }
 
       throw new ZyvarAIError("busy", 30);
     }
@@ -156,6 +174,8 @@ async function sendMessageToZyvarAI({ message, conversation }) {
     reply: data.reply,
     products: Array.isArray(data.products) ? data.products : [],
     sources: Array.isArray(data.sources) ? data.sources : [],
+    webSearchStatus:
+      typeof data.webSearchStatus === "string" ? data.webSearchStatus : "not_needed",
     productRequestName:
       typeof data.productRequestName === "string" ? data.productRequestName : "",
   };
@@ -266,6 +286,7 @@ export default function useZyvarAI() {
           content: result.reply,
           products: result.products,
           sources: result.sources,
+          webSearchStatus: result.webSearchStatus,
           productRequestName: result.productRequestName,
         },
       ]);

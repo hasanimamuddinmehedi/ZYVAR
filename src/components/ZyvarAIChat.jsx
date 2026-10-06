@@ -23,8 +23,8 @@ import RequestProductModal from "./RequestProductModal";
   ZYVAR AI CHAT
 
   Global multilingual skincare consultation and shopping widget. The
-  backend supplies researched replies, citations, and verified catalog
-  products; this component renders them with the store's shopping actions.
+  backend supplies assistant replies and verified catalog products; this
+  component renders them with the store's shopping actions.
   ========================================================================= */
 
 const QUICK_SUGGESTIONS = [
@@ -233,8 +233,7 @@ export default function ZyvarAIChat() {
 
   return (
     <>
-      {/* FLOATING LAUNCHER — positioned clear of the existing WhatsApp
-          support button (which sits at bottom-6 right-5). */}
+      {/* FLOATING LAUNCHER — positioned clear of the WhatsApp support button. */}
       {!isOpen && (
         <button
           type="button"
@@ -253,7 +252,7 @@ export default function ZyvarAIChat() {
           role="dialog"
           aria-modal="false"
           aria-label="Zyvar AI chat"
-          className="fixed inset-0 z-[10000] flex flex-col overflow-hidden border-white/10 bg-[#0B0B0B] shadow-2xl shadow-black/70 md:inset-auto md:bottom-8 md:right-6 md:h-[640px] md:w-[400px] md:rounded-2xl md:border"
+          className="fixed inset-0 z-[10000] flex h-dvh flex-col overflow-hidden border-white/10 bg-[#0B0B0B] pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] shadow-2xl shadow-black/70 md:inset-auto md:bottom-4 md:right-4 md:h-[min(640px,calc(100dvh-2rem))] md:max-h-[calc(100dvh-2rem)] md:w-[min(400px,calc(100vw-2rem))] md:rounded-2xl md:border md:pt-0 md:pb-0"
         >
           {/* HEADER */}
           <div className="flex items-center justify-between gap-3 border-b border-white/10 bg-gradient-to-r from-[#141414] to-[#0B0B0B] px-4 py-3">
@@ -310,8 +309,9 @@ export default function ZyvarAIChat() {
                     <br />
                     <br />
                     Tell me about your skin concern, skin type, and what you
-                    want help with. I can research skincare guidance and find
-                    matching products from Zyvar&apos;s catalog.
+                    want help with. I can share skincare guidance, look up
+                    current worldwide product information when web search is
+                    configured, and find matching products from Zyvar&apos;s catalog.
                     <br />
                     <br />
                     Ask in Bangla, Banglish, or English. I provide education,
@@ -340,6 +340,9 @@ export default function ZyvarAIChat() {
                 <MessageBubble message={message} />
                 {message.role === "assistant" && message.products?.length > 0 && (
                   <div className="ml-9 grid gap-2">
+                    <p className="text-[11px] font-semibold uppercase text-gray-500">
+                      Zyvar catalog matches
+                    </p>
                     {message.products.map((product) => (
                       <RecommendedProduct
                         key={product.id}
@@ -376,9 +379,31 @@ export default function ZyvarAIChat() {
                     </div>
                   </div>
                 )}
+                {message.role === "assistant" &&
+                  message.webSearchStatus === "not_configured" && (
+                    <p className="ml-9 text-xs text-amber-300">
+                      Live web search needs an Ollama API key in the backend
+                      configuration. These product cards, if shown, are only
+                      matches from Zyvar&apos;s catalog.
+                    </p>
+                  )}
+                {message.role === "assistant" &&
+                  message.webSearchStatus === "unavailable" && (
+                    <p className="ml-9 text-xs text-amber-300">
+                      Live web search is temporarily unavailable. Any product
+                      cards shown are only matches from Zyvar&apos;s catalog.
+                    </p>
+                  )}
+                {message.role === "assistant" &&
+                  message.webSearchStatus === "no_results" && (
+                    <p className="ml-9 text-xs text-amber-300">
+                      I couldn&apos;t find useful web results for that search.
+                      Any product cards shown are only matches from Zyvar&apos;s catalog.
+                    </p>
+                  )}
                 {message.role === "assistant" && message.sources?.length > 0 && (
                   <div className="ml-9 border-l border-white/10 pl-3">
-                    <p className="mb-1 text-[11px] font-semibold uppercase text-gray-500">Sources</p>
+                    <p className="mb-1 text-[11px] font-semibold uppercase text-gray-500">Web sources</p>
                     <ul className="space-y-1">
                       {message.sources.map((source) => (
                         <li key={source.url}>
