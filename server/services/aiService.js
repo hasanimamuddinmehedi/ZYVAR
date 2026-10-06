@@ -5,6 +5,7 @@ const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434"
 	"",
 );
 const MODEL = process.env.OLLAMA_MODEL || "gemma4:cloud";
+const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY;
 const REQUEST_TIMEOUT_MS = 120000;
 const MAX_PRODUCTS = 4;
 const PRODUCT_TYPE_ALIASES = [
@@ -149,9 +150,14 @@ async function requestConsultation(messages) {
 	let response;
 
 	try {
+		const headers = { "Content-Type": "application/json" };
+		if (new URL(OLLAMA_BASE_URL).hostname === "ollama.com" && OLLAMA_API_KEY) {
+			headers.Authorization = `Bearer ${OLLAMA_API_KEY}`;
+		}
+
 		response = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers,
 			body: JSON.stringify({
 				model: MODEL,
 				stream: false,

@@ -48,6 +48,30 @@ Keep the key on the backend only, never in frontend `VITE_*` settings or
 source control. Restart the backend after setting it. Without the key, the
 chat clearly labels search as unconfigured instead of implying it searched.
 
+### Deploying the frontend and backend
+
+Deploy the Vite frontend from the repository root to Vercel; its build output
+is `dist`. The existing Vercel project already contains the public
+`VITE_FIREBASE_*` and analytics settings. Set
+`VITE_ZYVAR_AI_API_URL` to the Render backend chat endpoint:
+`https://zyvar-email-server.onrender.com/api/zyvar-ai/chat`.
+
+Deploy the Node backend from the `server` directory to Render with build
+command `npm install`, start command `npm start`, and health-check path
+`/api/health`. Configure these Render environment variables in its dashboard:
+
+- `FRONTEND_URL`: the Vercel production origin (scheme and hostname only)
+- `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`
+- `BREVO_API_KEY`, `SENDER_EMAIL`
+- `OLLAMA_BASE_URL=https://ollama.com`
+- `OLLAMA_MODEL=gemma4:31b`
+- `OLLAMA_API_KEY`: a server-side Ollama API key
+
+The hosted backend calls Ollama Cloud directly; it cannot use Ollama sign-in
+from a developer's computer. Keep Firebase, Brevo, and Ollama secrets only
+in Render's environment settings. Never commit `.env` files or add secrets
+to Vercel frontend variables.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
