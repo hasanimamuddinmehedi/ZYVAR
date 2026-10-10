@@ -39,6 +39,7 @@ const MAX_CONVERSATION_MESSAGES_SENT = 20;
 
 const STORAGE_KEY = "zyvar-ai-conversation";
 const MAX_STORED_MESSAGES = 30;
+const CHAT_HISTORY_TTL_MS = 24 * 60 * 60 * 1000;
 
 /* -------------------------------------------------------------------------
    API client — isolated from rendering logic
@@ -173,7 +174,43 @@ async function sendMessageToZyvarAI({ message, conversation }) {
   return {
     reply: data.reply,
     products: Array.isArray(data.products) ? data.products : [],
+    recommendations: Array.isArray(data.recommendations)
+      ? data.recommendations.filter((item) =>
+          item &&
+          ((item.type === "request" && typeof item.name === "string") ||
+            (item.type === "product" && item.product && typeof item.product.id === "string"))
+        )
+        .map((item) =>
+          item.type === "request"
+            ? {
+                type: "request",
+                name: item.name,
+                approximateCost:
+                  typeof item.approximateCost === "string" ? item.approximateCost : "",
+                description:
+                  typeof item.description === "string" ? item.description : "",
+                referenceLink:
+                  typeof item.referenceLink === "string" &&
+                  item.referenceLink.startsWith("https://")
+                    ? item.referenceLink
+                    : "",
+              }
+            : item
+        )
+      : [],
+    productRequestNames: Array.isArray(data.productRequestNames)
+      ? data.productRequestNames.filter((name) => typeof name === "string")
+      : [],
     sources: Array.isArray(data.sources) ? data.sources : [],
+    actions: Array.isArray(data.actions)
+      ? data.actions.filter((action) =>
+          action &&
+          typeof action.label === "string" &&
+          typeof action.path === "string" &&
+          action.path.startsWith("/")
+        )
+      : [],
+    stores: Array.isArray(data.stores) ? data.stores : [],
     webSearchStatus:
       typeof data.webSearchStatus === "string" ? data.webSearchStatus : "not_needed",
     productRequestName:
@@ -196,24 +233,41 @@ function isValidStoredMessage(m) {
   );
 }
 
-function loadStoredMessages() {
+function loadStoredConversation() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) return { messages: [], createdAt: null };
 
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !Array.isArray(parsed.messages) ||
+      typeof parsed.createdAt !== "number" ||
+      Date.now() - parsed.createdAt >= CHAT_HISTORY_TTL_MS
+    ) {
+      clearStoredMessages();
+      return { messages: [], createdAt: null };
+    }
 
-    return parsed.filter(isValidStoredMessage).slice(-MAX_STORED_MESSAGES);
+    return {
+      messages: parsed.messages.filter(isValidStoredMessage).slice(-MAX_STORED_MESSAGES),
+      createdAt: parsed.createdAt,
+    };
   } catch {
-    return [];
+    clearStoredMessages();
+    return { messages: [], createdAt: null };
   }
 }
 
-function saveStoredMessages(messages) {
+function saveStoredMessages(messages, createdAt) {
   try {
     const safe = messages.filter(isValidStoredMessage).slice(-MAX_STORED_MESSAGES);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(safe));
+    if (!safe.length || !createdAt) {
+      window.localStorage.removeItem(STORAGE_KEY);
+      return;
+    }
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ messages: safe, createdAt }));
   } catch {
     // Quota exceeded, storage disabled, etc. — silently skip persistence,
     // the chat still works for the current session either way.
@@ -240,7 +294,9 @@ function makeId() {
 ------------------------------------------------------------------------- */
 export default function useZyvarAI() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState(() => loadStoredMessages());
+  const [initialConversation] = useState(loadStoredConversation);
+  const [messages, setMessages] = useState(initialConversation.messages);
+  const [conversationCreatedAt, setConversationCreatedAt] = useState(initialConversation.createdAt);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -250,8 +306,19 @@ export default function useZyvarAI() {
   const lastFailedRef = useRef(null);
 
   useEffect(() => {
-    saveStoredMessages(messages);
-  }, [messages]);
+    saveStoredMessages(messages, conversationCreatedAt);
+  }, [messages, conversationCreatedAt]);
+
+  useEffect(() => {
+    if (!conversationCreatedAt) return undefined;
+    const expiresIn = conversationCreatedAt + CHAT_HISTORY_TTL_MS - Date.now();
+    const timeoutId = window.setTimeout(() => {
+      setMessages([]);
+      setConversationCreatedAt(null);
+      clearStoredMessages();
+    }, Math.max(0, expiresIn));
+    return () => window.clearTimeout(timeoutId);
+  }, [conversationCreatedAt]);
 
   const open = useCallback(() => setIsOpen(true), []);
   const close = useCallback(() => setIsOpen(false), []);
@@ -259,6 +326,7 @@ export default function useZyvarAI() {
 
   const clearConversation = useCallback(() => {
     setMessages([]);
+    setConversationCreatedAt(null);
     setError(null);
     lastFailedRef.current = null;
     clearStoredMessages();
@@ -285,7 +353,11 @@ export default function useZyvarAI() {
           role: "assistant",
           content: result.reply,
           products: result.products,
+          recommendations: result.recommendations,
+          productRequestNames: result.productRequestNames,
           sources: result.sources,
+          actions: result.actions,
+          stores: result.stores,
           webSearchStatus: result.webSearchStatus,
           productRequestName: result.productRequestName,
         },
@@ -306,6 +378,7 @@ export default function useZyvarAI() {
       if (!text || loading) return;
 
       const userMessage = { id: makeId(), role: "user", content: text };
+      if (!conversationCreatedAt) setConversationCreatedAt(Date.now());
 
       // Snapshot the conversation as it stands BEFORE this new message,
       // since that's what the backend expects as prior context.
@@ -322,7 +395,7 @@ export default function useZyvarAI() {
       // before React commits, so it's safe to use immediately here.
       performSend(text, conversationSoFar);
     },
-    [loading, performSend]
+    [conversationCreatedAt, loading, performSend]
   );
 
   const retryLastMessage = useCallback(() => {

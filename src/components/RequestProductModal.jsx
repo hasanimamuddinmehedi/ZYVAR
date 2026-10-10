@@ -1,6 +1,4 @@
-import {
-  useState,
-} from "react";
+import { useState } from "react";
 
 import {
   collection,
@@ -23,6 +21,7 @@ export default function RequestProductModal({
   setOpen,
   onClose,
   searchText = "",
+  requestDetails = null,
 }) {
 
   // SUPPORT BOTH CLOSE METHODS
@@ -48,14 +47,6 @@ export default function RequestProductModal({
     setLoading,
   ] = useState(false);
 
-  // EMAIL STATE
-  const [
-    email,
-    setEmail,
-  ] = useState(
-    user?.email || ""
-  );
-
   // FORM DATA
   const [
     formData,
@@ -71,11 +62,16 @@ export default function RequestProductModal({
     phone: "",
 
     productName:
-      searchText || "",
+      requestDetails?.name || searchText || "",
 
-    details: "",
+    details:
+      requestDetails?.description || "",
 
-    referenceLink: "",
+    referenceLink:
+      requestDetails?.referenceLink || "",
+
+    approximateCost:
+      requestDetails?.approximateCost || "",
   });
 
   if (!open) return null;
@@ -116,10 +112,7 @@ export default function RequestProductModal({
             ...formData,
 
             // ALWAYS SAVE EMAIL
-            email:
-              user?.email ||
-              email ||
-              "",
+            email: user?.email || formData.email || "",
 
             userId:
               user?.uid || null,
@@ -157,12 +150,9 @@ export default function RequestProductModal({
           details: "",
 
           referenceLink: "",
-        });
 
-        // RESET EMAIL
-        setEmail(
-          user?.email || ""
-        );
+          approximateCost: "",
+        });
 
       } catch (error) {
 
@@ -322,12 +312,8 @@ export default function RequestProductModal({
             type="email"
             name="email"
             required
-            value={email}
-            onChange={(e) =>
-              setEmail(
-                e.target.value
-              )
-            }
+            value={formData.email}
+            onChange={handleChange}
             placeholder="Your Email"
             className="
               w-full
@@ -354,6 +340,30 @@ export default function RequestProductModal({
             value={formData.productName}
             onChange={handleChange}
             placeholder="Product Name"
+            className="
+              w-full
+              px-6
+              py-5
+              rounded-2xl
+              bg-black/30
+              border
+              border-white/10
+              outline-none
+              text-white
+              placeholder-gray-500
+              focus:border-[#C6922B]
+              transition
+              duration-300
+            "
+          />
+
+          {/* APPROXIMATE COST */}
+          <input
+            type="text"
+            name="approximateCost"
+            value={formData.approximateCost}
+            onChange={handleChange}
+            placeholder="Approximate cost (optional)"
             className="
               w-full
               px-6

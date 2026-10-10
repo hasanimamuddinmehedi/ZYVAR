@@ -1,306 +1,132 @@
+import { useState } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
-  useState,
-} from "react";
-
-import {
-  NavLink,
-  Outlet,
-} from "react-router-dom";
-
-import {
-  FaChartLine,
-  FaPlus,
-  FaBoxOpen,
-  FaShoppingBag,
-  FaStar,
-  FaMoneyBillWave,
-  FaCog,
   FaBars,
+  FaBoxOpen,
+  FaChartLine,
+  FaCog,
+  FaMoneyBillWave,
+  FaPlus,
+  FaShoppingBag,
+  FaSignOutAlt,
+  FaStar,
   FaTimes,
 } from "react-icons/fa";
+import { signOut } from "firebase/auth";
+import { auth } from "../../firebase/firebase";
+import DashboardQuickActions from "../../components/dashboard/DashboardQuickActions";
+import { DashboardDataProvider } from "../../components/dashboard/DashboardDataProvider";
 
-import Navbar from "../../components/Navbar";
+const menu = [
+  { name: "Dashboard", icon: <FaChartLine />, path: "/partner-dashboard", end: true },
+  { name: "Uploads", icon: <FaPlus />, path: "/partner-dashboard/uploads" },
+  { name: "Products", icon: <FaBoxOpen />, path: "/partner-dashboard/products" },
+  { name: "Orders", icon: <FaShoppingBag />, path: "/partner-dashboard/orders" },
+  { name: "Reviews", icon: <FaStar />, path: "/partner-dashboard/reviews" },
+  { name: "Earnings", icon: <FaMoneyBillWave />, path: "/partner-dashboard/earnings" },
+  { name: "Settings", icon: <FaCog />, path: "/partner-dashboard/settings" },
+];
 
 export default function PartnerLayout() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Partner sign out failed:", error);
+      window.alert("Unable to sign out. Please try again.");
+      return;
+    }
+    ["zyvar-admin", "zyvar-user", "zyvar-user-id", "zyvar-user-data", "zyvar-remember", "token"].forEach((key) => localStorage.removeItem(key));
+    navigate("/login");
+  };
 
-  const menu = [
-
-    {
-      name: "Dashboard",
-      icon: <FaChartLine />,
-      path: "/partner-dashboard",
-    },
-
-    {
-      name: "Uploads",
-      icon: <FaPlus />,
-      path: "/partner-dashboard/uploads",
-    },
-
-    {
-      name: "Products",
-      icon: <FaBoxOpen />,
-      path: "/partner-dashboard/products",
-    },
-
-    {
-      name: "Orders",
-      icon: <FaShoppingBag />,
-      path: "/partner-dashboard/orders",
-    },
-
-    {
-      name: "Reviews",
-      icon: <FaStar />,
-      path: "/partner-dashboard/reviews",
-    },
-
-    {
-      name: "Earnings",
-      icon: <FaMoneyBillWave />,
-      path: "/partner-dashboard/earnings",
-    },
-
-    {
-      name: "Settings",
-      icon: <FaCog />,
-      path: "/partner-dashboard/settings",
-    },
-  ];
+  const linkClass = ({ isActive }) => `flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-sm transition ${
+    isActive
+      ? "border-[#C6922B] bg-[#C6922B] font-bold text-black"
+      : "border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B]"
+  }`;
+  const logoutButton = "flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-red-400 transition hover:border-red-400 hover:bg-red-400/10";
 
   return (
+    <DashboardDataProvider role="partner">
+      <div className="min-h-screen bg-[#0B0B0B] text-white">
+        <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-[#0B0B0B]/95 px-3 backdrop-blur-2xl lg:left-[280px] lg:h-16 lg:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open partner navigation"
+              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 lg:hidden"
+            >
+              <FaBars />
+            </button>
+            <div>
+              <p className="text-sm font-black text-[#C6922B] sm:text-base">ZYVAR Partner</p>
+              <p className="hidden text-[10px] uppercase tracking-[0.2em] text-gray-500 lg:block">Partner Dashboard</p>
+            </div>
+          </div>
+          <DashboardQuickActions role="partner" />
+        </header>
 
-    <div className="min-h-screen bg-black text-white">
-
-      {/* SITE NAVBAR (fixed, h-16) */}
-
-      <Navbar />
-
-      {/* DESKTOP SIDEBAR — sits below the fixed navbar */}
-
-      <aside
-        className="
-        hidden
-        lg:flex
-        lg:flex-col
-        fixed
-        top-16
-        left-0
-        h-[calc(100vh-4rem)]
-        w-[280px]
-        border-r border-white/10
-        bg-[#0A0A0A]
-        p-6
-        z-30
-      "
-      >
-
-        <h1 className="text-3xl font-black text-[#C6922B] mb-10">
-
-          ZYVAR Partner
-
-        </h1>
-
-        <div className="space-y-3 overflow-y-auto">
-
-          {
-            menu.map((item) => (
-
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={
-                  item.path ===
-                  "/partner-dashboard"
-                }
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-5 py-4 rounded-2xl transition ${
-                    isActive
-                      ? "bg-[#C6922B] text-black font-bold"
-                      : "bg-white/5 hover:bg-white/10"
-                  }`
-                }
-              >
+        <aside className="fixed bottom-0 left-0 top-16 z-30 hidden w-[280px] flex-col border-r border-white/10 bg-[#0A0A0A] p-5 lg:flex">
+          <p className="mb-7 text-2xl font-black text-[#C6922B]">ZYVAR Partner</p>
+          <nav className="space-y-2 overflow-y-auto">
+            {menu.map((item) => (
+              <NavLink key={item.path} to={item.path} end={item.end} className={linkClass}>
                 {item.icon}
                 {item.name}
               </NavLink>
-            ))
-          }
+            ))}
+            <button type="button" onClick={handleLogout} className={logoutButton}>
+              <FaSignOutAlt />
+              Log Out
+            </button>
+          </nav>
+        </aside>
 
-        </div>
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-[80] lg:hidden">
+            <button
+              type="button"
+              aria-label="Close partner navigation"
+              onClick={() => setMobileMenuOpen(false)}
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
+            <aside className="absolute inset-y-0 left-0 flex w-[min(18rem,calc(100vw-2rem))] flex-col overflow-y-auto border-r border-white/10 bg-[#0A0A0A] p-5 shadow-2xl">
+              <div className="mb-7 flex items-center justify-between">
+                <div>
+                  <p className="text-xl font-black text-[#C6922B]">ZYVAR Partner</p>
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">Dashboard</p>
+                </div>
+                <button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu" className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5">
+                  <FaTimes />
+                </button>
+              </div>
+              <nav className="space-y-2">
+                {menu.map((item) => (
+                  <NavLink key={item.path} to={item.path} end={item.end} onClick={() => setMobileMenuOpen(false)} className={linkClass}>
+                    {item.icon}
+                    {item.name}
+                  </NavLink>
+                ))}
+                <button type="button" onClick={handleLogout} className={logoutButton}>
+                  <FaSignOutAlt />
+                  Log Out
+                </button>
+              </nav>
+            </aside>
+          </div>
+        )}
 
-      </aside>
-
-      {/* MOBILE PARTNER MENU TRIGGER — floating bar below navbar, mobile/tablet only */}
-
-      <div
-        className="
-        lg:hidden
-        fixed
-        top-16
-        left-0
-        w-full
-        z-30
-        bg-[#0A0A0A]
-        border-b border-white/10
-        px-4
-        h-14
-        flex items-center justify-between
-      "
-      >
-
-        <span className="text-base font-black text-[#C6922B]">
-
-          ZYVAR Partner
-
-        </span>
-
-        <button
-          type="button"
-          onClick={() => setIsMobileMenuOpen(true)}
-          aria-label="Open partner menu"
-          className="
-          flex items-center justify-center
-          w-10 h-10
-          rounded-xl
-          bg-white/5
-          hover:bg-white/10
-          text-white
-          transition
-        "
-        >
-
-          <FaBars size={16} />
-
-        </button>
-
+        <main className="min-h-screen w-full overflow-x-hidden px-4 pb-6 pt-14 sm:px-6 lg:pl-[280px] lg:pt-16">
+          <div className="p-0 md:p-4 lg:p-6">
+            <Outlet />
+          </div>
+        </main>
       </div>
-
-      {/* MOBILE PARTNER MENU — backdrop + slide-in drawer, built inline (no extra files) */}
-
-      <div
-        onClick={() => setIsMobileMenuOpen(false)}
-        className={`
-        lg:hidden
-        fixed inset-0
-        bg-black/70
-        z-40
-        transition-opacity duration-300
-        ${
-          isMobileMenuOpen
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }
-      `}
-      />
-
-      <aside
-        className={`
-        lg:hidden
-        fixed top-0 left-0
-        h-screen
-        w-[280px]
-        bg-[#0A0A0A]
-        border-r border-white/10
-        p-6
-        z-50
-        transform transition-transform duration-300
-        ${
-          isMobileMenuOpen
-            ? "translate-x-0"
-            : "-translate-x-full"
-        }
-      `}
-      >
-
-        <div className="flex items-center justify-between mb-10">
-
-          <h1 className="text-2xl font-black text-[#C6922B]">
-
-            ZYVAR Partner
-
-          </h1>
-
-          <button
-            type="button"
-            onClick={() => setIsMobileMenuOpen(false)}
-            aria-label="Close partner menu"
-            className="
-            flex items-center justify-center
-            w-9 h-9
-            rounded-full
-            bg-white/5
-            hover:bg-white/10
-            text-white
-            transition
-          "
-          >
-
-            <FaTimes size={16} />
-
-          </button>
-
-        </div>
-
-        <div className="space-y-3 overflow-y-auto">
-
-          {
-            menu.map((item) => (
-
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={
-                  item.path ===
-                  "/partner-dashboard"
-                }
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-5 py-4 rounded-2xl transition ${
-                    isActive
-                      ? "bg-[#C6922B] text-black font-bold"
-                      : "bg-white/5 hover:bg-white/10"
-                  }`
-                }
-              >
-                {item.icon}
-                {item.name}
-              </NavLink>
-            ))
-          }
-
-        </div>
-
-      </aside>
-
-      {/* MAIN CONTENT */}
-
-      <main
-        className="
-        min-h-screen
-        w-full
-        pt-[7.5rem]
-        lg:pt-16
-        lg:pl-[280px]
-        overflow-x-hidden
-      "
-      >
-
-        <div
-          className="
-          p-4
-          md:p-8
-        "
-        >
-
-          <Outlet />
-
-        </div>
-
-      </main>
-
-    </div>
+    </DashboardDataProvider>
   );
 }

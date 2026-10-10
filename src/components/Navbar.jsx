@@ -1076,6 +1076,7 @@ export default function Navbar() {
     </header>
 
     <RequestProductModal
+      key={requestOpen ? "open" : "closed"}
       open={requestOpen}
       onClose={() => setRequestOpen(false)}
     />

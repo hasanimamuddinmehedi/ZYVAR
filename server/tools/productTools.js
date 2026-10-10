@@ -13,7 +13,7 @@
        no internal fields)
 
    Product schema (per the Step 1 audit) is NOT changed by this file:
-     name, price, category, stock, description, images, slug,
+     name, price, category, stock, description, images (or legacy image), slug,
      uploadedBy, partnerSlug, partnerId, createdAt
    ========================================================================= */
 
@@ -28,9 +28,13 @@ const PRODUCTS_COLLECTION = "products";
 
 // Reasonable hard caps — protects against abuse and runaway reads.
 const MAX_SEARCH_RESULTS = 10;
-const MAX_SCAN_DOCS = 200; // upper bound on documents pulled per search
 const MAX_QUERY_LENGTH = 200;
 const MAX_CATEGORY_LENGTH = 100;
+const PRODUCT_CACHE_TTL_MS = 60 * 1000;
+let productCache = {
+  expiresAt: 0,
+  products: [],
+};
 
 function toSafeString(value, maxLength) {
   if (typeof value !== "string") return "";
@@ -60,6 +64,21 @@ function isValidProductId(id) {
 // product. Anything else on the document (Firestore metadata, internal
 // bookkeeping fields, etc.) is stripped out here.
 function sanitizeProduct(id, data) {
+  const getImageUrl = (image) => {
+    if (typeof image === "string") return image;
+    if (!image || typeof image !== "object") return "";
+    return [image.secure_url, image.url, image.src].find(
+      (url) => typeof url === "string" && url.trim(),
+    ) || "";
+  };
+  const images = (Array.isArray(data.images) ? data.images : [data.images])
+    .map(getImageUrl)
+    .filter(Boolean);
+  const legacyImage = getImageUrl(
+    data.image || data.imageUrl || data.imageURL || data.image_url,
+  );
+  const imageUrl = images[0] || legacyImage || null;
+
   return {
     id,
     name: data.name ?? null,
@@ -67,7 +86,9 @@ function sanitizeProduct(id, data) {
     stock: typeof data.stock === "number" ? data.stock : toSafeNumber(data.stock),
     category: data.category ?? null,
     description: data.description ?? null,
-    images: Array.isArray(data.images) ? data.images : [],
+    images,
+    image: imageUrl,
+    imageUrl,
     slug: data.slug ?? null,
     partnerSlug: data.partnerSlug ?? null,
   };
@@ -77,10 +98,10 @@ function sanitizeProduct(id, data) {
    1. searchProducts({ query, category, nameContains, minPrice, maxPrice, limit })
    -------------------------------------------------------------------------
    The existing "products" collection has no full-text search index, so
-   this is a practical first version: pull a bounded page of products and
-   filter/rank them in memory against the existing fields (name, category,
-   description, partnerSlug). This keeps the AI from ever constructing its
-   own Firestore query — the server always decides exactly what is fetched.
+   read the catalog once per cache window and filter/rank it in memory
+   against the existing fields (name, category, description, partnerSlug).
+   This lets recommendations cover the full customer-visible catalog while
+   limiting Firestore reads to one catalog fetch per minute per server.
 ------------------------------------------------------------------------- */
 async function searchProducts(rawArgs = {}) {
   const query = toSafeString(rawArgs.query, MAX_QUERY_LENGTH).toLowerCase();
@@ -101,21 +122,27 @@ async function searchProducts(rawArgs = {}) {
   if (!limit || limit < 1) limit = MAX_SEARCH_RESULTS;
   limit = Math.min(limit, MAX_SEARCH_RESULTS);
 
-  const db = admin.firestore();
-
-  // Bounded scan — never an unrestricted full-collection read.
-  const snapshot = await db
-    .collection(PRODUCTS_COLLECTION)
-    .limit(MAX_SCAN_DOCS)
-    .get();
+  if (productCache.expiresAt <= Date.now()) {
+    const snapshot = await admin
+      .firestore()
+      .collection(PRODUCTS_COLLECTION)
+      .get();
+    const products = [];
+    snapshot.forEach((docSnap) => {
+      products.push(sanitizeProduct(docSnap.id, docSnap.data() || {}));
+    });
+    productCache = {
+      expiresAt: Date.now() + PRODUCT_CACHE_TTL_MS,
+      products,
+    };
+  }
 
   const matches = [];
   const queryTerms = query
     .split(/[^\p{L}\p{N}]+/u)
     .filter((term) => term.length > 2);
 
-  snapshot.forEach((docSnap) => {
-    const data = docSnap.data() || {};
+  productCache.products.forEach((data) => {
 
     const name = String(data.name || "").toLowerCase();
     if (nameContains.length > 0 && !nameContains.some((term) => name.includes(term))) return;
@@ -141,7 +168,7 @@ async function searchProducts(rawArgs = {}) {
     if (minPrice !== null && (price === null || price < minPrice)) return;
     if (maxPrice !== null && (price === null || price > maxPrice)) return;
 
-    matches.push({ id: docSnap.id, data });
+    matches.push({ id: data.id, data });
   });
 
   // Simple relevance ranking: exact/starting name matches first.
@@ -153,7 +180,11 @@ async function searchProducts(rawArgs = {}) {
       const matchedTerms = queryTerms.filter((term) => searchableText.includes(term)).length;
       return (productName.startsWith(query) ? 100 : 0) + matchedTerms;
     };
-    return getScore(b.data, bName) - getScore(a.data, aName);
+    const relevance = getScore(b.data, bName) - getScore(a.data, aName);
+    if (relevance !== 0) return relevance;
+    const aAvailable = Number(a.data.stock) > 0;
+    const bAvailable = Number(b.data.stock) > 0;
+    return Number(bAvailable) - Number(aAvailable);
   });
 
   const results = matches
@@ -240,4 +271,5 @@ module.exports = {
   checkProductStock,
   // exported for validation/tests only
   isValidProductId,
+  sanitizeProduct,
 };

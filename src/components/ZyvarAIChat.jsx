@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowUpRight,
   Check,
@@ -11,6 +11,8 @@ import {
   Send,
   ShoppingCart,
   Sparkles,
+  Store,
+  Zap,
   X,
 } from "lucide-react";
 
@@ -79,34 +81,103 @@ function MessageBubble({ message }) {
     <div className={`flex items-end gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && <AssistantAvatar />}
       <div
-        className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+        className={`max-w-[90%] break-words rounded-2xl px-4 py-3 text-sm leading-7 ${
           isUser
-            ? "rounded-br-sm bg-yellow-500 text-black"
-            : "rounded-bl-sm border border-white/10 bg-[#171717] text-gray-100"
+            ? "rounded-br-sm bg-gradient-to-br from-yellow-400 to-yellow-600 text-black"
+            : "rounded-bl-sm border border-white/10 bg-gradient-to-br from-[#1b1b1b] to-[#121212] text-gray-100 shadow-lg shadow-black/10"
         }`}
       >
-        {message.content}
+        <FormattedReply content={message.content} isUser={isUser} />
       </div>
     </div>
   );
 }
 
-function RecommendedProduct({ product, wished, added, onAddToCart, onToggleWishlist }) {
-  const image = Array.isArray(product.images) ? product.images[0] : product.image;
-  const imageUrl = typeof image === "string" ? image : image?.url;
+function FormattedReply({ content, isUser }) {
+  const lines = content.split(/\r?\n/);
+  const blocks = [];
+  let listItems = [];
+  let listType = "";
+
+  const inlineContent = (text, keyPrefix) => text
+    .split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+    .map((part, index) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return <strong key={`${keyPrefix}-${index}`} className={`font-semibold ${isUser ? "text-black" : "text-white"}`}>{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith("`") && part.endsWith("`")) {
+        return <code key={`${keyPrefix}-${index}`} className="rounded bg-white/10 px-1 py-0.5 text-yellow-200">{part.slice(1, -1)}</code>;
+      }
+      return part;
+    });
+
+  const flushList = () => {
+    if (!listItems.length) return;
+    const List = listType === "number" ? "ol" : "ul";
+    blocks.push(
+      <List key={`list-${blocks.length}`} className={`${listType === "number" ? "list-decimal" : "list-disc"} space-y-1 pl-5 marker:text-yellow-400`}>
+        {listItems.map((item, index) => <li key={index}>{inlineContent(item, `list-${blocks.length}-${index}`)}</li>)}
+      </List>,
+    );
+    listItems = [];
+    listType = "";
+  };
+
+  lines.forEach((line, index) => {
+    const heading = line.match(/^\s*#{1,3}\s+(.+)/);
+    const bullet = line.match(/^\s*[-*]\s+(.+)/);
+    const numbered = line.match(/^\s*\d+[.)]\s+(.+)/);
+    if (bullet || numbered) {
+      const nextType = numbered ? "number" : "bullet";
+      if (listType && listType !== nextType) flushList();
+      listType = nextType;
+      listItems.push((bullet || numbered)[1]);
+      return;
+    }
+    flushList();
+    if (heading) {
+      blocks.push(
+        <h4 key={`heading-${index}`} className="pt-1 font-semibold text-white">
+          {inlineContent(heading[1], `heading-${index}`)}
+        </h4>,
+      );
+      return;
+    }
+    if (line.trim()) {
+      blocks.push(<p key={`paragraph-${index}`}>{inlineContent(line, `paragraph-${index}`)}</p>);
+    }
+  });
+  flushList();
+
+  return <div className="space-y-2">{blocks}</div>;
+}
+
+function RecommendedProduct({ product, position, wished, added, onBuyNow, onAddToCart, onToggleWishlist, onRequestProduct, onNavigate }) {
+  const image = product.imageUrl || product.images?.[0] || product.image;
+  const imageUrl = typeof image === "string"
+    ? image
+    : image?.url || image?.secure_url || image?.src;
+  const [imageFailed, setImageFailed] = useState(false);
   const inStock = Number(product.stock) > 0;
 
   return (
-    <article className="overflow-hidden rounded-xl border border-white/10 bg-[#111]">
+    <article className="overflow-hidden rounded-xl border border-white/10 bg-[#111] shadow-lg shadow-black/10">
       <div className="flex gap-3 p-3">
-        {imageUrl ? (
-          <img src={imageUrl} alt="" loading="lazy" className="h-16 w-16 shrink-0 rounded-lg bg-white/5 object-cover" />
+        {imageUrl && !imageFailed ? (
+          <img
+            src={imageUrl}
+            alt={product.name}
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+            className="h-20 w-20 shrink-0 rounded-lg bg-white/5 object-cover"
+          />
         ) : (
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-white/5 text-gray-500">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-white/5 text-gray-500">
             <PackagePlus className="h-5 w-5" aria-hidden="true" />
           </div>
         )}
         <div className="min-w-0 flex-1">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-yellow-400">Suggestion {String(position).padStart(2, "0")}</p>
           <p className="line-clamp-2 text-sm font-medium text-white">{product.name}</p>
           <p className="mt-1 text-sm font-semibold text-yellow-300">
             {Number.isFinite(product.price) ? `৳${product.price.toLocaleString("en-BD")}` : "Price unavailable"}
@@ -116,43 +187,118 @@ function RecommendedProduct({ product, wished, added, onAddToCart, onToggleWishl
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-2 border-t border-white/10 p-2">
+      <div className="grid grid-cols-2 gap-2 border-t border-white/10 p-2">
+        <button
+          type="button"
+          onClick={() => onBuyNow(product)}
+          disabled={!inStock}
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-yellow-500 px-2 text-xs font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Zap className="h-3.5 w-3.5" aria-hidden="true" />
+          Buy now · pay
+        </button>
         <button
           type="button"
           onClick={() => onAddToCart(product)}
           disabled={!inStock}
-          className="inline-flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-yellow-500 px-2 text-xs font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-white/10 px-2 text-xs font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {added ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <ShoppingCart className="h-3.5 w-3.5" aria-hidden="true" />}
-          {added ? "Added" : "Add to cart"}
+          {added ? "Added to cart" : "Add to cart"}
         </button>
         <button
           type="button"
           onClick={() => onToggleWishlist(product)}
-          aria-label={wished ? "Remove from wishlist" : "Add to wishlist"}
-          title={wished ? "Remove from wishlist" : "Add to wishlist"}
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 transition hover:bg-white/10 ${wished ? "text-pink-400" : "text-gray-300"}`}
+          className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-white/10 px-2 text-xs transition hover:bg-white/10 ${wished ? "text-pink-400" : "text-gray-300"}`}
         >
-          <Heart className="h-4 w-4" fill={wished ? "currentColor" : "none"} aria-hidden="true" />
+          <Heart className="h-3.5 w-3.5" fill={wished ? "currentColor" : "none"} aria-hidden="true" />
+          {wished ? "Wishlisted" : "Wishlist"}
         </button>
         <Link
           to={`/product/${product.slug || product.id}`}
+          onClick={onNavigate}
           aria-label={`View and buy ${product.name}`}
-          title="View product details"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 text-gray-300 transition hover:bg-white/10 hover:text-white"
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-white/10 px-2 text-xs text-gray-300 transition hover:bg-white/10 hover:text-white"
         >
-          <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+          <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+          Details
         </Link>
       </div>
+      {!inStock && (
+        <button type="button" onClick={() => onRequestProduct(product.name)} className="w-full border-t border-white/10 px-3 py-2 text-xs font-semibold text-yellow-300 hover:bg-yellow-400/10">
+          <PackagePlus className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
+          Request this product
+        </button>
+      )}
     </article>
   );
 }
 
+function PartnerStoreCard({ store, onNavigate }) {
+  return (
+    <article className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#111] p-3">
+      {store.logo ? (
+        <img src={store.logo} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-lg object-cover" />
+      ) : (
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-white/5 text-yellow-400"><Store className="h-5 w-5" /></span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-white">{store.name}</p>
+        {store.address && <p className="truncate text-xs text-gray-400">{store.address}</p>}
+      </div>
+      <Link to={`/${store.slug}`} onClick={onNavigate} className="shrink-0 rounded-lg border border-yellow-500/30 px-3 py-2 text-xs font-semibold text-yellow-300 hover:bg-yellow-500/10">
+        Visit store
+      </Link>
+    </article>
+  );
+}
+
+function MissingProductRequest({ recommendation, position, onRequest }) {
+  const { name, approximateCost, description, referenceLink } = recommendation;
+  return (
+    <article className="flex items-center justify-between gap-3 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-3">
+      <div className="min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-yellow-400">Suggestion {String(position).padStart(2, "0")} · Not in catalog</p>
+        <p className="mt-1 break-words text-sm text-white">{name}</p>
+        <p className="mt-1 text-xs text-yellow-200">
+          Approx. worldwide cost: {approximateCost || "Not available from current sources"}
+        </p>
+        {description && <p className="mt-1 text-xs leading-relaxed text-gray-400">{description}</p>}
+        {referenceLink && (
+          <a
+            href={referenceLink}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 inline-flex text-xs text-yellow-300 underline underline-offset-2"
+          >
+            View reference
+          </a>
+        )}
+      </div>
+      <button type="button" onClick={() => onRequest(recommendation)} className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-yellow-500 px-3 text-xs font-semibold text-black transition hover:bg-yellow-400">
+        <PackagePlus className="h-3.5 w-3.5" aria-hidden="true" />
+        Request
+      </button>
+    </article>
+  );
+}
+
+function getMessageRecommendations(message) {
+  if (message.recommendations?.length) return message.recommendations;
+  const entries = (message.products || []).map((product) => ({ type: "product", product }));
+  const requestNames = [...new Set([...(message.productRequestNames || []), message.productRequestName].filter(Boolean))];
+  return [
+    ...entries,
+    ...requestNames.map((name) => ({ type: "request", name })),
+  ];
+}
+
 export default function ZyvarAIChat() {
   const location = useLocation();
-  const { addToCart } = useCart();
+  const navigate = useNavigate();
+  const { addToCart, setSelectedItems } = useCart();
   const wishlist = useWishlist();
-  const [requestProductName, setRequestProductName] = useState("");
+  const [requestProduct, setRequestProduct] = useState(null);
   const [addedProductIds, setAddedProductIds] = useState({});
 
   const {
@@ -200,6 +346,10 @@ export default function ZyvarAIChat() {
     el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   }, [input]);
 
+  useEffect(() => {
+    close();
+  }, [location.pathname, close]);
+
   if (shouldHideOnPath(location.pathname)) {
     return null;
   }
@@ -219,6 +369,15 @@ export default function ZyvarAIChat() {
   const handleAddToCart = (product) => {
     addToCart(product);
     setAddedProductIds((previous) => ({ ...previous, [product.id]: true }));
+    close();
+    navigate("/cart");
+  };
+
+  const handleBuyNow = (product) => {
+    addToCart(product);
+    setSelectedItems([product.id]);
+    close();
+    navigate("/payment");
   };
 
   const handleToggleWishlist = (product) => {
@@ -227,6 +386,15 @@ export default function ZyvarAIChat() {
     } else {
       wishlist.addToWishlist(product);
     }
+    close();
+    navigate("/wishlist");
+  };
+
+  const handleRequestProduct = (request) => {
+    setRequestProduct(
+      typeof request === "string" ? { name: request } : request,
+    );
+    close();
   };
 
   const canSend = input.trim().length > 0 && !loading;
@@ -308,14 +476,15 @@ export default function ZyvarAIChat() {
                     Hi, I&apos;m Zyvar AI 👋
                     <br />
                     <br />
-                    Tell me about your skin concern, skin type, and what you
-                    want help with. I can share skincare guidance, look up
-                    current worldwide product information when web search is
-                    configured, and find matching products from Zyvar&apos;s catalog.
+                    I can help you find Zyvar products and partner stores, explain
+                    how to order or pay, and connect you with customer care.
+                    When available, I research product guidance online and only
+                    show products verified in Zyvar&apos;s catalog.
                     <br />
                     <br />
-                    Ask in Bangla, Banglish, or English. I provide education,
-                    not a medical diagnosis or treatment.
+                    Tell me what you&apos;re shopping for, your budget, or
+                    what you need help with. For skin concerns, I share
+                    education rather than a medical diagnosis or treatment.
                   </div>
                 </div>
 
@@ -338,53 +507,63 @@ export default function ZyvarAIChat() {
             {messages.map((message) => (
               <div key={message.id} className="space-y-2">
                 <MessageBubble message={message} />
-                {message.role === "assistant" && message.products?.length > 0 && (
+                {message.role === "assistant" && getMessageRecommendations(message).length > 0 && (
                   <div className="ml-9 grid gap-2">
                     <p className="text-[11px] font-semibold uppercase text-gray-500">
-                      Zyvar catalog matches
+                      Zyvar catalog and worldwide suggestions
                     </p>
-                    {message.products.map((product) => (
+                    {getMessageRecommendations(message).map((recommendation, index) => recommendation.type === "product" ? (
                       <RecommendedProduct
-                        key={product.id}
-                        product={product}
-                        wished={wishlist.isInWishlist(product.id)}
-                        added={Boolean(addedProductIds[product.id])}
+                        key={recommendation.product.id}
+                        product={recommendation.product}
+                        position={index + 1}
+                        wished={wishlist.isInWishlist(recommendation.product.id)}
+                        added={Boolean(addedProductIds[recommendation.product.id])}
+                        onBuyNow={handleBuyNow}
                         onAddToCart={handleAddToCart}
                         onToggleWishlist={handleToggleWishlist}
+                        onRequestProduct={handleRequestProduct}
+                        onNavigate={close}
+                      />
+                    ) : (
+                      <MissingProductRequest
+                        key={`${recommendation.name}-${index}`}
+                        recommendation={recommendation}
+                        position={index + 1}
+                        onRequest={handleRequestProduct}
                       />
                     ))}
                   </div>
                 )}
-                {message.role === "assistant" && message.productRequestName && (
-                  <div className="ml-9 rounded-xl border border-yellow-500/20 bg-yellow-500/5 p-3">
-                    <p className="text-xs leading-relaxed text-gray-300">
-                      I couldn&apos;t find an in-stock match in Zyvar&apos;s catalog. You can request it or contact our team.
-                    </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setRequestProductName(message.productRequestName)}
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-yellow-500 px-3 text-xs font-semibold text-black transition hover:bg-yellow-400"
-                      >
-                        <PackagePlus className="h-3.5 w-3.5" aria-hidden="true" />
-                        Request product
-                      </button>
+                {message.role === "assistant" && message.stores?.length > 0 && (
+                  <div className="ml-9 grid gap-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">Partner stores</p>
+                    {message.stores.map((store) => (
+                      <PartnerStoreCard key={store.id || store.slug} store={store} onNavigate={close} />
+                    ))}
+                  </div>
+                )}
+                {message.role === "assistant" && message.actions?.length > 0 && (
+                  <div className="ml-9 flex flex-wrap gap-2">
+                    {message.actions.map((action) => (
                       <Link
-                        to="/contact"
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-white/10 px-3 text-xs text-gray-200 transition hover:bg-white/5"
+                        key={`${action.path}-${action.label}`}
+                        to={action.path}
+                        onClick={close}
+                        className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-yellow-500/30 bg-yellow-500/5 px-3 text-xs font-semibold text-yellow-200 transition hover:bg-yellow-500/15"
                       >
-                        Contact support
-                        <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        {action.label}
+                        <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                       </Link>
-                    </div>
+                    ))}
                   </div>
                 )}
                 {message.role === "assistant" &&
                   message.webSearchStatus === "not_configured" && (
                     <p className="ml-9 text-xs text-amber-300">
-                      Live web search needs an Ollama API key in the backend
-                      configuration. These product cards, if shown, are only
-                      matches from Zyvar&apos;s catalog.
+                      Live product research is not enabled right now, so I
+                      haven&apos;t claimed to search the web. Any product cards
+                      shown are verified matches from Zyvar&apos;s catalog.
                     </p>
                   )}
                 {message.role === "assistant" &&
@@ -411,6 +590,7 @@ export default function ZyvarAIChat() {
                             href={source.url}
                             target="_blank"
                             rel="noreferrer"
+                            onClick={close}
                             className="inline-flex items-start gap-1 text-xs text-yellow-300 underline decoration-yellow-500/30 underline-offset-2 hover:text-yellow-200"
                           >
                             <ExternalLink className="mt-0.5 h-3 w-3 shrink-0" aria-hidden="true" />
@@ -465,7 +645,7 @@ export default function ZyvarAIChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask in Bangla, Banglish, or English..."
+              placeholder="Ask about products, stores, orders, or payment..."
               maxLength={2000}
               disabled={loading}
               className="max-h-[120px] flex-1 resize-none rounded-xl border border-white/10 bg-[#141414] px-3 py-2.5 text-sm text-gray-100 placeholder:text-gray-500 focus:border-yellow-500/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 disabled:opacity-60"
@@ -485,11 +665,13 @@ export default function ZyvarAIChat() {
           </form>
         </div>
       )}
-      {requestProductName && (
+      {requestProduct && (
         <RequestProductModal
+          key={`${requestProduct.name}-${requestProduct.referenceLink || ""}`}
           open
-          onClose={() => setRequestProductName("")}
-          searchText={requestProductName}
+          onClose={() => setRequestProduct(null)}
+          searchText={requestProduct.name}
+          requestDetails={requestProduct}
         />
       )}
     </>

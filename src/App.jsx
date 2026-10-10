@@ -119,6 +119,9 @@ const PartnerCouponsPage =
 const UsersPage =
   lazy(() => import("./pages/admin/UsersPage"));
 
+const ReviewsPage =
+  lazy(() => import("./pages/admin/ReviewsPage"));
+
 const BecomePartnerPage =
   lazy(() => import("./pages/BecomePartnerPage"));
 
@@ -222,6 +225,12 @@ function AppContent() {
   return (
 
     <>
+      <div className="site-ambient" aria-hidden="true">
+        <span className="site-ambient__orb site-ambient__orb--one" />
+        <span className="site-ambient__orb site-ambient__orb--two" />
+        <span className="site-ambient__orb site-ambient__orb--three" />
+      </div>
+
       {/* NAVBAR */}
       {
         !shouldHideNavbar && (
@@ -473,6 +482,12 @@ function AppContent() {
   path="users"
   element={
     <UsersPage />
+  }
+/>
+<Route
+  path="reviews"
+  element={
+    <ReviewsPage />
   }
 />
         </Route>

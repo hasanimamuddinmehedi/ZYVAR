@@ -9,6 +9,7 @@ import {
   FaHandshake,
   FaTicketAlt,
   FaUsers,
+  FaStar,
 } from "react-icons/fa";
 
 import {
@@ -32,14 +33,25 @@ export default function AdminSidebar() {
   const handleLogout =
     async () => {
 
-      await signOut(auth);
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error("Admin sign out failed:", error);
+        window.alert("Unable to sign out. Please try again.");
+        return;
+      }
 
-      localStorage.removeItem(
-        "zyvar-admin"
-      );
+      [
+        "zyvar-admin",
+        "zyvar-user",
+        "zyvar-user-id",
+        "zyvar-user-data",
+        "zyvar-remember",
+        "token",
+      ].forEach((key) => localStorage.removeItem(key));
 
       navigate(
-        "/admin-login"
+        "/login"
       );
     };
 
@@ -50,7 +62,7 @@ export default function AdminSidebar() {
   const navClass =
     ({ isActive }) =>
 
-      `w-full flex items-center gap-4 px-6 py-4 rounded-2xl transition duration-300 ${
+      `w-full flex items-center gap-4 px-5 py-3 rounded-xl transition duration-300 ${
         isActive
           ? "bg-[#C6922B] text-black font-black shadow-xl shadow-yellow-500/10"
           : "border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B]"
@@ -73,7 +85,7 @@ export default function AdminSidebar() {
         backdrop-blur-2xl
         border-r
         border-white/10
-        p-6
+        p-5
         overflow-y-auto
         scrollbar-none
       "
@@ -94,7 +106,7 @@ export default function AdminSidebar() {
       <div>
 
         {/* LOGO (links to home) */}
-        <div className="mb-14">
+        <div className="mb-8">
 
           <div
             onClick={goHome}
@@ -127,7 +139,7 @@ export default function AdminSidebar() {
         </div>
 
         {/* NAVIGATION */}
-        <nav className="space-y-4">
+        <nav className="space-y-2">
 
           {/* 1. Dashboard */}
           <NavLink
@@ -211,27 +223,24 @@ export default function AdminSidebar() {
             Settings
           </NavLink>
 
-        </nav>
-
-      </div>
-
-      {/* BOTTOM CARD: LOGOUT */}
-      <div className="rounded-[35px] border border-white/10 bg-gradient-to-br from-[#1A1A1A] to-[#101010] p-6 mt-10 relative overflow-hidden">
-
-        {/* GLOW */}
-        <div className="absolute top-0 right-0 w-40 h-40 rounded-full bg-[#C6922B]/10 blur-[80px]" />
-
-        <div className="relative z-10">
+          <NavLink
+            to="/admin/reviews"
+            className={navClass}
+          >
+            <FaStar className="text-lg" />
+            Reviews
+          </NavLink>
 
           <button
+            type="button"
             onClick={handleLogout}
-            className="w-full py-4 rounded-2xl bg-red-500 text-white font-black flex items-center justify-center gap-3 hover:opacity-90 transition duration-300"
+            className="w-full flex items-center gap-4 px-5 py-3 rounded-xl border border-white/10 bg-white/5 text-red-400 hover:border-red-400 hover:bg-red-400/10 transition duration-300"
           >
-            <FaSignOutAlt />
-            Logout Admin
+            <FaSignOutAlt className="text-lg" />
+            Log Out
           </button>
 
-        </div>
+        </nav>
 
       </div>
 

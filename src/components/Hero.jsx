@@ -1,9 +1,7 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
 export default function Hero() {
-  const navigate = useNavigate();
   return (
     <section className="relative min-h-screen overflow-hidden bg-[#0B0B0B] text-white flex items-center pt-24 sm:pt-28">
       {/* GLOW */}
