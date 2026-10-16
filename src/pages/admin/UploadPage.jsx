@@ -1,6 +1,7 @@
 import {
   useState,
   useEffect,
+  useCallback,
 } from "react";
 
 import {
@@ -25,6 +26,7 @@ import {
   FaWarehouse,
   FaAlignLeft,
   FaTimes,
+  FaMagic,
 } from "react-icons/fa";
 
 import {
@@ -46,6 +48,17 @@ import {
 import {
   ADMIN_EMAILS,
 } from "../../utils/adminCheck";
+
+// AI PRODUCT ASSISTANT (name check, category, description, price, images)
+import ProductAIAssistant from "../../components/productAI/ProductAIAssistant";
+import CategoryField from "../../components/productAI/CategoryField";
+import PriceSuggestion from "../../components/productAI/PriceSuggestion";
+import {
+  ImageAddTile,
+  OnlineImageSuggestions,
+  ImageProcessModal,
+} from "../../components/productAI/ProductImageTools";
+import useCategories from "../../hooks/useCategories";
 
 // SLUG UTILITY
 const toSlug = (name = "") =>
@@ -84,6 +97,29 @@ export default function UploadPage({
   const [description,
     setDescription] =
     useState("");
+
+  // AI ASSISTANT STATE
+  const { categories, addCategory } =
+    useCategories();
+
+  const [aiMeta,
+    setAiMeta] =
+    useState({});
+
+  const handleAiMeta =
+    useCallback(
+      (patch) =>
+        setAiMeta((prev) => ({
+          ...prev,
+          ...patch,
+        })),
+      []
+    );
+
+  // IMAGE PROCESSING JOB (raw / erase background / Zyvar template)
+  const [processJob,
+    setProcessJob] =
+    useState(null);
 
   // IMAGES (multi-image support — up to MAX_IMAGES)
   const [images,
@@ -373,6 +409,8 @@ export default function UploadPage({
           const imageUrl =
             await uploadImage(file);
 
+          if (!imageUrl) throw new Error("Image upload failed.");
+
           uploadedImages.push(
             imageUrl
           );
@@ -439,6 +477,70 @@ export default function UploadPage({
           )
       );
     };
+
+  // APPLY RESULT OF THE IMAGE OPTIONS POPUP
+  // (new images go through the normal upload handler above)
+  const handleProcessApply =
+    async (files) => {
+
+      const job = processJob;
+
+      setProcessJob(null);
+
+      if (!job) return;
+
+      if (job.replaceIndex == null) {
+
+        await handleImageUpload({
+          target: { files, value: "" },
+        });
+
+        return;
+      }
+
+      try {
+
+        setUploading(true);
+
+        const url =
+          await uploadImage(files[0]);
+
+        if (!url) throw new Error("upload");
+
+        setImages((prev) =>
+          prev.map((x, i) =>
+            i === job.replaceIndex ? url : x
+          )
+        );
+
+        setPreviews((prev) =>
+          prev.map((x, i) =>
+            i === job.replaceIndex
+              ? URL.createObjectURL(files[0])
+              : x
+          )
+        );
+
+      } catch (error) {
+
+        console.log(error);
+
+        await errorAlert(
+          "Upload Failed",
+          "Could not upload image"
+        );
+
+      } finally {
+
+        setUploading(false);
+      }
+    };
+
+  // STORE NAME PRINTED ON THE ZYVAR TEMPLATE (partners only)
+  const templateStoreName =
+    uploaderInfo && !uploaderInfo.isAdmin
+      ? uploaderInfo.uploadedBy
+      : "";
 
   // UPLOAD PRODUCT
   const handleUpload =
@@ -529,6 +631,7 @@ export default function UploadPage({
         setDescription("");
         setImages([]);
         setPreviews([]);
+        setAiMeta({});
 
         // REFRESH
         await fetchDashboard();
@@ -716,6 +819,20 @@ export default function UploadPage({
             "
             />
 
+            {/* AI: NAME CHECK + CATEGORY + DESCRIPTION + PRICE + IMAGES */}
+            <ProductAIAssistant
+              auto
+              name={name}
+              onNameChange={setName}
+              category={category}
+              onCategoryChange={setCategory}
+              description={description}
+              onDescriptionChange={setDescription}
+              categories={categories}
+              onNewCategory={addCategory}
+              onMeta={handleAiMeta}
+            />
+
           </div>
 
           {/* PRICE + STOCK */}
@@ -770,6 +887,13 @@ export default function UploadPage({
                 outline-none
                 focus:border-[#C6922B]
               "
+              />
+
+              <PriceSuggestion
+                price={aiMeta.price}
+                onApply={(value) =>
+                  setPrice(String(value))
+                }
               />
 
             </div>
@@ -845,15 +969,13 @@ export default function UploadPage({
 
             </label>
 
-            <select
+            <CategoryField
               value={category}
-              onChange={(e) =>
-                setCategory(
-                  e.target.value
-                )
-              }
+              onChange={setCategory}
+              categories={categories}
+              onAddCategory={addCategory}
               required
-              className="
+              selectClassName="
               w-full
               px-6
               py-5
@@ -864,57 +986,7 @@ export default function UploadPage({
               outline-none
               focus:border-[#C6922B]
             "
-            >
-
-              <option value="">
-                Select Category
-              </option>
-
-              <option value="Skincare">
-                Skincare
-              </option>
-
-              <option value="Makeup">
-                Makeup
-              </option>
-
-              <option value="Beauty">
-                Beauty
-              </option>
-
-              <option value="Haircare">
-                Haircare
-              </option>
-
-              <option value="Perfume">
-                Perfume
-              </option>
-
-              <option value="Fragrance">
-                Fragrance
-              </option>
-
-              <option value="Watch">
-                Watch
-              </option>
-
-              <option value="Fashion">
-                Fashion
-              </option>
-
-              <option value="Food">
-                Food
-              </option>
-
-              <option value="Bodycare">
-                Bodycare
-              </option>
-
-              <option value="Babycare">
-                Babycare
-              </option>
-
-            </select>
+            />
 
           </div>
 
@@ -990,6 +1062,18 @@ export default function UploadPage({
 
             </label>
 
+            {/* AI: PICTURES FOUND ONLINE */}
+            <OnlineImageSuggestions
+              images={aiMeta.images}
+              disabled={!canAddMoreImages || uploading}
+              onSelect={(url) =>
+                setProcessJob({
+                  sources: [{ url }],
+                  replaceIndex: null,
+                })
+              }
+            />
+
             <div
               className="
               flex
@@ -1026,6 +1110,37 @@ export default function UploadPage({
                     "
                     />
 
+                    {images[index] && (
+                      <button
+                        type="button"
+                        title="Erase background / Zyvar template"
+                        onClick={() =>
+                          setProcessJob({
+                            sources: [{ url: images[index] }],
+                            replaceIndex: index,
+                          })
+                        }
+                        className="
+                        absolute
+                        bottom-1
+                        left-1
+                        w-6
+                        h-6
+                        rounded-full
+                        bg-black/70
+                        text-[#C6922B]
+                        flex
+                        items-center
+                        justify-center
+                        hover:bg-[#C6922B]
+                        hover:text-black
+                        transition
+                      "
+                      >
+                        <FaMagic size={10} />
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() =>
@@ -1060,42 +1175,20 @@ export default function UploadPage({
                 )
               )}
 
-              {/* SINGLE UPLOAD SLOT — ONLY ONE VISIBLE "ADD" BUTTON */}
+              {/* UPLOAD SLOT — device upload or instant camera photo,
+                  then choose: raw / erase background / Zyvar template */}
               {canAddMoreImages && (
 
-                <label
-                  className="
-                  w-28
-                  h-28
-                  rounded-2xl
-                  border
-                  border-dashed
-                  border-white/20
-                  bg-black/30
-                  flex
-                  items-center
-                  justify-center
-                  cursor-pointer
-                  hover:border-[#C6922B]
-                  transition
-                "
-                >
-
-                  <FaPlus
-                    className="text-[#C6922B] text-2xl"
-                  />
-
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={
-                      handleImageUpload
-                    }
-                    className="hidden"
-                  />
-
-                </label>
+                <ImageAddTile
+                  sizeClass="w-28 h-28"
+                  busy={uploading}
+                  onPick={(files) =>
+                    setProcessJob({
+                      sources: files.map((file) => ({ file })),
+                      replaceIndex: null,
+                    })
+                  }
+                />
               )}
 
             </div>
@@ -1337,6 +1430,19 @@ export default function UploadPage({
         )}
 
       </div>
+
+
+      {/* IMAGE OPTIONS POPUP */}
+      {processJob && (
+        <ImageProcessModal
+          sources={processJob.sources}
+          name={name}
+          benefits={aiMeta.benefits || []}
+          storeName={templateStoreName}
+          onApply={handleProcessApply}
+          onClose={() => setProcessJob(null)}
+        />
+      )}
 
     </div>
   );

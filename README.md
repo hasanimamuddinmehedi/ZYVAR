@@ -44,9 +44,33 @@ To enable current worldwide information and web citations, create an Ollama
 API key at [ollama.com/settings/keys](https://ollama.com/settings/keys) and
 add it as `OLLAMA_API_KEY` in `server/.env`. Ollama's search API requires
 this key; signing into the Ollama app alone does not enable API web search.
+The seller product assistant also uses this key for researched prices and
+online product-image suggestions.
 Keep the key on the backend only, never in frontend `VITE_*` settings or
 source control. Restart the backend after setting it. Without the key, the
 chat clearly labels search as unconfigured instead of implying it searched.
+
+### Seller product assistant
+
+Admin and approved partner upload/edit pages use the backend's
+`/api/product-ai` routes for name and category checks, product descriptions,
+price research, and image discovery. Product details use the same service to
+translate descriptions into Bengali. These routes use the existing Firebase
+Admin and Ollama server configuration; no Firestore schema change is needed.
+
+For local development, add this alongside the chat URL in the root
+`.env.local`:
+
+```dotenv
+VITE_PRODUCT_AI_API_URL=http://localhost:5000/api/product-ai
+```
+
+Background removal runs in the browser and downloads its model the first time
+it is used. Sellers can also keep the original image or generate the Zyvar
+branded product poster. Only select online images that you have permission to
+use. Note that `@imgly/background-removal` is licensed under AGPL-3.0; verify
+that the project's distribution terms comply with that license or obtain the
+vendor's commercial license before deploying this feature.
 
 ### Deploying the frontend and backend
 

@@ -8,6 +8,7 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
+import { createPortal } from "react-dom";
 
 import {
   FaFacebookF,
@@ -76,6 +77,28 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   const location = useLocation();
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const previousOverscrollBehavior = document.body.style.overscrollBehavior;
+    document.body.classList.add("zyvar-public-menu-open");
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    window.dispatchEvent(
+      new CustomEvent("zyvar:public-menu", { detail: { open: true } }),
+    );
+
+    return () => {
+      document.body.classList.remove("zyvar-public-menu-open");
+      document.body.style.overflow = previousOverflow;
+      document.body.style.overscrollBehavior = previousOverscrollBehavior;
+      window.dispatchEvent(
+        new CustomEvent("zyvar:public-menu", { detail: { open: false } }),
+      );
+    };
+  }, [menuOpen]);
 
   const isLoggedIn =
     localStorage.getItem(
@@ -818,45 +841,28 @@ export default function Navbar() {
       }
 
       {/* MOBILE MENU */}
-      <div
-        className={`lg:hidden fixed top-16 left-0 w-full h-[calc(100vh-64px)] bg-black/95 backdrop-blur-2xl border-t border-white/10 text-white transition-all duration-300 overflow-y-auto z-40 ${
-          menuOpen
-            ? "translate-x-0 opacity-100 visible"
-            : "-translate-x-full opacity-0 invisible"
-        }`}
-      >
+      {menuOpen && createPortal(
+        <div className="fixed inset-x-0 bottom-0 top-16 z-[10001] overflow-hidden border-t border-white/10 bg-black/95 text-white overscroll-contain lg:hidden">
 
-        <div className="px-6 py-8 flex flex-col min-h-full">
+        <div className="h-full overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-7">
 
           {/* HEADER */}
-          <div className="flex items-center justify-between mb-10">
+          <div className="mb-5">
 
-            <h2 className="text-2xl font-black tracking-[0.2em] text-[#C6922B]">
-              MENU
+            <h2 className="text-xl font-black tracking-[0.12em] text-[#C6922B]">
+              Explore Zyvar
             </h2>
-
-            <button
-              onClick={() =>
-                setMenuOpen(false)
-              }
-              className="w-11 h-11 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center"
-            >
-
-              <X size={22} />
-
-            </button>
-
           </div>
 
           {/* MOBILE NAV LINKS */}
-          <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
 
             <Link
               to="/"
               onClick={() =>
                 setMenuOpen(false)
               }
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition sm:px-4"
             >
 
               <Home size={20} />
@@ -870,7 +876,7 @@ export default function Navbar() {
               onClick={() =>
                 setMenuOpen(false)
               }
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition sm:px-4"
             >
 
               <ShoppingBag size={20} />
@@ -884,7 +890,7 @@ export default function Navbar() {
               onClick={() =>
                 setMenuOpen(false)
               }
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition sm:px-4"
             >
 
               <Store size={20} />
@@ -898,7 +904,7 @@ export default function Navbar() {
               onClick={() =>
                 setMenuOpen(false)
               }
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition sm:px-4"
             >
 
               <Info size={20} />
@@ -912,7 +918,7 @@ export default function Navbar() {
               onClick={() =>
                 setMenuOpen(false)
               }
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition sm:px-4"
             >
 
               <Phone size={20} />
@@ -926,7 +932,7 @@ export default function Navbar() {
               onClick={() =>
                 setMenuOpen(false)
               }
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition sm:px-4"
             >
 
               <Heart size={20} />
@@ -940,7 +946,7 @@ export default function Navbar() {
               onClick={() =>
                 setMenuOpen(false)
               }
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition sm:px-4"
             >
 
               <ShoppingBag size={20} />
@@ -954,7 +960,7 @@ export default function Navbar() {
               onClick={() =>
                 setMenuOpen(false)
               }
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition sm:px-4"
             >
 
               <User size={20} />
@@ -968,7 +974,7 @@ export default function Navbar() {
               onClick={() =>
                 setMenuOpen(false)
               }
-              className="flex items-center gap-4 px-5 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="flex min-h-14 items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition sm:px-4"
             >
 
               <ShoppingBag size={20} />
@@ -980,7 +986,7 @@ export default function Navbar() {
           </div>
 
           {/* SOCIAL LINKS */}
-          <div className="flex items-center gap-4 mt-10">
+          <div className="flex items-center gap-3 mt-5">
 
             <a
               href="https://www.facebook.com/zyvar.shop"
@@ -1007,11 +1013,11 @@ export default function Navbar() {
           </div>
 
           {/* LOGIN / LOGOUT */}
-          <div className="mt-auto pt-10">
+          <div className="pt-5">
 
             {!isLoggedIn ? (
 
-              <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2.5">
 
                 <button
                   onClick={() => {
@@ -1020,7 +1026,7 @@ export default function Navbar() {
 
                     setMenuOpen(false);
                   }}
-                  className="w-full py-4 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center gap-3 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+                  className="w-full min-h-12 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center gap-2 text-sm hover:border-[#C6922B] hover:text-[#C6922B] transition"
                 >
 
                   <LogIn size={18} />
@@ -1036,7 +1042,7 @@ export default function Navbar() {
 
                     setMenuOpen(false);
                   }}
-                  className="w-full py-4 rounded-2xl bg-[#C6922B] text-black font-bold flex items-center justify-center gap-3 hover:scale-[1.02] transition"
+                  className="w-full min-h-12 rounded-xl bg-[#C6922B] text-black font-bold flex items-center justify-center gap-2 text-sm hover:scale-[1.02] transition"
                 >
 
                   <UserPlus size={18} />
@@ -1056,7 +1062,7 @@ export default function Navbar() {
 
                   setMenuOpen(false);
                 }}
-                className="w-full py-4 rounded-2xl bg-red-500 text-white font-bold flex items-center justify-center gap-3 hover:opacity-90 transition"
+                className="w-full min-h-12 rounded-xl bg-red-500 text-white font-bold flex items-center justify-center gap-2 text-sm hover:opacity-90 transition"
               >
 
                 <LogOut size={18} />
@@ -1071,7 +1077,9 @@ export default function Navbar() {
 
         </div>
 
-      </div>
+        </div>,
+        document.body,
+      )}
 
     </header>
 

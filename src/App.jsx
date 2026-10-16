@@ -220,6 +220,10 @@ function AppContent() {
 
     location.pathname.startsWith(
       "/admin"
+    ) ||
+
+    location.pathname.startsWith(
+      "/partner-dashboard"
     );
 
   return (

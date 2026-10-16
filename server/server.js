@@ -24,6 +24,7 @@ const axios = require("axios");
 const admin = require("firebase-admin");
 
 const zyvarAIRouter = require("./routes/zyvarAI");
+const productAIRouter = require("./routes/productAI");
 
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -61,6 +62,7 @@ app.use(express.json({ limit: "100kb" }));
 ========================================= */
 
 app.use("/api/zyvar-ai", zyvarAIRouter);
+app.use("/api/product-ai", productAIRouter);
 
 /* =========================================
    HEALTH CHECK

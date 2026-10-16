@@ -21,6 +21,10 @@ export default defineConfig({
       registerType:
         "autoUpdate",
 
+      workbox: {
+        globIgnores: ["**/*.wasm"],
+      },
+
       includeAssets: [
 
         "favicon.ico",

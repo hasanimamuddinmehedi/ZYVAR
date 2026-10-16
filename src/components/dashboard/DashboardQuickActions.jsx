@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FaBell,
+  FaArrowLeft,
   FaBoxOpen,
   FaClipboardList,
   FaHandshake,
@@ -65,6 +66,16 @@ export default function DashboardQuickActions({ role }) {
 
   return (
     <div className="flex items-center gap-2 sm:gap-3">
+      <button
+        type="button"
+        onClick={() => navigate("/")}
+        aria-label="Back to store"
+        title="Back to store"
+        className="flex h-10 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-2.5 text-sm text-gray-200 transition hover:border-[#C6922B] hover:text-[#C6922B] sm:px-3"
+      >
+        <FaArrowLeft aria-hidden="true" />
+        <span className="hidden sm:inline">Back to store</span>
+      </button>
       <div ref={searchRef} className="relative">
         <div className="hidden md:flex h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 focus-within:border-[#C6922B]">
           <FaSearch className="shrink-0 text-sm text-gray-500" />

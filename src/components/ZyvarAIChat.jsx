@@ -350,6 +350,15 @@ export default function ZyvarAIChat() {
     close();
   }, [location.pathname, close]);
 
+  useEffect(() => {
+    const handlePublicMenu = (event) => {
+      if (event.detail?.open) close();
+    };
+
+    window.addEventListener("zyvar:public-menu", handlePublicMenu);
+    return () => window.removeEventListener("zyvar:public-menu", handlePublicMenu);
+  }, [close]);
+
   if (shouldHideOnPath(location.pathname)) {
     return null;
   }

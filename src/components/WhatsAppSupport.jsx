@@ -6,6 +6,9 @@ export default function WhatsAppSupport() {
   const [show, setShow] =
     useState(false);
 
+  const [publicMenuOpen, setPublicMenuOpen] =
+    useState(false);
+
   useEffect(() => {
 
     const handleScroll =
@@ -37,6 +40,17 @@ export default function WhatsAppSupport() {
     };
 
   }, []);
+
+  useEffect(() => {
+    const handlePublicMenu = (event) => {
+      setPublicMenuOpen(Boolean(event.detail?.open));
+    };
+
+    window.addEventListener("zyvar:public-menu", handlePublicMenu);
+    return () => window.removeEventListener("zyvar:public-menu", handlePublicMenu);
+  }, []);
+
+  if (publicMenuOpen) return null;
 
   return (
 

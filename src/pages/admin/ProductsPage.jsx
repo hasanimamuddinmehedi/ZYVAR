@@ -1,6 +1,7 @@
 import {
   useEffect,
   useState,
+  useCallback,
 } from "react";
 
 import {
@@ -37,8 +38,8 @@ import {
   FaWarehouse,
   FaAlignLeft,
   FaImage,
-  FaPlus,
   FaUserTag,
+  FaMagic,
 } from "react-icons/fa";
 
 import {
@@ -60,6 +61,17 @@ import {
 import {
   ADMIN_EMAILS,
 } from "../../utils/adminCheck";
+
+// AI PRODUCT ASSISTANT (name check, category, description, price, images)
+import ProductAIAssistant from "../../components/productAI/ProductAIAssistant";
+import CategoryField from "../../components/productAI/CategoryField";
+import PriceSuggestion from "../../components/productAI/PriceSuggestion";
+import {
+  ImageAddTile,
+  OnlineImageSuggestions,
+  ImageProcessModal,
+} from "../../components/productAI/ProductImageTools";
+import useCategories from "../../hooks/useCategories";
 
 // SLUG UTILITY
 const toSlug = (name = "") =>
@@ -118,6 +130,30 @@ export default function ProductsPage() {
     setImageUploading] =
     useState(false);
 
+  // AI ASSISTANT STATE — categories include every category already
+  // used by a product plus any new ones created by AI / typed by hand
+  const { categories, addCategory } =
+    useCategories();
+
+  const [aiMeta,
+    setAiMeta] =
+    useState({});
+
+  const handleAiMeta =
+    useCallback(
+      (patch) =>
+        setAiMeta((prev) => ({
+          ...prev,
+          ...patch,
+        })),
+      []
+    );
+
+  // IMAGE PROCESSING JOB (raw / erase background / Zyvar template)
+  const [processJob,
+    setProcessJob] =
+    useState(null);
+
   // VIEWER IDENTITY — resolved the same way as UploadPage.jsx:
   // admin gets a fixed identity and sees every product; an
   // approved partner only sees products where partnerId
@@ -142,6 +178,10 @@ export default function ProductsPage() {
           if (!currentUser) {
 
             setViewerInfo(null);
+
+            setProducts([]);
+
+            setLoading(false);
 
             setResolvingViewer(false);
 
@@ -193,6 +233,8 @@ export default function ProductsPage() {
             } else {
 
               setViewerInfo(null);
+
+              setLoading(false);
             }
 
           } catch (error) {
@@ -200,6 +242,8 @@ export default function ProductsPage() {
             console.log(error);
 
             setViewerInfo(null);
+
+            setLoading(false);
 
           } finally {
 
@@ -220,14 +264,7 @@ export default function ProductsPage() {
 
     if (resolvingViewer) return;
 
-    if (!viewerInfo) {
-
-      setProducts([]);
-
-      setLoading(false);
-
-      return;
-    }
+    if (!viewerInfo) return;
 
     const fetchProducts =
       async () => {
@@ -345,6 +382,10 @@ export default function ProductsPage() {
   const handleEdit =
     (product) => {
 
+      setAiMeta({});
+
+      setProcessJob(null);
+
       setEditingId(
         product.id
       );
@@ -428,6 +469,8 @@ export default function ProductsPage() {
           const imageUrl =
             await uploadImage(file);
 
+          if (!imageUrl) throw new Error("Image upload failed.");
+
           uploadedImages.push(imageUrl);
         }
 
@@ -455,6 +498,57 @@ export default function ProductsPage() {
         setImageUploading(false);
 
         e.target.value = "";
+      }
+    };
+
+  // APPLY RESULT OF THE IMAGE OPTIONS POPUP
+  // (new images go through the normal edit upload handler)
+  const handleEditProcessApply =
+    async (files) => {
+
+      const job = processJob;
+
+      setProcessJob(null);
+
+      if (!job) return;
+
+      if (job.replaceIndex == null) {
+
+        await handleEditImageUpload({
+          target: { files, value: "" },
+        });
+
+        return;
+      }
+
+      try {
+
+        setImageUploading(true);
+
+        const url =
+          await uploadImage(files[0]);
+
+        if (!url) throw new Error("upload");
+
+        setEditData((prev) => ({
+          ...prev,
+          images: prev.images.map((x, i) =>
+            i === job.replaceIndex ? url : x
+          ),
+        }));
+
+      } catch (error) {
+
+        console.log(error);
+
+        await errorAlert(
+          "Upload Failed",
+          "Could not upload image. Please try again."
+        );
+
+      } finally {
+
+        setImageUploading(false);
       }
     };
 
@@ -873,6 +967,24 @@ export default function ProductsPage() {
                         "
                         />
 
+                        {/* AI: NAME CHECK + CATEGORY + DESCRIPTION + PRICE + IMAGES */}
+                        <ProductAIAssistant
+                          name={editData.name}
+                          onNameChange={(value) =>
+                            setEditData((prev) => ({ ...prev, name: value }))
+                          }
+                          category={editData.category}
+                          onCategoryChange={(value) =>
+                            setEditData((prev) => ({ ...prev, category: value }))
+                          }
+                          description={editData.description}
+                          onDescriptionChange={(value) =>
+                            setEditData((prev) => ({ ...prev, description: value }))
+                          }
+                          categories={categories}
+                          onNewCategory={addCategory}
+                          onMeta={handleAiMeta}
+                        />
                       </div>
 
                       {/* PRICE */}
@@ -924,6 +1036,12 @@ export default function ProductsPage() {
                         "
                         />
 
+                        <PriceSuggestion
+                          price={aiMeta.price}
+                          onApply={(value) =>
+                            setEditData((prev) => ({ ...prev, price: String(value) }))
+                          }
+                        />
                       </div>
 
                       {/* STOCK */}
@@ -999,20 +1117,14 @@ export default function ProductsPage() {
 
                         </label>
 
-                        <select
-                          value={
-                            editData.category
+                        <CategoryField
+                          value={editData.category}
+                          onChange={(value) =>
+                            setEditData((prev) => ({ ...prev, category: value }))
                           }
-                          onChange={(e) =>
-                            setEditData({
-                              ...editData,
-
-                              category:
-                                e.target
-                                  .value,
-                            })
-                          }
-                          className="
+                          categories={categories}
+                          onAddCategory={addCategory}
+                          selectClassName="
                           w-full
                           px-5
                           py-4
@@ -1023,53 +1135,7 @@ export default function ProductsPage() {
                           outline-none
                           focus:border-[#C6922B]
                         "
-                        >
-
-                          <option value="Skincare">
-                            Skincare
-                          </option>
-
-                          <option value="Haircare">
-                            Haircare
-                          </option>
-
-                          <option value="Makeup">
-                            Makeup
-                          </option>
-
-                          <option value="Beauty">
-                            Beauty
-                          </option>
-
-                          <option value="Perfume">
-                            Perfume
-                          </option>
-
-                          <option value="Fragrance">
-                            Fragrance
-                          </option>
-
-                          <option value="Watch">
-                            Watch
-                          </option>
-
-                          <option value="Fashion">
-                            Fashion
-                          </option>
-
-                          <option value="Food">
-                            Food
-                          </option>
-
-                          <option value="Bodycare">
-                            Bodycare
-                          </option>
-
-                          <option value="Babycare">
-                            Babycare
-                          </option>
-
-                        </select>
+                        />
 
                       </div>
 
@@ -1101,6 +1167,21 @@ export default function ProductsPage() {
 
                         </label>
 
+                        {/* AI: PICTURES FOUND ONLINE */}
+                        <OnlineImageSuggestions
+                          images={aiMeta.images}
+                          disabled={
+                            editData.images.length >= MAX_IMAGES ||
+                            imageUploading
+                          }
+                          onSelect={(url) =>
+                            setProcessJob({
+                              sources: [{ url }],
+                              replaceIndex: null,
+                            })
+                          }
+                        />
+
                         <div className="flex flex-wrap gap-3">
 
                           {
@@ -1126,6 +1207,35 @@ export default function ProductsPage() {
                                     alt={`product-${index}`}
                                     className="w-full h-full object-cover"
                                   />
+
+                                  <button
+                                    type="button"
+                                    title="Erase background / Zyvar template"
+                                    onClick={() =>
+                                      setProcessJob({
+                                        sources: [{ url: img }],
+                                        replaceIndex: index,
+                                      })
+                                    }
+                                    className="
+                                    absolute
+                                    bottom-1
+                                    left-1
+                                    w-5
+                                    h-5
+                                    rounded-full
+                                    bg-black/70
+                                    text-[#C6922B]
+                                    flex
+                                    items-center
+                                    justify-center
+                                    hover:bg-[#C6922B]
+                                    hover:text-black
+                                    transition
+                                  "
+                                  >
+                                    <FaMagic size={9} />
+                                  </button>
 
                                   <button
                                     type="button"
@@ -1162,48 +1272,16 @@ export default function ProductsPage() {
 
                           {
                             editData.images.length < MAX_IMAGES && (
-
-                              <label
-                                className="
-                                w-20
-                                h-20
-                                rounded-xl
-                                border
-                                border-dashed
-                                border-white/20
-                                bg-black/30
-                                flex
-                                items-center
-                                justify-center
-                                cursor-pointer
-                                hover:border-[#C6922B]
-                                transition
-                              "
-                              >
-
-                                {
-                                  imageUploading ? (
-
-                                    <div className="w-4 h-4 border-2 border-[#C6922B] border-t-transparent rounded-full animate-spin" />
-
-                                  ) : (
-
-                                    <FaPlus className="text-[#C6922B]" />
-                                  )
+                              <ImageAddTile
+                                sizeClass="w-20 h-20"
+                                busy={imageUploading}
+                                onPick={(files) =>
+                                  setProcessJob({
+                                    sources: files.map((file) => ({ file })),
+                                    replaceIndex: null,
+                                  })
                                 }
-
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  multiple
-                                  disabled={imageUploading}
-                                  onChange={
-                                    handleEditImageUpload
-                                  }
-                                  className="hidden"
-                                />
-
-                              </label>
+                              />
                             )
                           }
 
@@ -1515,6 +1593,29 @@ export default function ProductsPage() {
 
         </div>
       )}
+
+
+      {/* IMAGE OPTIONS POPUP */}
+      {processJob && (() => {
+        const editingProduct =
+          products.find((item) => item.id === editingId);
+
+        return (
+          <ImageProcessModal
+            sources={processJob.sources}
+            name={editData.name}
+            benefits={aiMeta.benefits || []}
+            storeName={
+              editingProduct?.partnerSlug &&
+              editingProduct.partnerSlug !== "zyvar"
+                ? editingProduct.uploadedBy || ""
+                : ""
+            }
+            onApply={handleEditProcessApply}
+            onClose={() => setProcessJob(null)}
+          />
+        );
+      })()}
 
     </div>
   );

@@ -53,8 +53,8 @@ export default function PartnerLayout() {
   return (
     <DashboardDataProvider role="partner">
       <div className="min-h-screen bg-[#0B0B0B] text-white">
-        <header className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-[#0B0B0B]/95 px-3 backdrop-blur-2xl lg:left-[280px] lg:h-16 lg:px-6">
-          <div className="flex items-center gap-3">
+        <header className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-white/10 bg-[#0B0B0B]/95 px-3 backdrop-blur-2xl lg:left-[280px] lg:h-16 lg:px-6">
+          <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
@@ -64,14 +64,16 @@ export default function PartnerLayout() {
               <FaBars />
             </button>
             <div>
-              <p className="text-sm font-black text-[#C6922B] sm:text-base">ZYVAR Partner</p>
-              <p className="hidden text-[10px] uppercase tracking-[0.2em] text-gray-500 lg:block">Partner Dashboard</p>
+              <p className="mb-1 text-[10px] uppercase tracking-[0.3em] text-[#C6922B]">Partner Dashboard</p>
+              <h1 className="truncate text-sm font-black sm:text-base">Welcome Back</h1>
             </div>
           </div>
-          <DashboardQuickActions role="partner" />
+          <div className="ml-3 shrink-0">
+            <DashboardQuickActions role="partner" />
+          </div>
         </header>
 
-        <aside className="fixed bottom-0 left-0 top-16 z-30 hidden w-[280px] flex-col border-r border-white/10 bg-[#0A0A0A] p-5 lg:flex">
+        <aside className="fixed bottom-0 left-0 top-0 z-50 hidden w-[280px] flex-col border-r border-white/10 bg-[#0A0A0A] p-5 lg:flex">
           <p className="mb-7 text-2xl font-black text-[#C6922B]">ZYVAR Partner</p>
           <nav className="space-y-2 overflow-y-auto">
             {menu.map((item) => (
@@ -88,7 +90,7 @@ export default function PartnerLayout() {
         </aside>
 
         {mobileMenuOpen && (
-          <div className="fixed inset-0 z-[80] lg:hidden">
+          <div className="fixed inset-0 z-[60] lg:hidden">
             <button
               type="button"
               aria-label="Close partner navigation"

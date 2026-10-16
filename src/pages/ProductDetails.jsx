@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
   collection,
@@ -25,6 +25,8 @@ import {
 import ProductReviews from "../components/ProductReviews";
 
 import SEO from "../components/SEO";
+
+import { translateToBengali } from "../utils/productAI";
 
 import {
   trackEvent,
@@ -70,6 +72,92 @@ export default function ProductDetails() {
     setLoading] =
     useState(true);
 
+  // BENGALI TRANSLATION OF THE DESCRIPTION
+  const [bnText,
+    setBnText] =
+    useState("");
+
+  const [showBn,
+    setShowBn] =
+    useState(false);
+
+  const [bnLoading,
+    setBnLoading] =
+    useState(false);
+
+  const [bnError,
+    setBnError] =
+    useState("");
+
+  const handleTranslate =
+    async () => {
+
+      // TOGGLE BACK TO ENGLISH
+      if (showBn) {
+        setShowBn(false);
+        return;
+      }
+
+      // ALREADY TRANSLATED — just show it
+      if (bnText) {
+        setShowBn(true);
+        return;
+      }
+
+      const cacheKey =
+        `zyvar-bn-${product?.id || id}`;
+
+      try {
+
+        setBnLoading(true);
+
+        setBnError("");
+
+        let translated = "";
+
+        try {
+          translated =
+            sessionStorage.getItem(cacheKey) || "";
+        } catch {
+          translated = "";
+        }
+
+        if (!translated) {
+          translated =
+            await translateToBengali(
+              product?.description || ""
+            );
+
+          try {
+            sessionStorage.setItem(
+              cacheKey,
+              translated
+            );
+          } catch {
+            /* storage unavailable — ignore */
+          }
+        }
+
+        setBnText(translated);
+
+        setShowBn(true);
+
+      } catch (error) {
+
+        console.error("Product description translation failed:", error);
+
+        setBnError(
+          error instanceof Error
+            ? error.message
+            : "Translation is unavailable right now. Please try again later."
+        );
+
+      } finally {
+
+        setBnLoading(false);
+      }
+    };
+
   // IMAGE ZOOM STATE
   const [zoomOpen,
     setZoomOpen] =
@@ -84,21 +172,13 @@ export default function ProductDetails() {
     setActiveImage] =
     useState(0);
 
-  // FETCH PRODUCT
-  useEffect(() => {
-
-    if (id) {
-      fetchProduct();
-    }
-
-  }, [id]);
-
   const fetchProduct =
-    async () => {
+    useCallback(async () => {
 
       try {
 
         setLoading(true);
+        setActiveImage(0);
 
         // STEP 1 — TRY FETCHING BY slug FIELD
         const slugQuery =
@@ -196,14 +276,15 @@ export default function ProductDetails() {
 
         setLoading(false);
       }
-    };
+    }, [id]);
 
-  // RESET ACTIVE IMAGE WHENEVER A NEW PRODUCT LOADS
+  // FETCH PRODUCT
   useEffect(() => {
-
-    setActiveImage(0);
-
-  }, [product?.id]);
+    if (!id) return;
+    // This route-driven Firestore lookup must update the page's loading state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchProduct();
+  }, [id, fetchProduct]);
 
   // AUTO SLIDING IMAGES — advances every 3 seconds
   useEffect(() => {
@@ -454,11 +535,52 @@ export default function ProductDetails() {
             </Link>
           )}
 
-          <p className="text-gray-300 text-lg leading-relaxed mb-10">
+          <p className="text-gray-300 text-lg leading-relaxed mb-4 whitespace-pre-line">
 
-            {product?.description}
+            {showBn
+              ? bnText
+              : product?.description}
 
           </p>
+
+          {/* TRANSLATE TO BENGALI */}
+          {product?.description && (
+
+            <div className="mb-10">
+
+              <button
+                type="button"
+                onClick={handleTranslate}
+                disabled={bnLoading}
+                className="
+                  px-5
+                  py-2
+                  rounded-full
+                  border
+                  border-[#C6922B]/50
+                  text-[#C6922B]
+                  text-sm
+                  font-semibold
+                  hover:bg-[#C6922B]/10
+                  transition
+                  disabled:opacity-50
+                "
+              >
+                {bnLoading
+                  ? "অনুবাদ হচ্ছে..."
+                  : showBn
+                    ? "Show in English"
+                    : "বাংলায় দেখুন (Translate to Bengali)"}
+              </button>
+
+              {bnError && (
+                <p className="mt-2 text-sm text-red-400">
+                  {bnError}
+                </p>
+              )}
+
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-8 mb-10">
 
