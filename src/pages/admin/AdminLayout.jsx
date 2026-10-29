@@ -11,7 +11,7 @@ export default function AdminLayout() {
         <AdminSidebar />
         <AdminMobileSidebar />
         <AdminNavbar />
-        <main className="min-h-screen w-full overflow-x-hidden pt-14 lg:pl-[280px] lg:pt-16">
+        <main className="min-h-screen w-full overflow-x-hidden pt-20 lg:pl-[280px] lg:pt-24">
           <div className="p-4 md:p-8">
             <Outlet />
           </div>

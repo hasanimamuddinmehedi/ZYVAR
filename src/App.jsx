@@ -21,6 +21,8 @@ import {
 import Home from "./pages/Home";
 
 import Navbar from "./components/Navbar";
+import NotificationPermissionGate from "./components/NotificationPermissionGate";
+import PwaUpdatePrompt from "./components/PwaUpdatePrompt";
 import ZyvarAIChat from "./components/ZyvarAIChat";
 
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -226,14 +228,22 @@ function AppContent() {
       "/partner-dashboard"
     );
 
+  const isDashboardRoute =
+    location.pathname.startsWith("/admin") ||
+    location.pathname.startsWith("/partner-dashboard");
+
   return (
 
     <>
-      <div className="site-ambient" aria-hidden="true">
-        <span className="site-ambient__orb site-ambient__orb--one" />
-        <span className="site-ambient__orb site-ambient__orb--two" />
-        <span className="site-ambient__orb site-ambient__orb--three" />
-      </div>
+      <NotificationPermissionGate />
+      <PwaUpdatePrompt />
+      {location.pathname !== "/" && (
+        <div className="site-ambient" aria-hidden="true">
+          <span className="site-ambient__orb site-ambient__orb--one" />
+          <span className="site-ambient__orb site-ambient__orb--two" />
+          <span className="site-ambient__orb site-ambient__orb--three" />
+        </div>
+      )}
 
       {/* NAVBAR */}
       {
@@ -252,6 +262,7 @@ function AppContent() {
           while their chunk is being fetched, instead of a blank screen */}
       <Suspense fallback={<PageLoader />}>
 
+      <div className={isDashboardRoute ? "" : "site-public-content"}>
       <Routes>
 
         {/* HOME */}
@@ -585,6 +596,7 @@ function AppContent() {
 />
 
       </Routes>
+      </div>
 
       </Suspense>
     </>

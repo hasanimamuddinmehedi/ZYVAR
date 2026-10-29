@@ -47,14 +47,18 @@ export default function PartnerApplicationsPage() {
     setProcessingId,
   ] = useState(null);
 
+  const [
+    failedLogoIds,
+    setFailedLogoIds,
+  ] = useState(() => new Set());
+
   useEffect(() => {
 
     fetchApplications();
 
   }, []);
 
-  const fetchApplications =
-    async () => {
+  async function fetchApplications() {
 
       try {
 
@@ -86,7 +90,7 @@ export default function PartnerApplicationsPage() {
 
         setLoading(false);
       }
-    };
+  }
 
   const approveApplication =
     async (application) => {
@@ -357,12 +361,28 @@ export default function PartnerApplicationsPage() {
             <div className="grid lg:grid-cols-[180px_1fr] gap-8">
 
               <div>
-                {application.logo && (
+                {application.logo &&
+                !failedLogoIds.has(application.id) ? (
                   <img
                     src={application.logo}
                     alt=""
                     className="w-full h-44 rounded-3xl object-cover"
+                    onError={() =>
+                      setFailedLogoIds((current) => {
+                        const next = new Set(current);
+                        next.add(application.id);
+                        return next;
+                      })
+                    }
                   />
+                ) : (
+                  <div
+                    className="flex h-44 w-full items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-5xl font-black text-[#C6922B]"
+                    role="img"
+                    aria-label={`${application.shopName || "Partner"} logo unavailable`}
+                  >
+                    {application.shopName?.trim().charAt(0).toUpperCase() || "S"}
+                  </div>
                 )}
               </div>
 

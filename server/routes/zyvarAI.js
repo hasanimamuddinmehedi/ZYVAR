@@ -12,6 +12,7 @@ const express = require("express");
 
 const { validateChatRequest } = require("../utils/aiValidation");
 const { getChatReply } = require("../services/aiService");
+const { analyzeSkinImage } = require("../services/skinAnalysisService");
 
 const router = express.Router();
 
@@ -31,6 +32,7 @@ const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const RATE_LIMIT_MAX_REQUESTS = 20; // per IP, per window
 
 const requestLog = new Map(); // ip -> { count, windowStart }
+const skinAnalysisRequestLog = new Map();
 
 function isRateLimited(ip) {
   const now = Date.now();
@@ -50,12 +52,29 @@ function isRateLimited(ip) {
   return false;
 }
 
+function isSkinAnalysisRateLimited(ip) {
+  const now = Date.now();
+  const entry = skinAnalysisRequestLog.get(ip);
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    skinAnalysisRequestLog.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+
+  entry.count += 1;
+  return entry.count > 3;
+}
+
 // Periodically clear stale entries so this Map doesn't grow forever.
 setInterval(() => {
   const now = Date.now();
   for (const [ip, entry] of requestLog.entries()) {
     if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
       requestLog.delete(ip);
+    }
+  }
+  for (const [ip, entry] of skinAnalysisRequestLog.entries()) {
+    if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+      skinAnalysisRequestLog.delete(ip);
     }
   }
 }, RATE_LIMIT_WINDOW_MS).unref();
@@ -99,6 +118,66 @@ router.post("/chat", async (req, res) => {
     }
 
     return res.status(502).json({ error: "AI service temporarily unavailable" });
+  }
+});
+
+router.post("/skin-analysis", async (req, res) => {
+  const clientIp = req.ip || req.connection?.remoteAddress || "unknown";
+  if (isSkinAnalysisRateLimited(clientIp)) {
+    return res.status(429).json({
+      code: "skin_analysis_rate_limited",
+      error: "Too many scans. Please wait a minute and try again.",
+    });
+  }
+
+  const { image, mimeType } = req.body || {};
+  if (
+    mimeType !== "image/jpeg" ||
+    typeof image !== "string" ||
+    image.length < 100 ||
+    image.length > 2_800_000 ||
+    !/^[A-Za-z0-9+/]+={0,2}$/.test(image)
+  ) {
+    return res.status(400).json({
+      code: "invalid_skin_image",
+      error: "Choose a valid JPG, PNG, or WebP photo and try again.",
+    });
+  }
+
+  if (Buffer.byteLength(image, "base64") > 2 * 1024 * 1024) {
+    return res.status(413).json({
+      code: "skin_image_too_large",
+      error: "This image is too large to analyze.",
+    });
+  }
+
+  try {
+    const analysis = await analyzeSkinImage({ image });
+    return res.status(200).json(analysis);
+  } catch (error) {
+    console.error("[zyvar-ai] skin analysis error:", error.code || error.status || "unknown");
+    if (error.status === 429) {
+      return res.status(429).json({
+        code: "provider_rate_limit",
+        error: "The AI service is busy. Please try again in a moment.",
+      });
+    }
+    if (error.status === 503) {
+      return res.status(503).json({
+        code: error.code || "provider_unavailable",
+        error: "Skin analysis is temporarily unavailable. Please try again later.",
+      });
+    }
+    if (error.status === 504) {
+      return res.status(504).json({
+        code: error.code || "skin_analysis_timeout",
+        error: "The scan took too long. Please try again with a clear photo.",
+      });
+    }
+    return res.status(502).json({
+      code: error.code || "skin_analysis_failed",
+      error: "We could not complete the analysis. Please try again with a clear photo.",
+    });
   }
 });
 

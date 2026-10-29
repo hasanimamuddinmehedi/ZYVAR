@@ -32,15 +32,19 @@ import {
   FaImage,
   FaCheckCircle,
   FaGlobe,
+  FaTimes,
 } from "react-icons/fa";
 
 import {
+  authorizeImageDeletion,
+  deleteImage,
   uploadImage,
 } from "../utils/cloudinary";
 
 import {
   successAlert,
   errorAlert,
+  warningAlert,
 } from "../utils/alerts";
 
 // ─── Reusable styled image upload button ───────────────────────────
@@ -50,6 +54,7 @@ function ImageUploadField({
   value,
   uploading,
   onChange,
+  onRemove,
   icon: Icon,
   aspectClass,
 }) {
@@ -188,6 +193,21 @@ function ImageUploadField({
           </div>
         )}
 
+        {value && onRemove && (
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={(event) => {
+              event.stopPropagation();
+              onRemove();
+            }}
+            aria-label={`Remove ${label}`}
+            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-red-400/40 bg-black/80 text-red-200 transition hover:bg-red-500/20 disabled:opacity-50"
+          >
+            <FaTimes />
+          </button>
+        )}
+
       </div>
 
       <input
@@ -317,12 +337,26 @@ export default function PartnerSettings() {
 
       setLogoUploading(true);
 
+      const previousImage = partnerForm.logo;
       const imageUrl = await uploadImage(file);
+      if (!imageUrl) throw new Error("Image upload did not return a URL.");
 
       setPartnerForm((prev) => ({
         ...prev,
         logo: imageUrl,
       }));
+
+      if (previousImage && previousImage !== partnerData?.logo) {
+        try {
+          await deleteImage(previousImage);
+        } catch (error) {
+          console.error("Temporary store logo cleanup failed:", error);
+          await warningAlert(
+            "Logo Changed",
+            "The new logo is ready, but the previous unsaved image could not be removed from Cloudinary."
+          );
+        }
+      }
 
     } catch (error) {
 
@@ -336,6 +370,7 @@ export default function PartnerSettings() {
     } finally {
 
       setLogoUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -349,12 +384,26 @@ export default function PartnerSettings() {
 
       setBannerUploading(true);
 
+      const previousImage = partnerForm.banner;
       const imageUrl = await uploadImage(file);
+      if (!imageUrl) throw new Error("Image upload did not return a URL.");
 
       setPartnerForm((prev) => ({
         ...prev,
         banner: imageUrl,
       }));
+
+      if (previousImage && previousImage !== partnerData?.banner) {
+        try {
+          await deleteImage(previousImage);
+        } catch (error) {
+          console.error("Temporary store banner cleanup failed:", error);
+          await warningAlert(
+            "Banner Changed",
+            "The new banner is ready, but the previous unsaved image could not be removed from Cloudinary."
+          );
+        }
+      }
 
     } catch (error) {
 
@@ -368,6 +417,21 @@ export default function PartnerSettings() {
     } finally {
 
       setBannerUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removePartnerImage = (field) => {
+    const imageUrl = partnerForm[field];
+    setPartnerForm((prev) => ({ ...prev, [field]: "" }));
+    if (imageUrl && imageUrl !== partnerData?.[field]) {
+      deleteImage(imageUrl).catch((error) => {
+        console.error("Temporary partner image cleanup failed:", error);
+        warningAlert(
+          "Image Removed",
+          "The image was removed from your draft, but it could not be deleted from Cloudinary."
+        );
+      });
     }
   };
 
@@ -379,6 +443,19 @@ export default function PartnerSettings() {
     try {
 
       setSaving(true);
+      const previousImages = [partnerData?.logo, partnerData?.banner];
+      const nextImages = [partnerForm.logo, partnerForm.banner];
+      const replacedImages = previousImages.filter(
+        (imageUrl) => imageUrl && !nextImages.includes(imageUrl),
+      );
+      const deletionAuthorizations = await Promise.all(
+        replacedImages.map((imageUrl) =>
+          authorizeImageDeletion(imageUrl, {
+            type: "partner",
+            id: user.uid,
+          }),
+        ),
+      );
 
       const partnerUpdates = {
         shopName:         partnerForm.storeName,
@@ -436,6 +513,24 @@ export default function PartnerSettings() {
         ...prev,
         ...partnerUpdates,
       }));
+
+      const cleanupResults = await Promise.allSettled(
+        replacedImages.map((imageUrl, index) =>
+          deleteImage(imageUrl, deletionAuthorizations[index]),
+        ),
+      );
+      const cleanupErrors = cleanupResults.filter(
+        (result) => result.status === "rejected",
+      );
+      if (cleanupErrors.length) {
+        cleanupErrors.forEach((result) =>
+          console.error("Previous partner image cleanup failed:", result.reason),
+        );
+        await warningAlert(
+          "Store Updated",
+          "Your store details were saved, but one or more previous images could not be removed from Cloudinary."
+        );
+      }
 
       await successAlert(
         "Store Updated",
@@ -612,6 +707,7 @@ export default function PartnerSettings() {
                 value={partnerForm.banner}
                 uploading={bannerUploading}
                 onChange={handleBannerUpload}
+                onRemove={() => removePartnerImage("banner")}
                 icon={FaImage}
                 aspectClass="h-44 w-full"
               />
@@ -625,6 +721,7 @@ export default function PartnerSettings() {
                   value={partnerForm.logo}
                   uploading={logoUploading}
                   onChange={handleLogoUpload}
+                  onRemove={() => removePartnerImage("logo")}
                   icon={FaCamera}
                   aspectClass="h-44 w-44"
                 />
@@ -1030,7 +1127,8 @@ export default function PartnerSettings() {
             {/* SAVE BUTTON — bottom of left col */}
             <button
               onClick={savePartnerProfile}
-              disabled={saving}
+              disabled={saving || logoUploading || bannerUploading}
+              aria-busy={saving || logoUploading || bannerUploading}
               className="
                 w-full
                 py-5
@@ -1047,7 +1145,11 @@ export default function PartnerSettings() {
                 disabled:scale-100
               "
             >
-              {saving ? "Saving…" : "Save Store Settings"}
+              {saving
+                ? "Saving…"
+                : logoUploading || bannerUploading
+                  ? "Uploading image…"
+                  : "Save Store Settings"}
             </button>
 
           </div>

@@ -74,19 +74,21 @@ export default function AdminSidebar() {
       className="
         hidden lg:flex
         fixed
-        left-0
-        top-0
+        left-3
+        top-3
+        bottom-3
         z-50
-        w-[280px]
-        h-screen
+        w-[260px]
         flex-col
         justify-between
-        bg-[#111111]/95
+        rounded-[22px]
+        bg-[#0B0B0B]/85
         backdrop-blur-2xl
-        border-r
-        border-white/10
+        border
+        border-[#C6922B]/25
         p-5
         overflow-y-auto
+        shadow-[0_10px_40px_rgba(0,0,0,0.28)]
         scrollbar-none
       "
       style={{
@@ -117,19 +119,19 @@ export default function AdminSidebar() {
 
             {/* Original logo image */}
             <img
-              src="https://res.cloudinary.com/dhppdatrl/image/upload/v1778734083/w3ehnytbwrugrxptj9py.png"
+              src="/android-chrome-192x192.png"
               alt="ZYVAR Logo"
-              className="w-14 h-14 rounded-3xl object-contain"
+              className="w-11 h-11 object-contain"
             />
 
             <div>
 
-              <h1 className="text-4xl font-black tracking-[0.3em] text-[#C6922B] leading-none">
+              <h1 className="text-2xl font-black tracking-[0.2em] text-[#C6922B] leading-none">
                 ZYVAR
               </h1>
 
-              <p className="text-gray-400 mt-2 uppercase text-[10px] tracking-[0.35em]">
-                Ultimate Admin Panel
+              <p className="text-gray-400 mt-1 uppercase text-[10px] tracking-[0.25em]">
+                Admin Dashboard
               </p>
 
             </div>

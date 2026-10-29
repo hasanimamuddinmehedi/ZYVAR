@@ -1,268 +1,127 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+import { Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import "./Hero.css";
+
+const ASSET_BASE =
+  "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/";
+
+const HERO_IMAGES = [
+  {
+    image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=900&auto=format&fit=crop",
+    alt: "Female fashion model wearing an elegant neutral look",
+    position: "hero-model hero-model--woman",
+  },
+  {
+    image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=900&auto=format&fit=crop",
+    alt: "Male fashion model in a refined modern outfit",
+    position: "hero-model hero-model--man",
+  },
+];
+
+const CAROUSEL_IMAGES = [
+  { src: `${ASSET_BASE}hf_20260912_110422_0fc34393-7417-41b0-a200-43fd2b08a37f.png`, alt: "Zyvar beauty and lifestyle campaign" },
+  { src: `${ASSET_BASE}hf_20260912_110423_ba46182e-43bc-43a8-9007-a8234acf442d.png`, alt: "Zyvar beauty collection campaign" },
+  { src: `${ASSET_BASE}hf_20260912_110423_06cfbb84-6f96-48f6-be45-e03516510e48.png`, alt: "Zyvar curated product collection" },
+  { src: `${ASSET_BASE}hf_20260912_110422_634bf390-f171-4f5d-9151-0d2c86c26e7b.png`, alt: "Zyvar partner store campaign" },
+  { src: `${ASSET_BASE}hf_20260912_110423_0cfe058d-db0e-4ee6-9708-7a297cc11a7a.png`, alt: "Zyvar shopping campaign" },
+  { src: `${ASSET_BASE}hf_20260912_110422_de267714-7647-4d9a-a0a9-55325683b2a2.png`, alt: "Zyvar daily essentials campaign" },
+];
 
 export default function Hero() {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <section className="relative min-h-screen overflow-hidden bg-[#0B0B0B] text-white flex items-center pt-24 sm:pt-28">
-      {/* GLOW */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#C6922B]/10 rounded-full blur-[140px]" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#C6922B]/10 rounded-full blur-[140px]" />
+    <section id="explore" className="zyvar-hero hero-two" aria-label="Discover Zyvar">
+      <div className="hero-two__glow" aria-hidden="true" />
 
-      {/* MAIN GRID */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-14 sm:py-20 grid lg:grid-cols-2 gap-16 items-center relative z-10">
-        {/* LEFT SIDE */}
-        <motion.div
-          initial={{ opacity: 0, x: -80 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1 }}
-        >
-          {/* TAG */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="uppercase tracking-[0.4em] text-[#C6922B] text-sm mb-6"
-          >
-            Original Cosmetics • Family Essentials • Imported Treats
-          </motion.p>
-
-          {/* TITLE */}
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="text-4xl sm:text-5xl lg:text-7xl font-black  leading-tight lg:leading-[0.9] mb-8"
-          >
+      <div className="hero-two__content">
+        <div className="hero-two__copy">
+          <p className="hero-two__eyebrow"><Sparkles size={14} /> Original cosmetics · family essentials · imported treats</p>
+          <h1>
             Discover
-            <span className="block text-[#C6922B]">
-              Premium Luxury
-            </span>
-            Collections
-          </motion.h1>
+            <span>Premium finds</span>
+            for every day.
+          </h1>
+          <p className="hero-two__description">
+            Explore original beauty, useful essentials and partner-store
+            collections, thoughtfully brought together by Zyvar.
+          </p>
+          <div className="hero-two__actions">
+            <Link className="hero-glass-button hero-glass-button--gold" to="/products">Shop now</Link>
+            <Link className="hero-glass-button" to="/stores">Explore stores</Link>
+          </div>
+          <div className="hero-two__stats" aria-label="Zyvar highlights">
+            <div><strong>10K+</strong><span>Customers</span></div>
+            <div><strong>500+</strong><span>Products</span></div>
+            <div><strong>24/7</strong><span>Support</span></div>
+          </div>
+        </div>
 
-          {/* DESCRIPTION */}
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="text-gray-300 text-lg leading-relaxed max-w-2xl mb-10"
-          >
-            Discover original cosmetics, family essentials, imported treats, luxury accessories, skincare, perfumes and premium lifestyle products from ZYVAR.
-          </motion.p>
-
-          {/* BUTTONS */}
+        <div className="hero-two__models" aria-label="Zyvar style inspiration">
+          <div className="hero-two__model-glow" aria-hidden="true" />
+          {HERO_IMAGES.map((model) => (
+            <motion.img
+              key={model.alt}
+              src={model.image}
+              alt={model.alt}
+              className={model.position}
+              fetchPriority="high"
+              animate={
+                reduceMotion
+                  ? { x: 0, scale: 1, rotate: 0, opacity: 1, zIndex: 10 }
+                  : model.position.includes("--woman")
+                  ? {
+                      x: ["38%", "0%", "-38%", "0%", "38%"],
+                      scale: [1, 0.92, 0.82, 0.92, 1],
+                      rotate: [0, -4, 0, 4, 0],
+                      zIndex: [30, 25, 5, 25, 30],
+                      opacity: [1, 1, 0.85, 1, 1],
+                    }
+                  : {
+                      x: ["-38%", "0%", "38%", "0%", "-38%"],
+                      scale: [0.82, 0.92, 1, 0.92, 0.82],
+                      rotate: [0, 4, 0, -4, 0],
+                      zIndex: [5, 25, 30, 25, 5],
+                      opacity: [0.85, 1, 1, 1, 0.85],
+                    }
+              }
+              transition={{
+                duration: 10,
+                repeat: reduceMotion ? 0 : Infinity,
+                ease: "easeInOut",
+              }}
+            />
+          ))}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="flex flex-wrap gap-5"
+            animate={reduceMotion ? { y: 0 } : { y: [0, -10, 0] }}
+            transition={{ duration: 4, repeat: reduceMotion ? 0 : Infinity, ease: "easeInOut" }}
+            className="hero-two__arrival glass-surface"
           >
-            {/* SHOP NOW */}
-            <Link
-              to="/products"
-              className="
-                group relative
-                px-9 py-5
-                rounded-2xl
-                bg-[#C6922B]
-                text-black
-                font-black 
-                overflow-hidden
-                hover:scale-105
-                transition duration-300
-              "
-            >
-              <span className="relative z-10">
-                Shop Now
-              </span>
-
-              <div className="absolute inset-0 bg-white scale-x-0 group-hover:scale-x-100 origin-left transition duration-500" />
-            </Link>
-
-            {/* EXPLORE */}
-            <Link
-              to="/products"
-              className="
-                px-9 py-5
-                rounded-2xl
-                border border-white/10
-                bg-white/5
-                backdrop-blur-xl
-                hover:border-[#C6922B]
-                hover:text-[#C6922B]
-                transition duration-300
-              "
-            >
-              Explore Collections
+            <span className="hero-two__arrival-label">New Arrival</span>
+            <strong>Premium Perfume</strong>
+            <p>Imported luxury fragrance collection.</p>
+            <Link className="hero-glass-button hero-glass-button--gold" to="/products">
+              Buy Now
             </Link>
           </motion.div>
+        </div>
+      </div>
 
-          {/* STATS */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="grid grid-cols-3 gap-6 mt-16"
-          >
-            <div>
-              <h2 className="text-4xl font-black  text-[#C6922B] mb-2">
-                10K+
-              </h2>
-
-              <p className="text-gray-400 uppercase text-sm tracking-widest">
-                Customers
-              </p>
-            </div>
-
-            <div>
-              <h2 className="text-4xl font-black  text-[#C6922B] mb-2">
-                500+
-              </h2>
-
-              <p className="text-gray-400 uppercase text-sm tracking-widest">
-                Products
-              </p>
-            </div>
-
-            <div>
-              <h2 className="text-4xl font-black  text-[#C6922B] mb-2">
-                24/7
-              </h2>
-
-              <p className="text-gray-400 uppercase text-sm tracking-widest">
-                Support
-              </p>
-            </div>
-          </motion.div>
-        </motion.div>
-
-        {/* RIGHT SIDE */}
-<motion.div
-  initial={{ opacity: 0, x: 100 }}
-  animate={{ opacity: 1, x: 0 }}
-  transition={{ duration: 1 }}
-  className="
-    relative
-    flex
-    justify-center
-    items-center
-    h-[520px]
-    sm:h-[650px]
-    w-full
-    mt-10 lg:mt-0
-  "
->
-  {/* FEMALE MODEL */}
-<motion.img
-  animate={{
-    x: [120, 0, -120, 0, 120],
-    scale: [1, 0.92, 0.82, 0.92, 1],
-    rotate: [0, -4, 0, 4, 0],
-    zIndex: [30, 25, 5, 25, 30],
-    opacity: [1, 1, 0.75, 1, 1],
-  }}
-  transition={{
-    duration: 10,
-    repeat: Infinity,
-    ease: "easeInOut",
-  }}
-  src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?q=80&w=1200"
-  alt="Female Model"
-  className="
-    absolute
-    rounded-[40px]
-    h-[420px]
-    sm:h-[620px]
-    w-[220px]
-    sm:w-[320px]
-    object-cover
-    border border-white/10
-    shadow-2xl
-  "
-/>
-
-{/* MALE MODEL */}
-<motion.img
-  animate={{
-    x: [-120, 0, 120, 0, -120],
-    scale: [0.82, 0.92, 1, 0.92, 0.82],
-    rotate: [0, 4, 0, -4, 0],
-    zIndex: [5, 25, 30, 25, 5],
-    opacity: [0.75, 1, 1, 1, 0.75],
-  }}
-  transition={{
-    duration: 10,
-    repeat: Infinity,
-    ease: "easeInOut",
-  }}
-  src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=1200"
-  alt="Male Model"
-  className="
-    absolute
-    rounded-[40px]
-    h-[360px]
-    sm:h-[540px]
-    w-[190px]
-    sm:w-[280px]
-    object-cover
-    border border-white/10
-    shadow-2xl
-  "
-/>
-
-  {/* FLOATING CARD */}
-  <motion.div
-    animate={{
-      y: [0, -10, 0],
-    }}
-    transition={{
-      duration: 4,
-      repeat: Infinity,
-    }}
-    className="
-      absolute
-      bottom-0
-      sm:bottom-10
-      right-1/2
-      translate-x-1/2
-      lg:right-0
-      lg:translate-x-0
-      rounded-[32px]
-      border border-white/10
-      bg-white/10
-      backdrop-blur-2xl
-      p-6 sm:p-8
-      w-[260px] sm:w-72
-      z-40
-    "
-  >
-    <p className="uppercase tracking-[0.3em] text-[#C6922B] text-xs mb-4">
-      New Arrival
-    </p>
-
-    <h3 className="text-2xl sm:text-3xl font-black  mb-3">
-      Premium Perfume
-    </h3>
-
-    <p className="text-gray-300 mb-5">
-      Imported luxury fragrance collection.
-    </p>
-
-    <Link
-      to="/products"
-      className="
-        block text-center
-        w-full py-4
-        rounded-2xl
-        bg-[#C6922B]
-        text-black
-        font-black 
-      "
-    >
-      Buy Now
-    </Link>
-  </motion.div>
-</motion.div>
+      <div className="hero-marquee" aria-label="Featured Zyvar collections">
+        <div className="hero-marquee__track">
+          {[...CAROUSEL_IMAGES, ...CAROUSEL_IMAGES].map((item, index) => (
+            <Link
+              className="hero-marquee__card glass-surface"
+              to="/products"
+              key={`${item.src}-${index}`}
+              aria-label={`Explore products: ${item.alt}`}
+              tabIndex={index >= CAROUSEL_IMAGES.length ? -1 : undefined}
+            >
+              <img src={item.src} alt={index < CAROUSEL_IMAGES.length ? item.alt : ""} loading="lazy" />
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
   );

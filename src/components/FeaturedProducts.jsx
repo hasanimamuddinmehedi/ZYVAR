@@ -1,19 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import { motion, AnimatePresence } from "framer-motion";
-
-import {
-  collection,
-  getDocs,
-} from "firebase/firestore";
-
-import { db } from "../firebase/firebase";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 import { useCart } from "../context/CartContext";
 
 import { useWishlist } from "../context/WishlistContext";
 
 import { useNavigate, Link } from "react-router-dom";
+import productImage from "../utils/productImage";
 
 import {
   successAlert,
@@ -83,28 +77,18 @@ const scoreFeatured = (product) => {
 // FIXED SLOTS
 const SLOTS = 6;
 
-// SWAP INTERVAL ms
-const SWAP_INTERVAL = 3500;
+// Keep each collection on screen long enough to explore.
+const SWAP_INTERVAL = 10000;
 
-export default function FeaturedProducts() {
+export default function FeaturedProducts({ products = [], loading = false }) {
 
-  const [sortedProducts, setSortedProducts] =
-    useState([]);
+  const sortedProducts = useMemo(
+    () => [...products].sort((a, b) => scoreFeatured(b) - scoreFeatured(a)),
+    [products],
+  );
 
-  // EACH SLOT HOLDS ONE PRODUCT
-  const [slots, setSlots] =
-    useState([]);
-
-  // WHICH SLOT IS ANIMATING OUT
-  const [exitingSlot, setExitingSlot] =
-    useState(null);
-
-  // NEXT PRODUCT INDEX IN THE SORTED LIST
-  const nextRef =
-    useState({ current: SLOTS })[0];
-
-  const [loading, setLoading] =
-    useState(true);
+  const [startIndex, setStartIndex] = useState(0);
+  const [pinnedSlots, setPinnedSlots] = useState({});
 
   const { addToCart } = useCart();
 
@@ -115,95 +99,44 @@ export default function FeaturedProducts() {
   } = useWishlist();
 
   const navigate = useNavigate();
+  const reduceMotion = useReducedMotion();
 
   const isLoggedIn =
     localStorage.getItem("zyvar-user") === "true";
 
+  // Advance the product strip one item at a time so the collection keeps moving.
   useEffect(() => {
-
-    fetchProducts();
-
-  }, []);
-
-  const fetchProducts = async () => {
-
-    try {
-
-      const snapshot =
-        await getDocs(collection(db, "products"));
-
-      const list =
-        snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-
-      // SORT BY TRENDING SCORE
-      const sorted = [...list].sort(
-        (a, b) => scoreFeatured(b) - scoreFeatured(a)
-      );
-
-      setSortedProducts(sorted);
-
-      // FILL INITIAL 6 SLOTS
-      setSlots(sorted.slice(0, SLOTS));
-
-      // NEXT POINTER STARTS AT INDEX 6
-      nextRef.current = SLOTS % sorted.length;
-
-    } catch (error) {
-
-      console.log(error);
-
-    } finally {
-
-      setLoading(false);
-    }
-  };
-
-  // AUTO SWAP — cycle ALL products through the 6 slots
-  useEffect(() => {
-
-    if (sortedProducts.length <= SLOTS) return;
+    if (sortedProducts.length <= SLOTS || reduceMotion) return;
 
     const interval = setInterval(() => {
-
-      // PICK A RANDOM SLOT TO REPLACE
-      const slotToReplace =
-        Math.floor(Math.random() * SLOTS);
-
-      // GET THE NEXT PRODUCT FROM THE FULL LIST
-      const nextProduct =
-        sortedProducts[nextRef.current];
-
-      // ADVANCE POINTER — wraps around entire list
-      nextRef.current =
-        (nextRef.current + 1) % sortedProducts.length;
-
-      // MARK SLOT AS EXITING
-      setExitingSlot(slotToReplace);
-
-      // AFTER EXIT ANIMATION COMPLETES — SWAP IN NEW PRODUCT
-      setTimeout(() => {
-
-        setSlots((prev) => {
-
-          const next = [...prev];
-
-          next[slotToReplace] = nextProduct;
-
-          return next;
-        });
-
-        setExitingSlot(null);
-
-      }, 500);
-
+      setStartIndex((index) => (index + 1) % sortedProducts.length);
     }, SWAP_INTERVAL);
 
     return () => clearInterval(interval);
 
-  }, [sortedProducts]);
+  }, [reduceMotion, sortedProducts.length]);
+
+  const slots = sortedProducts.length
+    ? Array.from(
+        { length: Math.min(SLOTS, sortedProducts.length) },
+        (_, index) => sortedProducts[(startIndex + index) % sortedProducts.length],
+      )
+    : [];
+  const reservedProductIds = new Set(
+    Object.values(pinnedSlots).map((product) => product.id),
+  );
+  const occupiedProductIds = new Set(reservedProductIds);
+  const displayedSlots = slots.map((product, slotIdx) => {
+    if (pinnedSlots[slotIdx]) return pinnedSlots[slotIdx];
+
+    const nextProduct = sortedProducts
+      .slice((startIndex + slotIdx) % sortedProducts.length)
+      .concat(sortedProducts.slice(0, (startIndex + slotIdx) % sortedProducts.length))
+      .find((candidate) => !occupiedProductIds.has(candidate.id));
+    const selectedProduct = nextProduct || product;
+    occupiedProductIds.add(selectedProduct.id);
+    return selectedProduct;
+  });
 
   // BUY NOW
   const handleBuyNow = (product) => {
@@ -222,53 +155,50 @@ export default function FeaturedProducts() {
 
   return (
 
-    <section className="py-24 px-6 lg:px-10 bg-[#0B0B0B] text-white relative overflow-hidden">
+    <section className="featured-products-section relative overflow-hidden bg-[#0B0B0B] px-5 py-20 text-white sm:px-6 sm:py-24 lg:px-10">
 
       {/* GLOW — matches hero */}
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#C6922B]/10 rounded-full blur-[140px]" />
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-[#C6922B]/10 rounded-full blur-[140px]" />
+      <div className="featured-products-orbit featured-products-orbit--one" aria-hidden="true" />
+      <div className="featured-products-orbit featured-products-orbit--two" aria-hidden="true" />
 
       <div className="max-w-7xl mx-auto relative z-10">
 
         {/* HEADER — hero-style staggered entrance */}
         <motion.div
-          initial={{ opacity: 0, x: -80 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-          className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-16"
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.25 }}
+          transition={{ duration: reduceMotion ? 0 : 0.8, ease: [0.22, 1, 0.36, 1] }}
+          className="featured-products-header mb-12 flex flex-col items-start justify-between gap-7 sm:mb-16 lg:flex-row lg:items-end"
         >
 
           <div>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="uppercase tracking-[0.4em] text-[#C6922B] text-sm mb-4"
-            >
+            <p className="mb-4 flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.32em] text-[#D6B66F] sm:text-sm">
+              <span className="h-px w-8 bg-[#C6922B]" />
               Trending Products
-            </motion.p>
+            </p>
 
-            <motion.h2
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="text-4xl sm:text-5xl lg:text-6xl font-black leading-tight"
-            >
+            <h2 className="text-4xl font-black leading-[1.05] tracking-[-0.04em] sm:text-5xl lg:text-7xl">
               Featured
-              <span className="block text-[#C6922B]">
-                Luxury Products
+              <span className="featured-products-heading-accent block">
+                The Zyvar Edit
               </span>
-            </motion.h2>
+            </h2>
+
+            <p className="mt-5 max-w-xl text-sm leading-7 text-white/60 sm:text-base">
+              Thoughtfully selected finds, chosen to make everyday feel extraordinary.
+            </p>
 
           </div>
 
           <motion.button
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            whileHover={reduceMotion ? undefined : { y: -3 }}
+            whileTap={reduceMotion ? undefined : { scale: 0.98 }}
             onClick={() => navigate("/products")}
-            className="px-8 py-4 rounded-2xl border border-white/10 bg-white/5 hover:border-[#C6922B] hover:text-[#C6922B] transition"
+            className="glass-surface min-h-12 rounded-full px-6 text-sm font-semibold text-white transition hover:border-[#C6922B]/60 hover:text-[#E4C277] sm:px-7"
           >
             View All Products
           </motion.button>
@@ -284,21 +214,25 @@ export default function FeaturedProducts() {
 
         ) : sortedProducts.length === 0 ? (
 
-          <div className="rounded-[40px] border border-white/10 bg-white/5 p-16 text-center">
-            <h3 className="text-4xl font-black mb-5">No Products Found</h3>
-            <p className="text-gray-400">Upload products from admin dashboard.</p>
+          <div className="rounded-[32px] border border-white/10 bg-white/5 p-8 text-center text-white backdrop-blur-xl sm:p-16">
+            <h3 className="mb-5 text-3xl font-bold sm:text-4xl">Our next favorites are on their way.</h3>
+            <p className="text-gray-300">Explore the full Zyvar collection while we curate more products.</p>
+            <button
+              type="button"
+              onClick={() => navigate("/products")}
+              className="mt-6 rounded-full border border-[#C6922B]/45 bg-[#C6922B]/10 px-6 py-3 font-semibold text-[#E4C277] transition hover:bg-[#C6922B]/20"
+            >
+              Browse products
+            </button>
           </div>
 
         ) : (
 
           // FIXED 6-SLOT GRID — never collapses
-          <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-8">
+          <div className="grid gap-5 sm:grid-cols-2 sm:gap-6 xl:grid-cols-3 xl:gap-7">
 
-            {slots.map((product, slotIdx) => {
-
+            {displayedSlots.map((product, slotIdx) => {
               if (!product) return null;
-
-              const isExiting = exitingSlot === slotIdx;
 
               return (
 
@@ -309,91 +243,97 @@ export default function FeaturedProducts() {
                     // KEY CHANGES ON PRODUCT SWAP — triggers exit+enter animation
                     key={`${slotIdx}-${product.id}`}
 
-                    // HERO-STYLE — matches model swap animation
                     initial={{
                       opacity: 0,
-                      scale: 0.82,
-                      y: 40,
-                      rotate: -4,
+                      y: 48,
+                      rotateX: 9,
+                      scale: 0.96,
                     }}
 
-                    animate={{
-                      opacity: isExiting ? 0.75 : 1,
-                      scale: isExiting ? 0.92 : 1,
-                      y: isExiting ? -10 : 0,
-                      rotate: 0,
-                    }}
+                    animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
 
                     exit={{
                       opacity: 0,
-                      scale: 0.82,
-                      y: -40,
-                      rotate: 4,
+                      y: -24,
+                      rotateX: -6,
+                      scale: 0.97,
                     }}
 
-                    whileHover={{
-                      y: -12,
-                      scale: 1.02,
+                    whileHover={reduceMotion ? undefined : { y: -10, scale: 1.015, rotateX: 0 }}
+                    onPointerEnter={() => {
+                      setPinnedSlots((current) => (
+                        current[slotIdx]
+                          ? current
+                          : { ...current, [slotIdx]: product }
+                      ));
                     }}
+                    onPointerLeave={() => {
+                      setPinnedSlots((current) => {
+                        if (!current[slotIdx]) return current;
+                        const next = { ...current };
+                        delete next[slotIdx];
+                        return next;
+                      });
+                    }}
+                    onClick={() => navigate(`/product/${product.slug || toSlug(product.name)}`)}
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        navigate(`/product/${product.slug || toSlug(product.name)}`);
+                      }
+                    }}
+                    role="link"
+                    tabIndex={0}
+                    aria-label={`View ${product.name} details`}
 
                     transition={{
-                      duration: 0.8,
-                      ease: "easeInOut",
+                      duration: reduceMotion ? 0 : 1.05,
+                      delay: reduceMotion ? 0 : slotIdx * 0.1,
+                      ease: [0.22, 1, 0.36, 1],
                     }}
 
+                    style={{ transformPerspective: 1200 }}
                     className="
-                      group
-                      rounded-[32px]
-                      overflow-hidden
-                      border border-white/10
-                      bg-white/5
-                      backdrop-blur-xl
-                      hover:border-[#C6922B]
-                      hover:shadow-[0_0_40px_rgba(198,146,43,0.15)]
-                      transition-colors
-                      duration-300
-                      cursor-pointer
+                      featured-product-card group relative cursor-pointer overflow-hidden rounded-[30px]
                     "
                   >
 
                     {/* IMAGE */}
-                    <div
-                      className="relative overflow-hidden"
-                      onClick={() =>
-                        navigate(
-                          `/product/${product.slug || toSlug(product.name)}`
-                        )
-                      }
-                    >
+                    <div className="featured-product-card__image relative overflow-hidden">
 
                       <motion.img
-                        src={
-                          product.images?.[0] ||
-                          product.image
-                        }
+                        src={productImage(product) || "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=1200&auto=format&fit=crop"}
                         alt={product.name}
-                        whileHover={{ scale: 1.1 }}
-                        transition={{ duration: 0.6, ease: "easeInOut" }}
-                        className="h-64 w-full object-cover"
+                        onError={(event) => {
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=1200&auto=format&fit=crop";
+                        }}
+                        whileHover={reduceMotion ? undefined : { scale: 1.07 }}
+                        transition={{ duration: reduceMotion ? 0 : 1.1, ease: [0.22, 1, 0.36, 1] }}
+                        className="h-80 w-full object-cover sm:h-[22rem]"
                       />
 
-                      {/* CATEGORY BADGE */}
-                      <div className="absolute top-5 left-5 px-4 py-2 rounded-full bg-[#C6922B] text-black text-xs font-bold uppercase tracking-widest">
+                      <div className="featured-product-card__image-shade absolute inset-0" />
+                      <div className="featured-product-card__image-glow absolute inset-0" />
+                      <div className="absolute left-4 top-4 rounded-full border border-white/25 bg-black/35 px-3 py-1.5 text-[9px] font-semibold uppercase tracking-[0.22em] text-white/90 backdrop-blur-md sm:left-5 sm:top-5">
+                        {pinnedSlots[slotIdx] ? "Held for you" : "Zyvar selection"}
+                      </div>
+                      <div className="absolute right-4 top-4 rounded-full bg-[#C6922B] px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-black sm:right-5 sm:top-5">
                         {product.category}
+                      </div>
+                      <div className="absolute bottom-4 left-4 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/90 sm:bottom-5 sm:left-5">
+                        <span className="h-px w-6 bg-[#E4C277]" />
+                        Featured {String(slotIdx + 1).padStart(2, "0")}
                       </div>
 
                     </div>
 
                     {/* CONTENT */}
-                    <div className="p-7">
+                    <div className="featured-product-card__content p-5 sm:p-6">
 
                       <h3
-                        onClick={() =>
-                          navigate(
-                            `/product/${product.slug || toSlug(product.name)}`
-                          )
-                        }
-                        className="text-xl font-black mb-3 hover:text-[#C6922B] transition cursor-pointer line-clamp-1"
+                        className="mb-3 line-clamp-1 text-xl font-bold tracking-tight text-white transition group-hover:text-[#F0D18A] sm:text-2xl"
                       >
                         {product.name}
                       </h3>
@@ -403,6 +343,7 @@ export default function FeaturedProducts() {
 
                         <Link
                           to={`/${product.partnerSlug}`}
+                          onClick={(event) => event.stopPropagation()}
                           className="
                             inline-block
                             text-sm
@@ -416,12 +357,12 @@ export default function FeaturedProducts() {
                         </Link>
                       )}
 
-                      <p className="text-gray-400 mb-5 line-clamp-2 text-sm">
+                      <p className="mb-5 line-clamp-2 min-h-10 text-sm leading-5 text-white/55">
                         {product.description || "Premium imported luxury collection."}
                       </p>
 
                       {/* PRICE */}
-                      <div className="flex justify-between items-center mb-5">
+                      <div className="mb-5 flex items-end justify-between border-t border-white/10 pt-4">
 
                         <div>
                           <p className="text-gray-400 text-xs mb-1">Price</p>
@@ -443,11 +384,16 @@ export default function FeaturedProducts() {
                         {/* BUY NOW */}
                         <motion.button
                           whileTap={{ scale: 0.97 }}
-                          onClick={() => handleBuyNow(product)}
-                          className="w-full py-4 rounded-2xl bg-[#C6922B] text-black font-black hover:opacity-90 transition duration-300 flex items-center justify-center gap-3"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleBuyNow(product);
+                          }}
+                          className="featured-product-card__buy w-full rounded-2xl py-4 font-bold text-black transition duration-300"
                         >
-                          <Zap size={18} />
-                          Buy Now
+                          <span className="flex items-center justify-center gap-3">
+                            <Zap size={18} />
+                            Buy Now
+                          </span>
                         </motion.button>
 
                         {/* CART + WISHLIST */}
@@ -455,7 +401,8 @@ export default function FeaturedProducts() {
 
                           <motion.button
                             whileTap={{ scale: 0.97 }}
-                            onClick={() => {
+                            onClick={(event) => {
+                              event.stopPropagation();
                               addToCart(product);
                               successAlert(
                                 "Added To Cart!",
@@ -469,7 +416,8 @@ export default function FeaturedProducts() {
 
                           <motion.button
                             whileTap={{ scale: 0.97 }}
-                            onClick={() => {
+                            onClick={(event) => {
+                              event.stopPropagation();
                               if (isInWishlist(product.id)) {
                                 removeFromWishlist(product.id);
                               } else {

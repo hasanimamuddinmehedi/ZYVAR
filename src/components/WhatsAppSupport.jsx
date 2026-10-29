@@ -1,5 +1,6 @@
 import { useEffect, useState }
 from "react";
+import { FaWhatsapp } from "react-icons/fa";
 
 export default function WhatsAppSupport() {
 
@@ -55,8 +56,8 @@ export default function WhatsAppSupport() {
   return (
 
     <div
-      className={`fixed bottom-6 z-[9999] transition-all duration-500 ${
-        show ? "right-5" : "-right-20"
+      className={`fixed bottom-6 right-5 z-[9999] transition-all duration-500 ${
+        show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-4 opacity-0"
       }`}
     >
       <a
@@ -65,13 +66,9 @@ export default function WhatsAppSupport() {
         rel="noreferrer"
         aria-label="Chat with Zyvar support on WhatsApp"
         title="Chat with Zyvar support on WhatsApp"
-        className="block h-[65px] w-[65px] overflow-hidden rounded-full border-4 border-[#25D366] bg-white shadow-2xl"
+        className="whatsapp-support glass-surface grid h-[58px] w-[58px] place-items-center rounded-full border border-[#25D366]/50 bg-[#0B0B0B]/75 text-white shadow-xl backdrop-blur-2xl transition hover:scale-105 hover:border-[#25D366]"
       >
-        <img
-          src="https://img.mailinblue.com/8458568/images/content_library/original/699ff6b8682ba8e2834a1593.jpeg"
-          alt=""
-          className="h-full w-full object-cover"
-        />
+        <span className="whatsapp-support__icon"><FaWhatsapp aria-hidden="true" /></span>
       </a>
     </div>
   );

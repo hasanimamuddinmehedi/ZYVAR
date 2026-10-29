@@ -15,14 +15,18 @@ import {
   auth,
 } from "../firebase/firebase";
 
+import {
+  trackEvent,
+} from "../utils/analytics";
+
 export default function Checkout() {
 
   const navigate =
     useNavigate();
 
   const {
-    cartItems,
-    totalPrice,
+    cart: cartItems = [],
+    cartTotal: totalPrice = 0,
     clearCart,
   } = useCart();
 
@@ -51,6 +55,24 @@ export default function Checkout() {
         e.target.value,
     });
   };
+
+  if (cartItems.length === 0) {
+
+    return (
+      <div className="min-h-screen bg-[#0B0B0B] px-4 py-20 text-center text-white">
+        <h1 className="mb-6 text-4xl font-black">
+          Your Cart Is Empty
+        </h1>
+        <button
+          type="button"
+          onClick={() => navigate("/products")}
+          className="rounded-2xl bg-[#C6922B] px-6 py-3 font-bold text-black"
+        >
+          Continue Shopping
+        </button>
+      </div>
+    );
+  }
 
   // PLACE ORDER
   const placeOrder = async () => {
@@ -94,21 +116,19 @@ export default function Checkout() {
 
       setLoading(true);
 
-      // USER ID
-      const customerId =
-        localStorage.getItem(
-          "zyvar-user-id"
-        ) || "guest-user";
-
       // SAVE ORDER
-        const user = auth.currentUser;
-        
+      const user = auth.currentUser;
+
+      const orderRef =
         await addDoc(
           collection(db, "orders"),
           {
 
     // USER INFO
-    userId: user?.uid || "",
+    userId:
+      user?.uid ||
+      localStorage.getItem("zyvar-user-id") ||
+      "",
     userEmail: user?.email || "",
 
     // CUSTOMER INFO
@@ -122,9 +142,9 @@ export default function Checkout() {
 
     // PRICE
     subtotal: totalPrice,
-    shipping: 0,
+    shipping: 120,
 
-total: totalPrice,
+    total: totalPrice + 120,
 
     // PAYMENT
     paymentMethod:
@@ -163,18 +183,11 @@ total: totalPrice,
   }
 );
 
-      // ANALYTICS
-      if (
-        typeof trackEvent !==
-        "undefined"
-      ) {
-
-        trackEvent(
-          "Order",
-          "Place Order",
-          "Checkout Success"
-        );
-      }
+      trackEvent(
+        "Order",
+        "Place Order",
+        "Checkout Success"
+      );
 
       // CLEAR CART
       clearCart();

@@ -30,10 +30,14 @@ import {
   registerSW,
 } from "virtual:pwa-register";
 
-// REGISTER SERVICE WORKER
-registerSW({
+// REGISTER THE PWA SERVICE WORKER AND PROMPT WHEN AN UPDATE IS READY.
+const applyPwaUpdate = registerSW({
   immediate: true,
+  onNeedRefresh() {
+    window.dispatchEvent(new Event("zyvar:pwa-update"));
+  },
 });
+window.zyvarApplyPwaUpdate = () => applyPwaUpdate(true);
 
 // INITIALIZE ANALYTICS
 initAnalytics();

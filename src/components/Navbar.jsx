@@ -44,6 +44,7 @@ import {
 import { auth, db } from "../firebase/firebase";
 
 import RequestProductModal from "./RequestProductModal";
+import NotificationCenter from "./NotificationCenter";
 
 // SLUG UTILITY
 const toSlug = (name = "") =>
@@ -280,26 +281,26 @@ export default function Navbar() {
   return (
     <>
 
-    <header className="fixed top-0 left-0 w-full z-50 bg-black/60 backdrop-blur-2xl border-b border-white/10">
+    <header className="site-navbar-glass fixed left-1/2 top-2 z-50 w-[calc(100%-1rem)] max-w-[1450px] -translate-x-1/2 rounded-[22px] border border-[#C6922B]/25 bg-[#0B0B0B]/65 shadow-[0_10px_40px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:top-3 sm:w-[calc(100%-2rem)]">
 
       <div className="max-w-[1450px] mx-auto px-4 sm:px-6 lg:px-6 xl:px-8">
 
-        <div className="h-16 flex items-center justify-between">
+        <div className="h-14 flex items-center justify-between lg:h-16">
 
           {/* LEFT */}
-          <div className="flex items-center gap-6">
+          <div className="flex min-w-0 items-center gap-3 lg:gap-4">
 
             {/* LOGO */}
             <Link
               to="/"
-              className="flex items-center gap-3"
+              className="flex shrink-0 items-center gap-2"
             >
 
               {/* LOGO IMAGE */}
-              <div className="w-9 h-9 flex items-center justify-center">
+              <div className="w-8 h-8 flex items-center justify-center">
 
                 <img
-                  src="https://res.cloudinary.com/dhppdatrl/image/upload/v1778734083/w3ehnytbwrugrxptj9py.png"
+                  src="/android-chrome-192x192.png"
                   alt="ZYVAR Logo"
                   className="
                     w-full
@@ -311,7 +312,7 @@ export default function Navbar() {
               </div>
 
               {/* BRAND NAME */}
-              <h1 className="text-lg xl:text-xl font-black tracking-[0.16em] text-[#C6922B]">
+              <h1 className="text-base font-black tracking-[0.14em] text-[#C6922B] xl:text-lg">
 
                 ZYVAR
 
@@ -320,14 +321,14 @@ export default function Navbar() {
             </Link>
 
             {/* DESKTOP MENU */}
-            <nav className="hidden lg:flex items-center gap-5 xl:gap-7 text-white text-sm">
+            <nav className="hidden lg:flex items-center gap-3 text-white text-xs xl:gap-4 xl:text-[13px]">
 
               <Link
                 to="/"
-                className="flex items-center gap-2 hover:text-[#C6922B] transition"
+                className="flex items-center gap-1.5 hover:text-[#C6922B] transition"
               >
 
-                <Home size={18} />
+                <Home size={16} />
 
                 Home
 
@@ -335,10 +336,10 @@ export default function Navbar() {
 
               <Link
                 to="/products"
-                className="flex items-center gap-2 hover:text-[#C6922B] transition"
+                className="flex items-center gap-1.5 hover:text-[#C6922B] transition"
               >
 
-                <ShoppingBag size={18} />
+                <ShoppingBag size={16} />
 
                 Products
 
@@ -346,10 +347,10 @@ export default function Navbar() {
 
               <Link
                 to="/stores"
-                className="flex items-center gap-2 hover:text-[#C6922B] transition"
+                className="flex items-center gap-1.5 hover:text-[#C6922B] transition"
               >
 
-                <Store size={18} />
+                <Store size={16} />
 
                 Stores
 
@@ -357,10 +358,10 @@ export default function Navbar() {
 
               <Link
                 to="/about"
-                className="flex items-center gap-2 hover:text-[#C6922B] transition"
+                className="flex items-center gap-1.5 hover:text-[#C6922B] transition"
               >
 
-                <Info size={18} />
+                <Info size={16} />
 
                 About
 
@@ -368,10 +369,10 @@ export default function Navbar() {
 
               <Link
                 to="/contact"
-                className="flex items-center gap-2 hover:text-[#C6922B] transition"
+                className="flex items-center gap-1.5 hover:text-[#C6922B] transition"
               >
 
-                <Phone size={18} />
+                <Phone size={16} />
 
                 Contact
 
@@ -382,16 +383,16 @@ export default function Navbar() {
           </div>
 
           {/* RIGHT */}
-          <div className="hidden lg:flex items-center gap-2 xl:gap-3 text-white">
+          <div className="hidden lg:flex items-center gap-1.5 text-white xl:gap-2">
 
             {/* SOCIALS */}
-            <div className="flex items-center gap-3 mr-4">
+            <div className="hidden items-center gap-2 xl:mr-2 xl:flex">
 
               <a
                 href="https://www.facebook.com/zyvar.shop"
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#C6922B] hover:text-[#C6922B] transition"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs transition hover:border-[#C6922B] hover:text-[#C6922B]"
               >
 
                 <FaFacebookF />
@@ -402,7 +403,7 @@ export default function Navbar() {
                 href="https://www.instagram.com/zyvar.shop"
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center hover:border-[#C6922B] hover:text-[#C6922B] transition"
+                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-xs transition hover:border-[#C6922B] hover:text-[#C6922B]"
               >
 
                 <FaInstagram />
@@ -421,9 +422,9 @@ export default function Navbar() {
               }
 
               className="
-                w-12
-                h-12
-                rounded-2xl
+                w-9
+                h-9
+                rounded-xl
                 border
                 border-white/10
                 bg-white/5
@@ -439,9 +440,9 @@ export default function Navbar() {
               {
                 showSearch
 
-                  ? <X size={20} />
+                  ? <X size={17} />
 
-                  : <Search size={20} />
+                  : <Search size={17} />
               }
 
             </button>
@@ -451,10 +452,10 @@ export default function Navbar() {
               onClick={() =>
                 navigate("/wishlist")
               }
-              className="w-10 h-10 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="w-9 h-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
             >
 
-              <Heart size={20} />
+              <Heart size={17} />
 
             </button>
 
@@ -463,10 +464,10 @@ export default function Navbar() {
               onClick={() =>
                 navigate("/cart")
               }
-              className="w-10 h-10 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="w-9 h-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
             >
 
-              <ShoppingBag size={20} />
+              <ShoppingBag size={17} />
 
             </button>
 
@@ -475,12 +476,14 @@ export default function Navbar() {
               onClick={() =>
                 navigate("/profile")
               }
-              className="w-10 h-10 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
+              className="w-9 h-9 rounded-xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
             >
 
-              <User size={20} />
+              <User size={17} />
 
             </button>
+
+            <NotificationCenter />
 
             {/* LOGIN / LOGOUT */}
             {!isLoggedIn ? (
@@ -491,10 +494,10 @@ export default function Navbar() {
                   onClick={() =>
                     navigate("/login")
                   }
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-2xl border border-white/10 bg-white/5 text-white hover:border-[#C6922B] hover:text-[#C6922B] transition"
+                  className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white transition hover:border-[#C6922B] hover:text-[#C6922B]"
                 >
 
-                  <LogIn size={18} />
+                  <LogIn size={15} />
 
                   Login
 
@@ -504,10 +507,10 @@ export default function Navbar() {
                   onClick={() =>
                     navigate("/signup")
                   }
-                  className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-2xl bg-[#C6922B] text-black font-bold hover:scale-105 transition"
+                  className="flex items-center gap-1.5 rounded-xl bg-[#C6922B] px-3 py-2 text-xs font-bold text-black transition hover:scale-105"
                 >
 
-                  <UserPlus size={18} />
+                  <UserPlus size={15} />
 
                   Signup
 
@@ -519,10 +522,10 @@ export default function Navbar() {
 
               <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm rounded-2xl bg-red-500 text-white font-bold hover:scale-105 transition"
+                className="flex items-center gap-1.5 rounded-xl bg-red-500 px-3 py-2 text-xs font-bold text-white transition hover:scale-105"
               >
 
-                <LogOut size={18} />
+                <LogOut size={15} />
 
                 Logout
 
@@ -533,7 +536,9 @@ export default function Navbar() {
           </div>
 
           {/* MOBILE RIGHT — search button only, no X here since menu has its own */}
-          <div className="lg:hidden flex items-center gap-3">
+          <div className="lg:hidden flex items-center gap-2">
+
+            <NotificationCenter />
 
             {/* MOBILE SEARCH BUTTON */}
             <button
@@ -551,9 +556,9 @@ export default function Navbar() {
               }}
 
               className="
-                w-10
-                h-10
-                rounded-2xl
+                w-9
+                h-9
+                rounded-xl
                 border
                 border-white/10
                 bg-white/5
@@ -565,7 +570,7 @@ export default function Navbar() {
             >
 
               {/* ONLY SHOW SEARCH ICON — X is handled inside the search bar */}
-              <Search size={20} />
+              <Search size={17} />
 
             </button>
 
@@ -580,7 +585,7 @@ export default function Navbar() {
                   setShowSearch(false);
                 }
               }}
-              className="w-10 h-10 rounded-2xl border border-white/10 bg-white/5 text-white flex items-center justify-center"
+              className="w-9 h-9 rounded-xl border border-white/10 bg-white/5 text-white flex items-center justify-center"
             >
 
               {menuOpen
@@ -842,7 +847,7 @@ export default function Navbar() {
 
       {/* MOBILE MENU */}
       {menuOpen && createPortal(
-        <div className="fixed inset-x-0 bottom-0 top-16 z-[10001] overflow-hidden border-t border-white/10 bg-black/95 text-white overscroll-contain lg:hidden">
+        <div className="fixed inset-x-0 bottom-0 top-[4.5rem] z-[10001] overflow-hidden rounded-t-2xl border-t border-[#C6922B]/20 bg-[#0B0B0B]/85 text-white shadow-2xl backdrop-blur-2xl overscroll-contain lg:hidden">
 
         <div className="h-full overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 sm:py-7">
 

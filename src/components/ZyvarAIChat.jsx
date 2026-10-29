@@ -351,6 +351,33 @@ export default function ZyvarAIChat() {
   }, [location.pathname, close]);
 
   useEffect(() => {
+    const handleOpenChat = (event) => {
+      const prompt = event.detail?.prompt;
+      if (typeof prompt === "string" && prompt.trim()) {
+        setInput(prompt.trim());
+      }
+      open();
+    };
+
+    window.addEventListener("zyvar:open-chat", handleOpenChat);
+    return () => window.removeEventListener("zyvar:open-chat", handleOpenChat);
+  }, [open, setInput]);
+
+  useEffect(() => {
+    const handleCategoryRecommendation = (event) => {
+      const category = event.detail?.category;
+      if (typeof category !== "string" || !category.trim()) return;
+      open();
+      sendMessage(
+        `Please recommend products from Zyvar's available catalog in the "${category}" category. Prioritize matching products that are currently listed on the Products page, and briefly explain why each is relevant.`,
+      );
+    };
+
+    window.addEventListener("zyvar:recommend-category", handleCategoryRecommendation);
+    return () => window.removeEventListener("zyvar:recommend-category", handleCategoryRecommendation);
+  }, [open, sendMessage]);
+
+  useEffect(() => {
     const handlePublicMenu = (event) => {
       if (event.detail?.open) close();
     };
@@ -416,10 +443,10 @@ export default function ZyvarAIChat() {
           type="button"
           onClick={open}
           aria-label="Open Zyvar AI, your shopping and beauty assistant"
-          className="fixed bottom-6 right-28 z-[9997] flex items-center gap-2 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 px-4 py-3.5 text-black shadow-2xl shadow-black/60 transition-transform duration-300 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black md:right-32 md:px-5"
+          title="Open Zyvar AI"
+          className="zyvar-ai-launcher fixed bottom-[5.75rem] right-5 z-[9997] grid h-[58px] w-[58px] place-items-center rounded-full bg-gradient-to-br from-yellow-300 to-yellow-600 text-black shadow-2xl shadow-black/60 transition-transform duration-300 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         >
           <Sparkles className="h-5 w-5" aria-hidden="true" />
-          <span className="hidden text-sm font-semibold sm:inline">Zyvar AI</span>
         </button>
       )}
 

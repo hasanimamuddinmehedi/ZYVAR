@@ -1,5 +1,15 @@
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import { Navigate }
 from "react-router-dom";
+
+import {
+  onAuthStateChanged,
+}
+from "firebase/auth";
 
 import { auth }
 from "../firebase/firebase";
@@ -15,29 +25,90 @@ export default function AdminRoute({
 
 }) {
 
-  const user =
-    auth.currentUser;
+  const [access, setAccess] =
+    useState("loading");
 
-  // NOT LOGGED IN
-  if (!user) {
+  useEffect(() => {
+
+    const unsubscribe =
+      onAuthStateChanged(
+        auth,
+        (user) => {
+
+          if (!user) {
+
+            setAccess("unauthenticated");
+
+            return;
+          }
+
+          setAccess(
+            ADMIN_EMAILS.includes(
+              user.email?.toLowerCase()
+            )
+              ? "authorized"
+              : "unauthorized"
+          );
+        },
+        (error) => {
+
+          console.error(
+            "Unable to verify admin access:",
+            error
+          );
+
+          setAccess("error");
+        }
+      );
+
+    return () =>
+      unsubscribe();
+
+  }, []);
+
+  if (access === "loading") {
 
     return (
-      <Navigate to="/login" />
+      <div
+        className="min-h-screen bg-black flex items-center justify-center text-white"
+        role="status"
+      >
+        Verifying admin access...
+      </div>
     );
   }
 
-  // NOT ADMIN
-  if (
-    !ADMIN_EMAILS.includes(
-      user.email
-    )
-  ) {
+  if (access === "unauthenticated") {
 
     return (
-      <Navigate to="/" />
+      <Navigate
+        to="/login"
+        replace
+      />
     );
   }
 
-  // ADMIN ACCESS
+  if (access === "unauthorized") {
+
+    return (
+      <Navigate
+        to="/"
+        replace
+      />
+    );
+  }
+
+  if (access === "error") {
+
+    return (
+      <div
+        className="min-h-screen bg-black flex items-center justify-center px-6 text-center text-white"
+        role="alert"
+      >
+        Unable to verify admin access. Please refresh and try again.
+      </div>
+    );
+  }
+
   return children;
 }

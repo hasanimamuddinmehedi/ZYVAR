@@ -614,4 +614,4 @@ async function getChatReply(message, conversation = []) {
 	};
 }
 
-module.exports = { getChatReply, detectCustomerLanguage, localizeReply };
+module.exports = { getChatReply, detectCustomerLanguage, localizeReply, searchWeb };

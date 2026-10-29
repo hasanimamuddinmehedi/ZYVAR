@@ -35,6 +35,8 @@ import {
 } from "../data/bangladeshData";
 
 import {
+  authorizeImageDeletion,
+  deleteImage,
   uploadImage,
 } from "../utils/cloudinary";
 
@@ -227,11 +229,22 @@ export default function ProfileSettings() {
 
         setPhotoUploading(true);
 
+        const previousImage = profile.photoURL;
+        const deletionAuthorization = previousImage
+          ? await authorizeImageDeletion(previousImage, {
+              type: "profile",
+              id: user.uid,
+            })
+          : null;
         // UPLOAD TO CLOUDINARY
         const imageUrl =
           await uploadImage(
             selectedFile
           );
+
+        if (!imageUrl) {
+          throw new Error("Image upload did not return a URL.");
+        }
 
         // UPDATE FIRESTORE
         await updateDoc(
@@ -283,6 +296,18 @@ export default function ProfileSettings() {
           photoURL: imageUrl,
         }));
 
+        if (previousImage && previousImage !== imageUrl) {
+          try {
+            await deleteImage(previousImage, deletionAuthorization);
+          } catch (error) {
+            console.error("Previous profile photo cleanup failed:", error);
+            await warningAlert(
+              "Photo Updated",
+              "Your new profile photo is saved, but the previous photo could not be removed from Cloudinary."
+            );
+          }
+        }
+
         await successAlert(
           "Photo Updated!",
           "Profile picture updated successfully."
@@ -308,6 +333,44 @@ export default function ProfileSettings() {
         }
       }
     };
+
+  const handleRemovePhoto = async () => {
+    const previousImage = profile.photoURL;
+    if (!previousImage) return;
+
+    try {
+      const deletionAuthorization = await authorizeImageDeletion(
+        previousImage,
+        { type: "profile", id: user.uid },
+      );
+      await updateDoc(doc(db, "users", user.uid), { photoURL: "" });
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { photoURL: null });
+      }
+
+      const stored = JSON.parse(
+        localStorage.getItem("zyvar-user-data") || "{}"
+      );
+      localStorage.setItem(
+        "zyvar-user-data",
+        JSON.stringify({ ...stored, photoURL: "" })
+      );
+      setProfile((prev) => ({ ...prev, photoURL: "" }));
+
+      try {
+        await deleteImage(previousImage, deletionAuthorization);
+      } catch (error) {
+        console.error("Profile photo cleanup failed:", error);
+        await warningAlert(
+          "Photo Removed",
+          "Your profile photo was removed, but its Cloudinary file could not be deleted."
+        );
+      }
+    } catch (error) {
+      console.error("Profile photo removal failed:", error);
+      await errorAlert("Remove Failed", "Could not remove your profile photo.");
+    }
+  };
 
   // SAVE SETTINGS
   const handleSave =
@@ -512,6 +575,17 @@ export default function ProfileSettings() {
             Back To Profile
 
           </button>
+
+          {profile?.photoURL && (
+            <button
+              type="button"
+              disabled={photoUploading}
+              onClick={handleRemovePhoto}
+              className="mt-3 px-5 py-2 rounded-xl border border-red-500/30 text-red-300 hover:bg-red-500/10 transition disabled:opacity-50"
+            >
+              Remove Photo
+            </button>
+          )}
 
         </div>
 

@@ -1,183 +1,124 @@
-import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+
+const CATEGORIES = [
+  {
+    name: "face",
+    video:
+      "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260518_203023_87a26602-2898-4acc-a396-c7a2b5ad84fd.mp4",
+  },
+  {
+    name: "beauty tools",
+    video:
+      "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260518_203415_b86e3f19-2aec-46cd-9a86-b64c40118e38.mp4",
+  },
+  {
+    name: "body",
+    video:
+      "https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260518_203051_85fee398-ea01-4aa0-972b-137a74213be5.mp4",
+  },
+  {
+    name: "skincare",
+    video: "https://assets.mixkit.co/videos/50426/50426-360.mp4",
+  },
+  {
+    name: "haircare",
+    video: "https://assets.mixkit.co/videos/33257/33257-360.mp4",
+  },
+  {
+    name: "fragrance",
+    video: "https://assets.mixkit.co/videos/20766/20766-360.mp4",
+  },
+];
+
+function useInView(threshold = 0.15) {
+  const ref = useRef(null);
+  const [isVisible, setIsVisible] = useState(
+    () => typeof IntersectionObserver === "undefined",
+  );
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof IntersectionObserver === "undefined") return undefined;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        setIsVisible(true);
+        observer.unobserve(entry.target);
+      },
+      { threshold },
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [threshold]);
+
+  return { ref, isVisible };
+}
 
 export default function Categories() {
-
-  const navigate = useNavigate();
-
-  const categories = [
-
-    {
-      name: "Skincare",
-      image:
-        "https://images.unsplash.com/photo-1556228578-8c89e6adf883?q=80&w=1200&auto=format&fit=crop",
-    },
-
-    {
-      name: "Perfume",
-      image:
-        "https://images.unsplash.com/photo-1541643600914-78b084683601?q=80&w=1200&auto=format&fit=crop",
-    },
-
-    {
-      name: "Watches",
-      image:
-        "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1200&auto=format&fit=crop",
-    },
-
-    {
-      name: "Fashion",
-      image:
-        "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?q=80&w=1200&auto=format&fit=crop",
-    },
-
-  ];
+  const { ref, isVisible } = useInView(0.1);
 
   return (
-
-    <section className="py-24 px-6 lg:px-10 bg-[#0B0B0B] text-white relative overflow-hidden">
-
-      {/* Glow */}
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-[#C6922B]/10 blur-[120px]" />
-
-      <div className="max-w-7xl mx-auto relative z-10">
-
-        {/* Header */}
-        <motion.div
-
-          initial={{
-            opacity: 0,
-            y: 40,
-          }}
-
-          whileInView={{
-            opacity: 1,
-            y: 0,
-          }}
-
-          transition={{
-            duration: 0.8,
-          }}
-
-          viewport={{
-            once: true,
-          }}
-
-          className="text-center mb-20"
+    <section
+      id="categories"
+      className="everyday-favorites flex min-h-screen w-full flex-col justify-center overflow-hidden text-white"
+      aria-labelledby="everyday-favorites-heading"
+    >
+      <header className="px-6 pb-10 pt-16 text-center text-white sm:pb-14 md:pt-20">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-[#D2A94F]">
+          Explore the Zyvar edit
+        </p>
+        <h2
+          id="everyday-favorites-heading"
+          className="text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl"
         >
+          Find your everyday favorites
+        </h2>
+      </header>
 
-          <p className="uppercase tracking-[0.3em] text-[#C6922B] text-sm mb-5">
-
-            Shop By Category
-
-          </p>
-
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black  leading-tight">
-
-            Explore Our
-            <span className="block text-[#C6922B]">
-
-              Luxury Collections
-
-            </span>
-
-          </h2>
-
-        </motion.div>
-
-        {/* Categories Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-
-          {categories.map((category, index) => (
-
-            <motion.div
-
-              key={index}
-
-              initial={{
-                opacity: 0,
-                y: 50,
-              }}
-
-              whileInView={{
-                opacity: 1,
-                y: 0,
-              }}
-
-              transition={{
-                duration: 0.8,
-                delay: index * 0.2,
-              }}
-
-              viewport={{
-                once: true,
-              }}
-
-              onClick={() =>
-                navigate("/products")
-              }
-
-              className="
-                group
-                cursor-pointer
-                relative
-                overflow-hidden
-                rounded-[32px]
-                border border-white/10
-                bg-white/5
-                backdrop-blur-xl
-                hover:border-[#C6922B]
-                transition
-                duration-500
-              "
+      <div
+        ref={ref}
+        className={`grid grid-cols-1 transition-all duration-1000 ease-out md:grid-cols-2 xl:grid-cols-3 ${
+          isVisible ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
+        }`}
+      >
+        {CATEGORIES.map((category, index) => (
+          <article
+            key={category.name}
+            className={`everyday-video-card ${category.name === "fragrance" ? "everyday-video-card--fragrance" : ""} group relative flex min-h-[420px] flex-col items-start justify-between overflow-hidden border border-white/10 bg-[#111]/30 p-6 transition-all duration-1000 ease-out sm:min-h-[540px] sm:p-8 xl:min-h-[680px] xl:p-10 ${
+              isVisible ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
+            }`}
+            style={{ transitionDelay: `${index * 150}ms` }}
+          >
+            <video
+              className="everyday-video-card__media absolute inset-0 h-full w-full object-cover transition-transform duration-1000 group-hover:scale-110"
+              src={category.video}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              aria-hidden="true"
+            />
+            <div className="everyday-video-card__overlay absolute inset-0" />
+            <h3
+              className="everyday-video-card__name relative z-10 origin-center text-5xl font-medium text-white transition-transform duration-500 sm:text-6xl md:text-7xl lg:text-8xl"
+              style={{ writingMode: "vertical-lr", transform: "rotate(180deg)" }}
             >
-
-              {/* Image */}
-              <div className="overflow-hidden">
-
-                <img
-                  src={category.image}
-                  alt={category.name}
-
-                  className="
-                    h-80
-                    w-full
-                    object-cover
-                    group-hover:scale-110
-                    transition
-                    duration-700
-                  "
-                />
-              </div>
-
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-
-              {/* Content */}
-              <div className="absolute bottom-0 left-0 p-8">
-
-                <h3 className="text-3xl font-black  mb-3">
-
-                  {category.name}
-
-                </h3>
-
-                <button className="px-6 py-3 rounded-2xl bg-[#C6922B] text-black font-bold hover:scale-105 transition">
-
-                  Explore Now
-
-                </button>
-
-              </div>
-
-            </motion.div>
-
-          ))}
-
-        </div>
-
+              {category.name}
+            </h3>
+            <Link
+              to={`/products?category=${encodeURIComponent(category.name)}`}
+              className="btn-primary relative z-10 mt-auto inline-flex rounded-full border border-white/25 bg-white/90 px-8 py-3 text-sm font-semibold lowercase text-black backdrop-blur-md transition hover:bg-white"
+              aria-label={`Shop ${category.name} products`}
+            >
+              shop {category.name}
+            </Link>
+          </article>
+        ))}
       </div>
-
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -23,6 +24,7 @@ import {
 
 import {
   Link,
+  useLocation,
   useNavigate,
 } from "react-router-dom";
 
@@ -57,6 +59,16 @@ const toSlug = (name) =>
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-");
 
+const CATEGORY_ALIASES = {
+  face: ["face", "skin", "skincare"],
+  skincare: ["skin", "skincare", "face"],
+  body: ["body", "bodycare", "body care"],
+  "beauty tools": ["beauty tool", "beauty tools", "tool"],
+  haircare: ["hair", "haircare", "hair care"],
+  fragrance: ["fragrance", "perfume", "scent"],
+  makeup: ["makeup", "cosmetic", "cosmetics"],
+};
+
 export default function Products() {
 
   const [products,
@@ -75,9 +87,10 @@ export default function Products() {
     setLoading] =
     useState(true);
 
-  const [selectedCategory,
-    setSelectedCategory] =
-    useState("All");
+  const location = useLocation();
+  const autoRecommendCategory = useRef("");
+  const selectedCategory =
+    new URLSearchParams(location.search).get("category") || "All";
 
   const {
     addToCart,
@@ -92,10 +105,42 @@ export default function Products() {
   const navigate =
     useNavigate();
 
+  const handleCategoryChange = (category) => {
+    const params = new URLSearchParams(location.search);
+    params.delete("aiSuggest");
+    if (category === "All") {
+      params.delete("category");
+    } else {
+      params.set("category", category);
+    }
+    const query = params.toString();
+    navigate(`${location.pathname}${query ? `?${query}` : ""}`);
+  };
+
   const isLoggedIn =
     localStorage.getItem(
       "zyvar-user"
     ) === "true";
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const category = params.get("category");
+    const shouldRecommend = params.get("aiSuggest") === "1";
+    const requestKey = `${category || ""}:${shouldRecommend}`;
+
+    if (!category || !shouldRecommend || autoRecommendCategory.current === requestKey) {
+      return undefined;
+    }
+
+    autoRecommendCategory.current = requestKey;
+    const timer = window.setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("zyvar:recommend-category", { detail: { category } }),
+      );
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+  }, [location.search]);
 
   // FETCH PRODUCTS
   useEffect(() => {
@@ -152,6 +197,11 @@ export default function Products() {
     }, [products]);
 
   // FILTER PRODUCTS
+  const requestedCategory = selectedCategory.toLowerCase().trim();
+  const categoryTerms = CATEGORY_ALIASES[requestedCategory] || [
+    requestedCategory,
+    requestedCategory.replace(/s$/, ""),
+  ];
   const filteredProducts =
     products.filter((product) => {
 
@@ -170,13 +220,10 @@ export default function Products() {
             search.toLowerCase()
           );
 
+      const productCategory = product.category?.toLowerCase().trim();
       const matchesCategory =
-        selectedCategory === "All"
-
-          ? true
-
-          : product.category ===
-            selectedCategory;
+        selectedCategory === "All" ||
+        categoryTerms.some((term) => productCategory?.includes(term));
 
       return (
         matchesSearch &&
@@ -358,13 +405,11 @@ export default function Products() {
 
                 <button
                   key={index}
-                  onClick={() =>
-                    setSelectedCategory(category)
-                  }
+                  onClick={() => handleCategoryChange(category)}
                   className={`px-6 py-3 rounded-2xl font-semibold transition duration-300 border
 
                   ${
-                    selectedCategory === category
+                    selectedCategory.toLowerCase() === category.toLowerCase()
 
                       ? "bg-[#C6922B] text-black border-[#C6922B]"
 

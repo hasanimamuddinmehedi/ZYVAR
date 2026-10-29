@@ -58,6 +58,23 @@ price research, and image discovery. Product details use the same service to
 translate descriptions into Bengali. These routes use the existing Firebase
 Admin and Ollama server configuration; no Firestore schema change is needed.
 
+### Push notifications and app installation
+
+The navbar notification center lets Zyvar administrators broadcast messages,
+notices, incident updates, and order updates to devices that enabled push
+notifications. In Firebase Console, enable Cloud Messaging and create a Web
+Push certificate key pair. Set the public key as
+`VITE_FIREBASE_VAPID_KEY` in the frontend environment. The backend uses its
+existing Firebase Admin service account; deploy the backend with the
+`/api/notifications` routes before sending broadcasts. Browser permission
+must be approved by each visitor; a site cannot override a browser or OS
+notification denial.
+
+The home page includes the PWA install prompt. When a new frontend service
+worker is ready, the app offers an update action instead of silently
+restarting. The app icons and `site.webmanifest` are built from the supplied
+ZYVAR logo files.
+
 For local development, add this alongside the chat URL in the root
 `.env.local`:
 
@@ -73,6 +90,12 @@ that the project's distribution terms comply with that license or obtain the
 vendor's commercial license before deploying this feature.
 
 ### Deploying the frontend and backend
+
+The frontend build and backend use Node.js 24.22.1 or later in the 24.x
+release line. The root `.nvmrc` and `server/.node-version` select 24.22.1;
+the package `engines` settings keep both deployment environments on Node 24.
+Redeploy both services to pick up the platform's updated system certificate
+store.
 
 Deploy the Vite frontend from the repository root to Vercel; its build output
 is `dist`. The existing Vercel project already contains the public

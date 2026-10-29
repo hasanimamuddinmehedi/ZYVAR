@@ -17,6 +17,7 @@ import {
 
 import {
   onAuthStateChanged,
+  updateProfile,
 } from "firebase/auth";
 
 import {
@@ -35,6 +36,7 @@ import {
   FaStore,
   FaGlobe,
   FaCheckCircle,
+  FaTimes,
 } from "react-icons/fa";
 
 import {
@@ -46,12 +48,15 @@ import {
 } from "../data/bangladeshData";
 
 import {
+  authorizeImageDeletion,
+  deleteImage,
   uploadImage,
 } from "../utils/cloudinary";
 
 import {
   successAlert,
   errorAlert,
+  warningAlert,
 } from "../utils/alerts";
 
 export default function Profile() {
@@ -464,10 +469,21 @@ export default function Profile() {
 
         setPhotoUploading(true);
 
+        const previousImage = profile.photoURL;
+        const deletionAuthorization = previousImage
+          ? await authorizeImageDeletion(previousImage, {
+              type: "profile",
+              id: user.uid,
+            })
+          : null;
         const imageUrl =
           await uploadImage(
             selectedFile
           );
+
+        if (!imageUrl) {
+          throw new Error("Image upload did not return a URL.");
+        }
 
         await updateDoc(
 
@@ -482,12 +498,36 @@ export default function Profile() {
           }
         );
 
+        if (auth.currentUser) {
+          await updateProfile(auth.currentUser, { photoURL: imageUrl });
+        }
+
+        const storedUser = JSON.parse(
+          localStorage.getItem("zyvar-user-data") || "{}"
+        );
+        localStorage.setItem(
+          "zyvar-user-data",
+          JSON.stringify({ ...storedUser, photoURL: imageUrl })
+        );
+
         setProfile((prev) => ({
 
           ...prev,
 
           photoURL: imageUrl,
         }));
+
+        if (previousImage && previousImage !== imageUrl) {
+          try {
+            await deleteImage(previousImage, deletionAuthorization);
+          } catch (error) {
+            console.error("Previous profile photo cleanup failed:", error);
+            await warningAlert(
+              "Photo Updated",
+              "Your new profile photo is saved, but the previous photo could not be removed from Cloudinary."
+            );
+          }
+        }
 
         await successAlert(
           "Photo Updated!",
@@ -514,6 +554,43 @@ export default function Profile() {
       }
     };
 
+  const handleRemovePhoto = async () => {
+    const previousImage = profile.photoURL;
+    if (!previousImage) return;
+
+    try {
+      const deletionAuthorization = await authorizeImageDeletion(
+        previousImage,
+        { type: "profile", id: user.uid },
+      );
+      await updateDoc(doc(db, "users", user.uid), { photoURL: "" });
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { photoURL: null });
+      }
+      const storedUser = JSON.parse(
+        localStorage.getItem("zyvar-user-data") || "{}"
+      );
+      localStorage.setItem(
+        "zyvar-user-data",
+        JSON.stringify({ ...storedUser, photoURL: "" })
+      );
+      setProfile((prev) => ({ ...prev, photoURL: "" }));
+
+      try {
+        await deleteImage(previousImage, deletionAuthorization);
+      } catch (error) {
+        console.error("Profile photo cleanup failed:", error);
+        await warningAlert(
+          "Photo Removed",
+          "Your profile photo was removed, but its Cloudinary file could not be deleted."
+        );
+      }
+    } catch (error) {
+      console.error("Profile photo removal failed:", error);
+      await errorAlert("Remove Failed", "Could not remove your profile photo.");
+    }
+  };
+
   // COVER PHOTO UPLOAD
   const handleCoverChange =
     async (e) => {
@@ -527,6 +604,13 @@ export default function Profile() {
 
         setCoverUploading(true);
 
+        const previousImage = profile.coverPhoto;
+        const deletionAuthorization = previousImage
+          ? await authorizeImageDeletion(previousImage, {
+              type: "profile",
+              id: user.uid,
+            })
+          : null;
         const imageUrl =
           await uploadImage(file);
 
@@ -559,6 +643,18 @@ export default function Profile() {
             imageUrl,
         }));
 
+        if (previousImage && previousImage !== imageUrl) {
+          try {
+            await deleteImage(previousImage, deletionAuthorization);
+          } catch (error) {
+            console.error("Previous cover photo cleanup failed:", error);
+            await warningAlert(
+              "Cover Updated",
+              "Your new cover photo is saved, but the previous photo could not be removed from Cloudinary."
+            );
+          }
+        }
+
         await successAlert(
           "Cover Updated",
           "Your cover photo has been updated successfully."
@@ -578,8 +674,38 @@ export default function Profile() {
         setCoverUploading(
           false
         );
+        if (coverInputRef.current) {
+          coverInputRef.current.value = "";
+        }
       }
     };
+
+  const handleRemoveCover = async () => {
+    const previousImage = profile.coverPhoto;
+    if (!previousImage) return;
+
+    try {
+      const deletionAuthorization = await authorizeImageDeletion(
+        previousImage,
+        { type: "profile", id: user.uid },
+      );
+      await updateDoc(doc(db, "users", user.uid), { coverPhoto: "" });
+      setProfile((prev) => ({ ...prev, coverPhoto: "" }));
+
+      try {
+        await deleteImage(previousImage, deletionAuthorization);
+      } catch (error) {
+        console.error("Cover photo cleanup failed:", error);
+        await warningAlert(
+          "Cover Removed",
+          "Your cover photo was removed, but its Cloudinary file could not be deleted."
+        );
+      }
+    } catch (error) {
+      console.error("Cover photo removal failed:", error);
+      await errorAlert("Remove Failed", "Could not remove your cover photo.");
+    }
+  };
 
   // SAVE PROFILE
   const saveProfile =
@@ -765,6 +891,17 @@ export default function Profile() {
 
             </button>
 
+            {profile?.coverPhoto && (
+              <button
+                type="button"
+                disabled={coverUploading}
+                onClick={handleRemoveCover}
+                className="absolute right-5 top-20 flex items-center gap-2 rounded-xl border border-red-400/40 bg-black/70 px-4 py-3 text-red-200 transition hover:border-red-400 disabled:opacity-50"
+              >
+                Remove Cover
+              </button>
+            )}
+
           </div>
 
           {/* PROFILE */}
@@ -854,6 +991,18 @@ export default function Profile() {
                 }
 
               </button>
+
+              {profile?.photoURL && (
+                <button
+                  type="button"
+                  disabled={photoUploading}
+                  onClick={handleRemovePhoto}
+                  aria-label="Remove profile picture"
+                  className="absolute bottom-2 left-2 flex h-10 w-10 items-center justify-center rounded-full border border-red-400/50 bg-black/80 text-red-200 transition hover:bg-red-500/20 disabled:opacity-50"
+                >
+                  <FaTimes />
+                </button>
+              )}
 
             </div>
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
+  FaBars,
   FaBoxOpen,
   FaChartPie,
   FaClipboardList,
@@ -17,6 +18,7 @@ import {
 import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/firebase";
 import DashboardQuickActions from "../dashboard/DashboardQuickActions";
+import NotificationCenter from "../NotificationCenter";
 
 const links = [
   { label: "Dashboard", path: "/admin/dashboard", icon: <FaChartPie /> },
@@ -55,19 +57,27 @@ export default function AdminMobileSidebar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-white/10 bg-[#0B0B0B]/95 px-3 backdrop-blur-2xl lg:hidden">
+      <header className="fixed inset-x-2 top-2 z-40 flex h-14 items-center justify-between rounded-[22px] border border-[#C6922B]/25 bg-[#0B0B0B]/85 px-3 shadow-[0_10px_40px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:hidden">
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open admin navigation"
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-lg"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-lg transition hover:border-[#C6922B] hover:text-[#C6922B]"
         >
-          ☰
+          <FaBars />
         </button>
-        <button type="button" onClick={() => navigate("/")} className="text-base font-black tracking-[0.2em] text-[#C6922B]">
+        <button type="button" onClick={() => navigate("/")} aria-label="Go to Zyvar home" className="flex items-center gap-2 text-base font-black tracking-[0.2em] text-[#C6922B]">
+          <img
+            src="/android-chrome-192x192.png"
+            alt=""
+            className="h-8 w-8 object-contain"
+          />
           ZYVAR
         </button>
-        <DashboardQuickActions role="admin" />
+        <div className="flex items-center gap-2">
+          <NotificationCenter />
+          <DashboardQuickActions role="admin" />
+        </div>
       </header>
 
       {open && (
@@ -78,7 +88,7 @@ export default function AdminMobileSidebar() {
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
-          <aside className="absolute inset-y-0 left-0 flex w-[min(18rem,calc(100vw-2rem))] flex-col overflow-y-auto border-r border-white/10 bg-[#111] p-5 shadow-2xl">
+          <aside className="absolute inset-y-2 left-2 flex w-[min(18rem,calc(100vw-1rem))] flex-col overflow-y-auto rounded-[22px] border border-[#C6922B]/25 bg-[#0B0B0B]/95 p-5 shadow-2xl backdrop-blur-2xl">
             <div className="mb-7 flex items-center justify-between">
               <div>
                 <p className="text-xl font-black tracking-[0.18em] text-[#C6922B]">ZYVAR</p>

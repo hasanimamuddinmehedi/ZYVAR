@@ -25,6 +25,8 @@ const admin = require("firebase-admin");
 
 const zyvarAIRouter = require("./routes/zyvarAI");
 const productAIRouter = require("./routes/productAI");
+const cloudinaryRouter = require("./routes/cloudinary");
+const notificationsRouter = require("./routes/notifications");
 
 admin.initializeApp({
   credential: admin.credential.cert({
@@ -54,6 +56,10 @@ app.use(
 // Request size limit — basic abuse protection for the new AI endpoint
 // (Step 2, Part 14). Existing email endpoints send small JSON bodies well
 // under this limit, so this does not change their behavior.
+app.use(
+  "/api/zyvar-ai/skin-analysis",
+  express.json({ limit: "4mb" })
+);
 app.use(express.json({ limit: "100kb" }));
 
 /* =========================================
@@ -63,6 +69,8 @@ app.use(express.json({ limit: "100kb" }));
 
 app.use("/api/zyvar-ai", zyvarAIRouter);
 app.use("/api/product-ai", productAIRouter);
+app.use("/api/cloudinary", cloudinaryRouter);
+app.use("/api/notifications", notificationsRouter);
 
 /* =========================================
    HEALTH CHECK

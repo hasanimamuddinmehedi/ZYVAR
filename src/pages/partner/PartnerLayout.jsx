@@ -16,6 +16,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "../../firebase/firebase";
 import DashboardQuickActions from "../../components/dashboard/DashboardQuickActions";
 import { DashboardDataProvider } from "../../components/dashboard/DashboardDataProvider";
+import NotificationCenter from "../../components/NotificationCenter";
 
 const menu = [
   { name: "Dashboard", icon: <FaChartLine />, path: "/partner-dashboard", end: true },
@@ -53,13 +54,13 @@ export default function PartnerLayout() {
   return (
     <DashboardDataProvider role="partner">
       <div className="min-h-screen bg-[#0B0B0B] text-white">
-        <header className="fixed left-0 right-0 top-0 z-50 flex h-14 items-center justify-between border-b border-white/10 bg-[#0B0B0B]/95 px-3 backdrop-blur-2xl lg:left-[280px] lg:h-16 lg:px-6">
+        <header className="fixed left-2 right-2 top-2 z-50 flex h-14 items-center justify-between rounded-[22px] border border-[#C6922B]/25 bg-[#0B0B0B]/85 px-3 shadow-[0_10px_40px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:left-[296px] lg:right-3 lg:top-3 lg:h-16 lg:px-6">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               onClick={() => setMobileMenuOpen(true)}
               aria-label="Open partner navigation"
-              className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 lg:hidden"
+              className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 transition hover:border-[#C6922B] hover:text-[#C6922B] lg:hidden"
             >
               <FaBars />
             </button>
@@ -69,12 +70,25 @@ export default function PartnerLayout() {
             </div>
           </div>
           <div className="ml-3 shrink-0">
-            <DashboardQuickActions role="partner" />
+            <div className="flex items-center gap-2">
+              <NotificationCenter />
+              <DashboardQuickActions role="partner" />
+            </div>
           </div>
         </header>
 
-        <aside className="fixed bottom-0 left-0 top-0 z-50 hidden w-[280px] flex-col border-r border-white/10 bg-[#0A0A0A] p-5 lg:flex">
-          <p className="mb-7 text-2xl font-black text-[#C6922B]">ZYVAR Partner</p>
+        <aside className="fixed bottom-3 left-3 top-3 z-50 hidden w-[260px] flex-col rounded-[22px] border border-[#C6922B]/25 bg-[#0B0B0B]/85 p-5 shadow-[0_10px_40px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:flex">
+          <div className="mb-7 flex items-center gap-3">
+            <img
+              src="/android-chrome-192x192.png"
+              alt="ZYVAR Logo"
+              className="h-10 w-10 object-contain"
+            />
+            <div>
+              <p className="text-xl font-black tracking-[0.16em] text-[#C6922B]">ZYVAR</p>
+              <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">Partner Dashboard</p>
+            </div>
+          </div>
           <nav className="space-y-2 overflow-y-auto">
             {menu.map((item) => (
               <NavLink key={item.path} to={item.path} end={item.end} className={linkClass}>
@@ -97,10 +111,10 @@ export default function PartnerLayout() {
               onClick={() => setMobileMenuOpen(false)}
               className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             />
-            <aside className="absolute inset-y-0 left-0 flex w-[min(18rem,calc(100vw-2rem))] flex-col overflow-y-auto border-r border-white/10 bg-[#0A0A0A] p-5 shadow-2xl">
+            <aside className="absolute inset-y-2 left-2 flex w-[min(18rem,calc(100vw-1rem))] flex-col overflow-y-auto rounded-[22px] border border-[#C6922B]/25 bg-[#0B0B0B]/95 p-5 shadow-2xl backdrop-blur-2xl">
               <div className="mb-7 flex items-center justify-between">
                 <div>
-                  <p className="text-xl font-black text-[#C6922B]">ZYVAR Partner</p>
+                  <p className="text-xl font-black tracking-[0.16em] text-[#C6922B]">ZYVAR</p>
                   <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-gray-500">Dashboard</p>
                 </div>
                 <button type="button" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu" className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/5">
@@ -123,7 +137,7 @@ export default function PartnerLayout() {
           </div>
         )}
 
-        <main className="min-h-screen w-full overflow-x-hidden px-4 pb-6 pt-14 sm:px-6 lg:pl-[280px] lg:pt-16">
+        <main className="min-h-screen w-full overflow-x-hidden px-4 pb-6 pt-20 sm:px-6 lg:pl-[280px] lg:pt-24">
           <div className="p-0 md:p-4 lg:p-6">
             <Outlet />
           </div>

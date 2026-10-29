@@ -48,6 +48,8 @@ import {
 } from "../../firebase/firebase";
 
 import {
+  authorizeImageDeletion,
+  deleteImage,
   uploadImage,
 } from "../../utils/cloudinary";
 
@@ -347,12 +349,36 @@ export default function ProductsPage() {
         if (!result.isConfirmed)
           return;
 
+        const product = products.find((item) => item.id === id);
+        const images = product?.images?.length
+          ? product.images
+          : product?.image
+            ? [product.image]
+            : [];
+        const deletionAuthorizations = await Promise.all(
+          images.map((imageUrl) =>
+            authorizeImageDeletion(imageUrl, { type: "product", id }),
+          ),
+        );
+
         await deleteDoc(
           doc(
             db,
             "products",
             id
           )
+        );
+
+        const cleanupResults = await Promise.allSettled(
+          images.map((imageUrl, index) =>
+            deleteImage(imageUrl, deletionAuthorizations[index]),
+          ),
+        );
+        const cleanupErrors = cleanupResults.filter(
+          (cleanup) => cleanup.status === "rejected",
+        );
+        cleanupErrors.forEach((cleanup) =>
+          console.error("Deleted product image cleanup failed:", cleanup.reason),
         );
 
         setProducts(
@@ -366,6 +392,12 @@ export default function ProductsPage() {
           "Product Deleted!",
           "The product has been deleted successfully."
         );
+        if (cleanupErrors.length) {
+          await warningAlert(
+            "Product Deleted",
+            "The product was deleted, but one or more Cloudinary images could not be removed."
+          );
+        }
 
       } catch (error) {
 
@@ -525,6 +557,7 @@ export default function ProductsPage() {
 
         setImageUploading(true);
 
+        const replacedImage = editData.images[job.replaceIndex];
         const url =
           await uploadImage(files[0]);
 
@@ -536,6 +569,7 @@ export default function ProductsPage() {
             i === job.replaceIndex ? url : x
           ),
         }));
+        await deleteTemporaryEditImage(replacedImage);
 
       } catch (error) {
 
@@ -552,9 +586,31 @@ export default function ProductsPage() {
       }
     };
 
+  const deleteTemporaryEditImage = async (imageUrl) => {
+    if (!imageUrl || !editingId) return;
+    const product = products.find((item) => item.id === editingId);
+    const savedImages = product?.images?.length
+      ? product.images
+      : product?.image
+        ? [product.image]
+        : [];
+    if (savedImages.includes(imageUrl)) return;
+
+    try {
+      await deleteImage(imageUrl);
+    } catch (error) {
+      console.error("Temporary product image cleanup failed:", error);
+      await warningAlert(
+        "Image Changed",
+        "The image was replaced in your draft, but its Cloudinary file could not be deleted."
+      );
+    }
+  };
+
   // REMOVE AN IMAGE WHILE EDITING
   const handleRemoveEditImage =
-    (index) => {
+    async (index) => {
+      const removedImage = editData.images[index];
 
       setEditData(
         (prev) => ({
@@ -564,6 +620,7 @@ export default function ProductsPage() {
           ),
         })
       );
+      await deleteTemporaryEditImage(removedImage);
     };
 
   // SAVE EDIT
@@ -607,6 +664,21 @@ export default function ProductsPage() {
             editData.images,
         };
 
+        const previousProduct = products.find((product) => product.id === id);
+        const previousImages = previousProduct?.images?.length
+          ? previousProduct.images
+          : previousProduct?.image
+            ? [previousProduct.image]
+            : [];
+        const removedImages = previousImages.filter(
+          (imageUrl) => !editData.images.includes(imageUrl),
+        );
+        const deletionAuthorizations = await Promise.all(
+          removedImages.map((imageUrl) =>
+            authorizeImageDeletion(imageUrl, { type: "product", id }),
+          ),
+        );
+
         await updateDoc(
           doc(
             db,
@@ -614,6 +686,18 @@ export default function ProductsPage() {
             id
           ),
           updatedData
+        );
+
+        const cleanupResults = await Promise.allSettled(
+          removedImages.map((imageUrl, index) =>
+            deleteImage(imageUrl, deletionAuthorizations[index]),
+          ),
+        );
+        const cleanupErrors = cleanupResults.filter(
+          (cleanup) => cleanup.status === "rejected",
+        );
+        cleanupErrors.forEach((cleanup) =>
+          console.error("Replaced product image cleanup failed:", cleanup.reason),
         );
 
         setProducts(
@@ -637,6 +721,12 @@ export default function ProductsPage() {
           "Product Updated!",
           "Product has been updated successfully."
         );
+        if (cleanupErrors.length) {
+          await warningAlert(
+            "Product Updated",
+            "Your changes were saved, but one or more replaced images could not be removed from Cloudinary."
+          );
+        }
 
       } catch (error) {
 
